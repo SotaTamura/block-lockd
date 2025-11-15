@@ -3,32 +3,21 @@
 import { UserType } from "@/constants";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useState, ReactNode } from "react";
-import { putUser, putUserName } from "./fetch";
-
-type UserPropertyType =
-    | {
-          property: "name";
-          newData: string;
-      }
-    | {
-          property: "completedStageIds";
-          newData: number[];
-      };
-
+import { putUser, throwError } from "./fetch";
 interface AuthContextType {
-    user: UserType | null;
-    login: (userData: UserType) => void;
+    user: Omit<UserType, "password"> | null;
+    login: (userData: Omit<UserType, "password">) => void;
     logout: () => void;
-    changeUserData: ({ property, newData }: UserPropertyType) => void;
+    changeUserData: (newUserData: Partial<Omit<UserType, "id">>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<UserType | null>(null);
+    const [user, setUser] = useState<Omit<UserType, "password"> | null>(null);
     const router = useRouter();
 
-    const login = (userData: UserType) => {
+    const login = (userData: Omit<UserType, "password">) => {
         setUser(userData);
         router.push("/");
         router.refresh();
@@ -40,16 +29,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         router.refresh();
     };
 
-    const changeUserData = ({ property, newData }: UserPropertyType) => {
+    const changeUserData = async (newUserData: Partial<Omit<UserType, "id">>) => {
         if (!user) return;
-        if (property === "name") {
-            const newUserData = { ...user, name: newData };
-            putUserName({ id: user.id, name: newData });
-            setUser(newUserData);
-        } else {
-            const newUserData = { ...user, [property]: newData };
-            putUser(newUserData);
-            setUser(newUserData);
+        try {
+            const res = await putUser({ id: user.id, ...newUserData });
+            if (res.ok) {
+                setUser({ ...user, ...newUserData });
+                if ("name" in newUserData) window.alert("名前を変更しました。");
+            } else {
+                const data = await res.json();
+                alert(data.message);
+            }
+        } catch (err) {
+            throwError(err);
         }
     };
 

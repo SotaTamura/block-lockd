@@ -18,14 +18,11 @@ export default function SignupPage() {
         } else {
             try {
                 const res = await postUser({ name: nameRef.current.value, password: passwordRef.current.value });
+                const data = await res.json();
                 if (res.ok) {
-                    const data = await res.json();
                     login(data.user);
-                } else if (res.status === 409) {
-                    const data = await res.json();
-                    alert(data.message || "このユーザー名は既に使用されています");
                 } else {
-                    throw new Error("登録に失敗しました");
+                    alert(data.message);
                 }
             } catch (err) {
                 throwError(err);

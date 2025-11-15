@@ -1,6 +1,6 @@
 "use client";
 
-import { getStage } from "@/app/fetch";
+import { getStage, throwError } from "@/app/fetch";
 import { StageType } from "@/constants";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
@@ -14,8 +14,7 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
             try {
                 setStage(await getStage(id));
             } catch (err) {
-                console.error(err);
-                window.alert("エラーが発生しました。");
+                throwError(err);
             }
         })();
     }, [id]);

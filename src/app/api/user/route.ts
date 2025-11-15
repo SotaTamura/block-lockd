@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export const GET = async (_req: NextRequest) => {
     try {
         const users = await prisma.user.findMany();
-        return NextResponse.json({ message: "success", users: users }, { status: 200 });
+        return NextResponse.json({ message: "success", users: users.map(({ password, ...userWithoutPassword }) => userWithoutPassword) }, { status: 200 });
     } catch (err) {
         return NextResponse.json({ message: "error", err }, { status: 500 });
     }

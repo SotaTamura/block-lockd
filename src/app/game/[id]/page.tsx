@@ -61,7 +61,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 accumulator += dt ? dt : 0;
                 while (accumulator >= STEP) {
                     update(async () => {
-                        if (user) changeUserData({ property: "completedStageIds", newData: [...user.completedStageIds, id] });
+                        if (user) changeUserData({ completedStageIds: [...user.completedStageIds, id] });
                         setIsComplete(true);
                     });
                     accumulator -= STEP;

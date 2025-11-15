@@ -35,7 +35,8 @@ export default function EditStage({ params }: { params: Promise<{ id: number }> 
                 router.push("/editor");
                 router.refresh();
             } else {
-                window.alert("ステージの削除に失敗しました。");
+                const data = await res.json();
+                window.alert(data.message);
             }
         }
     };

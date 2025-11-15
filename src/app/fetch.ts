@@ -5,6 +5,7 @@ export const throwError = (err: unknown) => {
     console.error(err);
 };
 
+// project://src/app/api/stage
 export const getAllStages = async (): Promise<StageType[]> => {
     try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
@@ -18,19 +19,14 @@ export const getAllStages = async (): Promise<StageType[]> => {
         return [];
     }
 };
-export const getStagesByUser = async (userId: number): Promise<StageType[]> => {
-    try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/user/${userId}`, {
-            cache: "no-store",
-        });
-        if (!res.ok) return [];
-        const data = await res.json();
-        return data.stages || [];
-    } catch (err) {
-        throwError(err);
-        return [];
-    }
-};
+export const postStage = async (stageData: CreateStageType) =>
+    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(stageData),
+    });
+
+// project://src/app/api/stage/[id]
 export const getStage = async (stageId: number): Promise<StageType | null> => {
     try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/${stageId}`, {
@@ -44,12 +40,6 @@ export const getStage = async (stageId: number): Promise<StageType | null> => {
         return null;
     }
 };
-export const postStage = async (stageData: CreateStageType) =>
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(stageData),
-    });
 export const putStage = async (newStageData: StageType) =>
     await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/${newStageData.id}`, {
         method: "PUT",
@@ -62,7 +52,39 @@ export const deleteStage = async (stageId: number) =>
         headers: { "Content-Type": "application/json" },
     });
 
-export const getUser = async (userId: number): Promise<UserType | null> => {
+// project://src/app/api/stage/user/[id]
+export const getStagesByUser = async (userId: number): Promise<StageType[]> => {
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/user/${userId}`, {
+            cache: "no-store",
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.stages || [];
+    } catch (err) {
+        throwError(err);
+        return [];
+    }
+};
+
+// project://src/app/api/user/route.ts
+export const postUser = async (signupData: LoginType) =>
+    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(signupData),
+    });
+
+// project://src/app/api/user/login/route.ts
+export const postLogin = async (loginData: LoginType) =>
+    await fetch(`/api/user/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(loginData),
+    });
+
+// project://src/app/api/user/[id]/route.ts
+export const getUser = async (userId: number): Promise<Omit<UserType, "password"> | null> => {
     try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${userId}`, {
             cache: "no-store",
@@ -75,39 +97,14 @@ export const getUser = async (userId: number): Promise<UserType | null> => {
         return null;
     }
 };
-export const postUser = async (signupData: LoginType) =>
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signupData),
-    });
-export const putUser = async (newUserData: UserType) =>
+export const putUser = async (newUserData: { id: number } & Partial<Omit<UserType, "id">>) =>
     await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${newUserData.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUserData),
     });
-export const putUserName = async (newUserNameData: { id: number; name: string }) =>
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${newUserNameData.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newUserNameData.name }),
-    });
-export const putUserPassword = async (newPasswordData: { id: number; password: string }) =>
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${newPasswordData.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newPasswordData),
-    });
 export const deleteUser = async (userId: number) =>
     await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${userId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-    });
-
-export const postLogin = async (loginData: LoginType) =>
-    await fetch(`/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loginData),
     });

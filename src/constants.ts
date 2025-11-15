@@ -35,6 +35,7 @@ export type CreateStageType = {
 export type UserType = {
     id: number;
     name: string;
+    password: string;
     completedStageIds: number[];
 };
 export type LoginType = {

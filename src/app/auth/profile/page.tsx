@@ -2,7 +2,7 @@
 
 import { LeftSvg } from "@/app/components";
 import { useAuth } from "@/app/context";
-import { deleteUser, postLogin, putUserPassword } from "@/app/fetch";
+import { deleteUser, postLogin, putUser } from "@/app/fetch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -30,8 +30,7 @@ export default function Profile() {
         if (!newNameRef.current?.value) {
             window.alert("新しい名前を入力してください。");
         } else {
-            changeUserData({ property: "name", newData: newNameRef.current.value });
-            window.alert("名前を変更しました。");
+            changeUserData({ name: newNameRef.current.value });
         }
     };
 
@@ -50,11 +49,11 @@ export default function Profile() {
                 password: currentPasswordRef.current.value,
             });
             if (res.ok) {
-                const updateRes = await putUserPassword({
+                const res = await putUser({
                     id: user.id,
                     password: newPasswordRef.current.value,
                 });
-                if (updateRes.ok) {
+                if (res.ok) {
                     window.alert("パスワードを変更しました。");
                     if (currentPasswordRef.current) currentPasswordRef.current.value = "";
                     if (newPasswordRef.current) newPasswordRef.current.value = "";
@@ -75,7 +74,8 @@ export default function Profile() {
                 window.alert("アカウントを削除しました。");
                 logout();
             } else {
-                window.alert("アカウントの削除に失敗しました。");
+                const data = await res.json();
+                window.alert(data.message);
             }
         }
     };
