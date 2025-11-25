@@ -1,4 +1,4 @@
-import { CreateStageType, LoginType, StageType, UserType } from "@/constants";
+import { StageType, UserType } from "@/constants";
 
 export const throwError = (err: unknown) => {
     window.alert("エラーが発生しました：" + err);
@@ -19,7 +19,7 @@ export const getAllStages = async (): Promise<StageType[]> => {
         return [];
     }
 };
-export const postStage = async (stageData: CreateStageType) =>
+export const postStage = async (stageData: Pick<StageType, "title" | "creatorId" | "description" | "code">) =>
     await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,7 +68,7 @@ export const getStagesByUser = async (userId: number): Promise<StageType[]> => {
 };
 
 // project://src/app/api/user/route.ts
-export const postUser = async (signupData: LoginType) =>
+export const postUser = async (signupData: Pick<UserType, "name" | "password">) =>
     await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,7 +76,7 @@ export const postUser = async (signupData: LoginType) =>
     });
 
 // project://src/app/api/user/login/route.ts
-export const postLogin = async (loginData: LoginType) =>
+export const postLogin = async (loginData: Pick<UserType, "name" | "password">) =>
     await fetch(`/api/user/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

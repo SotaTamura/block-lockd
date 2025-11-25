@@ -26,21 +26,11 @@ export type StageType = {
     description: string;
     code: string;
 };
-export type CreateStageType = {
-    title: string;
-    creatorId: number;
-    description: string;
-    code: string;
-};
 export type UserType = {
     id: number;
     name: string;
     password: string;
     completedStageIds: number[];
-};
-export type LoginType = {
-    name: string;
-    password: string;
 };
 export type Angle = 0 | 90 | 180 | -90;
 export type StageData = {
