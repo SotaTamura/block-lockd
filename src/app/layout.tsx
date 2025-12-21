@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "Cube Escape",
+    title: "Block Lockd",
     description: "A puzzle x action game.",
 };
 

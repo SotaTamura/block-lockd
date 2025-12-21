@@ -6,10 +6,11 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getStagesByUser } from "../fetch";
 import { useRouter } from "next/navigation";
+import { LeftSvg, PencilSvg, PlayButton } from "../components";
 
 export default function MyLobby() {
     const router = useRouter();
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const [stages, setStages] = useState<StageType[]>([]);
 
     useEffect(() => {
@@ -21,49 +22,44 @@ export default function MyLobby() {
                 setStages(await getStagesByUser(user.id));
             })();
         }
-    }, [user]);
+    }, [user, router]);
 
     return (
-        <main className="w-full h-full">
-            {user ? (
-                <div className="text-right my-5">
-                    <p className="text-lg font-semibold">こんにちは、{user.name}さん</p>
-                    <button onClick={logout} className="mt-2 md:w-1/6 sm:w-2/4 text-center rounded-md p-2 m-auto bg-red-500 text-white font-semibold">
-                        ログアウト
-                    </button>
-                </div>
-            ) : null}
-            <div className="flex my-5">
-                <Link href={"/"} className="w-20 text-center rounded-md p-2 m-auto bg-slate-300 font-semibold">
-                    戻る
+        <main className="backGround editor-layout text-center">
+            <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
+                <Link href={"/"} className="btn back w-[18dvmin] h-full">
+                    <LeftSvg />
                 </Link>
             </div>
-            <div className="flex my-5">
-                <Link href={"/editor/add"} className=" md:w-1/6 sm:w-2/4 text-center rounded-md p-2 m-auto bg-slate-300 font-semibold">
-                    ブログ新規作成
+
+            <div className="[grid-area:title] flex justify-center items-center">
+                <h1 className="text-[length:10dvmin]">マイステージ</h1>
+            </div>
+
+            <div className="[grid-area:new-link] flex justify-center items-center">
+                <Link href={"/editor/add"} className="completedBtn w-[10dvmin] h-[10dvmin]">
+                    <div className="text-[length:8dvmin] leading-[8dvmin]">+</div>
                 </Link>
             </div>
-            <div className="w-full flex flex-col justify-center items-center">
-                {stages.map((stage: StageType) => (
-                    <div key={stage.id} className="w-3/4 p-4 rounded-md mx-3 my-2 bg-slate-300 flex flex-col justify-center">
-                        <div className="flex items-center my-3">
-                            <div className="mr-auto">
-                                <h2 className="mr-auto font-semibold">{stage.title}</h2>
+
+            <div className="[grid-area:list] bg-[#333] overflow-y-auto py-[2dvmin]">
+                <div className="flex flex-col items-center gap-[2dvmin]">
+                    {stages.map((stage: StageType) => (
+                        <div key={stage.id} className="w-[90%] max-w-200 bg-[#4a4a4a] p-[2dvmin] border-[3px] border-[#222] text-left">
+                            <div className="flex justify-between items-center mb-[1.5dvmin]">
+                                <div className="text-[length:3dvmin]">
+                                    <h2 className="text-[length:5dvmin] font-semibold">{stage.title}</h2>
+                                </div>
+                                <div className="flex flex-row gap-2">
+                                    <Link href={`/editor/edit/${stage.id}`} className="btn text-[length:3dvmin] py-[1dvmin] px-[2dvmin] border-[3px]">
+                                        <PencilSvg />
+                                    </Link>
+                                    <PlayButton i={stage.id} isCompleted={user?.completedOnlineStageIds.includes(stage.id) || false} />
+                                </div>
                             </div>
-                            <Link href={`/editor/edit/${stage.id}`} className="px-4 py-1 text-center text-xl bg-slate-900 rounded-md font-semibold text-slate-200">
-                                編集
-                            </Link>
                         </div>
-
-                        <div className="mr-auto my-1">
-                            <blockquote className="font-bold text-slate-700">{new Date(stage.date).toDateString()}</blockquote>
-                        </div>
-
-                        <div className="mr-auto my-1">
-                            <h2>{stage.description}</h2>
-                        </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
         </main>
     );

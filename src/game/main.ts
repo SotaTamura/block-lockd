@@ -1,8 +1,10 @@
-import { BitmapText } from "pixi.js";
+import { Application, BitmapText } from "pixi.js";
 import { Block, Button, GameObj, Key, Ladder, Lever, MoveBlock, Oneway, Player, Portal, PushBlock } from "./class";
-import { blockDashLine, changeTexture, clearPressStart, drawDebug, pressStartEvent, rotateTexture, setSprite, updateSprites } from "./base";
-import { Angle, GRAVITY, JUMP_SPEED, MAP_BLOCK_LEN, PLAYER_STRENGTH, PX_PER_UNIT, PLAYER_SPEED, StageData, UNIT, MOVE_BLOCK_SPEED } from "@/constants";
-import { app, debugContainer } from "@/app/game/[id]/page";
+import { blockDashLine, stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites } from "./base";
+import { Angle, GRAVITY, JUMP_SPEED, MAP_BLOCK_LEN, PLAYER_STRENGTH, PX_PER_UNIT, TiledStageDataType, UNIT, MOVE_BLOCK_SPEED, TextureName, colorMap, parseBase, PROPS_LEN } from "@/constants";
+import { getStage } from "@/app/fetch";
+import { EditorObj } from "@/app/editor/stageEditor";
+import { gunzipSync } from "zlib";
 
 export let hint: string;
 export let gameObjs: GameObj[];
@@ -34,7 +36,7 @@ const remove = (obj: GameObj) => {
 const activate = (color: string | undefined) => {
     for (const moveBlock of moveBlocks) {
         if (moveBlock.color === color) {
-            changeTexture(moveBlock, moveBlock.isActivated ? "off" : "on");
+            stateChangeTexture(moveBlock, moveBlock.isActivated ? "off" : "on");
             moveBlock.isActivated = !moveBlock.isActivated;
         }
     }
@@ -60,14 +62,14 @@ const activate = (color: string | undefined) => {
             rotateTexture(oneway, 180);
         }
 };
-const objectCreator: { [gid: number]: (...args: [x: number, y: number, w: number, h: number, ang: Angle, color: string | undefined, type: string]) => GameObj } = {
+const objCreator: { [gid: number]: (...args: [x: number, y: number, w: number, h: number, ang: Angle, color: string | undefined, tag: string]) => GameObj } = {
     1: (x, y, w, h, ang) => new Player(x, y, w, h, ang),
     2: (x, y, w, h, ang, color) => new Block(x, y, w, h, ang, true, color),
     3: (x, y, w, h, ang, color) => new Block(x, y, w, h, ang, false, color),
     4: (x, y, w, h, ang) => new Ladder(x, y, w, h, ang),
     5: (x, y, w, h, ang, color) => new Key(x, y, w, h, ang, color),
     6: (x, y, w, h, ang, color) => new Oneway(x, y, w, h, ang, color),
-    7: (x, y, w, h, ang, _color, type) => new Portal(x, y, w, h, ang, type),
+    7: (x, y, w, h, ang, _color, tag) => new Portal(x, y, w, h, ang, tag),
     8: (x, y, w, h, ang, color) => new Lever(x, y, w, h, ang, color),
     9: (x, y, w, h, ang) => new PushBlock(x, y, w, h, ang),
     10: (x, y, w, h, ang, color) => new Button(x, y, w, h, ang, color),
@@ -75,7 +77,7 @@ const objectCreator: { [gid: number]: (...args: [x: number, y: number, w: number
     12: (x, y, w, h, ang, color) => new MoveBlock(x, y, w, h, ang, color, true),
 };
 // マップ作成
-export const loadStage = async (i: number) => {
+export const loadStage = async (i: number, app: Application, dataType: "official" | "online" | EditorObj[]) => {
     // 初期化
     gameObjs = [];
     players = [];
@@ -89,52 +91,90 @@ export const loadStage = async (i: number) => {
     pushBlocks = [];
     buttons = [];
     moveBlocks = [];
-    let data: { default: StageData } | null;
-    try {
-        data = await import(`./stagesJSON/stage${i}.json`);
-    } catch {
-        data = null;
+    if (dataType === "official") {
+        let data: { default: TiledStageDataType } | null;
+        try {
+            data = await import(`./stagesJSON/stage${i}.json`);
+        } catch {
+            data = null;
+        }
+        if (!data) return;
+        hint = data.default.properties[0].value;
+        const allObjs = data.default.layers.flatMap((layer) => (layer.objects ? layer.objects.map((obj) => ({ ...obj, color: layer.tintcolor })) : []));
+        for (let obj of allObjs) {
+            let newW = obj.width / PX_PER_UNIT;
+            let newH = obj.height / PX_PER_UNIT;
+            let newX = obj.x / PX_PER_UNIT;
+            let newY = obj.y / PX_PER_UNIT;
+            if (obj.rotation === 0) {
+                newY -= newH;
+            } else if (obj.rotation === 90) {
+                [newW, newH] = [newH, newW];
+            } else if (obj.rotation === 180) {
+                newX -= newW;
+            } else if (obj.rotation === -90) {
+                [newW, newH] = [newH, newW];
+                newX -= newW;
+                newY -= newH;
+            }
+            const create = objCreator[obj.gid];
+            if (!create) throw new Error(`unknown gid ${obj.gid}`);
+            const newObj = create(newX, newY, newW, newH, obj.rotation, obj.color, obj.type);
+            gameObjs.push(newObj);
+            setSprite(newObj, app);
+        }
+    } else if (dataType === "online") {
+        const data = await getStage(i);
+        if (!data) return;
+        const splitCode = gunzipSync(Buffer.from(data.code, "base64")).toString("utf-8").split(";");
+        for (const obj of splitCode) {
+            const [base64Mask, joinedMaskedProps] = obj.split(":");
+            let mask = parseBase(base64Mask, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_");
+            const maskedProps = joinedMaskedProps.split(",");
+            let maskedPropIndex = 0;
+            const propStrs: (string | null)[] = new Array(PROPS_LEN).fill(null);
+            for (let i = 0; i < PROPS_LEN; i++) {
+                if (mask & (1 << i)) {
+                    const propStr = maskedProps[maskedPropIndex++];
+                    propStrs[i] = propStr;
+                }
+            }
+            const [gid, x, y, w, h, ang, color, tag] = [
+                Number(propStrs[0]),
+                Number(propStrs[1]),
+                Number(propStrs[2] || 1),
+                Number(propStrs[3] || 1),
+                Number(propStrs[4] || 1),
+                [0, 90, 180, -90][Number(propStrs[5] || 0)] as Angle,
+                Number(propStrs[6] || 0),
+                propStrs[7] || "",
+            ];
+            const create = objCreator[gid];
+            if (!create) throw new Error(`unknown gid ${gid}`);
+            const newObj = create(x, y, w, h, ang, colorMap[color], tag);
+            gameObjs.push(newObj);
+            setSprite(newObj, app);
+        }
+    } else {
+        for (const obj of dataType) {
+            const create = objCreator[obj.gid];
+            if (!create) throw new Error(`unknown gid ${obj.gid}`);
+            const newObj = create(obj.x, obj.y, obj.w, obj.h, obj.ang, colorMap[obj.color], obj.tag);
+            gameObjs.push(newObj);
+            setSprite(newObj, app);
+        }
     }
-    if (!data) return;
-    hint = data.default.properties[0].value;
-    const allObjs = data.default.layers.flatMap((layer) => (layer.objects ? layer.objects.map((obj) => ({ ...obj, color: layer.tintcolor })) : []));
-    for (let obj of allObjs) {
-        let newW = obj.width / PX_PER_UNIT;
-        let newH = obj.height / PX_PER_UNIT;
-        let newX = obj.x / PX_PER_UNIT;
-        let newY = obj.y / PX_PER_UNIT;
-        if (obj.rotation === 0) {
-            newY -= newH;
-        } else if (obj.rotation === 90) {
-            [newW, newH] = [newH, newW];
-        } else if (obj.rotation === 180) {
-            newX -= newW;
-        } else if (obj.rotation === -90) {
-            [newW, newH] = [newH, newW];
-            newX -= newW;
-            newY -= newH;
-        }
-        const create = objectCreator[obj.gid];
-        if (!create) {
-            throw new Error(`unknown gid ${obj.gid}`);
-        }
-        const newObj = create(newX, newY, newW, newH, obj.rotation, obj.color, obj.type);
-        if (newObj instanceof Player) players.push(newObj);
-        else if (newObj instanceof Block) blocks.push(newObj);
-        else if (newObj instanceof Ladder) ladders.push(newObj);
-        else if (newObj instanceof Key) keys.push(newObj);
-        else if (newObj instanceof Oneway) oneways.push(newObj);
-        else if (newObj instanceof Portal) portals.push(newObj);
-        else if (newObj instanceof Lever) levers.push(newObj);
-        else if (newObj instanceof PushBlock) pushBlocks.push(newObj);
-        else if (newObj instanceof Button) buttons.push(newObj);
-        else if (newObj instanceof MoveBlock) moveBlocks.push(newObj);
-        gameObjs.push(newObj);
-        setSprite(newObj);
-        if (newObj instanceof Block) {
-            blockDashLine(newObj);
-        }
-    }
+    players = gameObjs.filter((o) => o instanceof Player);
+    blocks = gameObjs.filter((o) => o instanceof Block);
+    ladders = gameObjs.filter((o) => o instanceof Ladder);
+    keys = gameObjs.filter((o) => o instanceof Key);
+    oneways = gameObjs.filter((o) => o instanceof Oneway);
+    portals = gameObjs.filter((o) => o instanceof Portal);
+    levers = gameObjs.filter((o) => o instanceof Lever);
+    pushBlocks = gameObjs.filter((o) => o instanceof PushBlock);
+    buttons = gameObjs.filter((o) => o instanceof Button);
+    moveBlocks = gameObjs.filter((o) => o instanceof MoveBlock);
+    for (const block of blocks) blockDashLine(block);
     for (const portal of portals) {
         const portalText = new BitmapText({
             text: portal.id,
@@ -154,7 +194,7 @@ export const loadStage = async (i: number) => {
     }
 };
 export let isComplete = false;
-export const update = (handleComplete: () => void) => {
+export const update = (handleComplete: () => void, app: Application) => {
     // 鍵
     for (const key of keys)
         if (players.some((player) => player.isColliding(key.triggers[0]))) {
@@ -167,7 +207,7 @@ export const update = (handleComplete: () => void) => {
         if (isColliding) {
             if (!lever.isBeingContacted) {
                 activate(lever.color);
-                changeTexture(lever, lever.textureState === "on" ? "off" : "on");
+                stateChangeTexture(lever, lever.state === "on" ? "off" : "on");
                 lever.isBeingContacted = true;
             }
         } else {
@@ -180,13 +220,13 @@ export const update = (handleComplete: () => void) => {
         if (isPressed) {
             if (!button.isPressed) {
                 activate(button.color);
-                changeTexture(button, "on");
+                stateChangeTexture(button, "on");
                 button.isPressed = true;
             }
         } else {
             if (button.isPressed) {
                 activate(button.color);
-                changeTexture(button, "off");
+                stateChangeTexture(button, "off");
                 button.isPressed = false;
             }
         }
@@ -202,7 +242,7 @@ export const update = (handleComplete: () => void) => {
         player.nextBlock = { t: null, b: null, l: null, r: null };
         player.vy += GRAVITY; // 重力加速度
         player.handleLadder(ladders); //ハシゴ
-        player.handlePortal(portals); //ポータル
+        player.handlePortal(portals, app); //ポータル
         player.handleHorizontalMove(); // 左右移動
     }
     for (const pushBlock of pushBlocks) {
@@ -216,7 +256,7 @@ export const update = (handleComplete: () => void) => {
         pushBlock.nextBlock = { t: null, b: null, l: null, r: null };
         pushBlock.vy += GRAVITY; // 重力加速度
         pushBlock.handleLadder(ladders); //ハシゴ
-        pushBlock.handlePortal(portals); //ポータル
+        pushBlock.handlePortal(portals, app); //ポータル
     }
     for (const moveBlock of moveBlocks) {
         moveBlock.strength = {
@@ -238,7 +278,7 @@ export const update = (handleComplete: () => void) => {
             moveBlock.vx = moveBlock.isActivated && !moveBlock.nextBlock.l ? -MOVE_BLOCK_SPEED : 0;
         }
         moveBlock.nextBlock = { t: null, b: null, l: null, r: null };
-        moveBlock.handlePortal(portals); //ポータル
+        moveBlock.handlePortal(portals, app); //ポータル
     }
     for (let i = 0; i < [...players, ...pushBlocks, ...moveBlocks].length; i++) {
         for (const obj of [...moveBlocks, ...pushBlocks, ...players]) {
@@ -296,5 +336,4 @@ export const update = (handleComplete: () => void) => {
     }
     clearPressStart();
     updateSprites();
-    if (debugContainer.visible) drawDebug();
 };

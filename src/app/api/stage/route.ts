@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export const GET = async (_req: NextRequest) => {
     try {
-        const stages = await prisma.stage.findMany();
+        const stages = await prisma.stage.findMany({ where: { access: 0 } });
         const creatorIds = stages.map((stage) => stage.creatorId);
         const creators = await prisma.user.findMany({
             where: {
@@ -32,9 +32,9 @@ export const GET = async (_req: NextRequest) => {
 
 export const POST = async (req: NextRequest) => {
     try {
-        const { title, creatorId, description, code } = await req.json();
+        const { title, creatorId, description, code, access } = await req.json();
         const stage = await prisma.stage.create({
-            data: { title, creatorId, description, code },
+            data: { title, creatorId, description, code, access },
         });
         return NextResponse.json({ message: "success", stage: stage }, { status: 201 });
     } catch (err) {
