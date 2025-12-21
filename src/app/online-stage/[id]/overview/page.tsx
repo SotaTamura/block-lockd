@@ -1,6 +1,6 @@
 "use client";
 
-import { RightSvg, LeftSvg } from "@/app/components";
+import { RightSvg, LeftSvg, Loading } from "@/app/components";
 import { getStage, throwError } from "@/app/fetch";
 import { StageType } from "@/constants";
 import Link from "next/link";
@@ -21,7 +21,8 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
     }, [id]);
 
     return (
-        <main className="backGround text-center">
+        <main className="text-center">
+            {!stage && <Loading />}
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
                 <Link href={"/select-online-stage"} className="btn back w-[18dvmin] h-[12dvmin]">
                     <LeftSvg />

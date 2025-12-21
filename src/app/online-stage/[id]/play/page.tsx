@@ -2,25 +2,30 @@
 
 import { Application, isMobile } from "pixi.js";
 import { use, useEffect, useRef, useState } from "react";
-import { RESOLUTION, STEP } from "@/constants";
+import { RESOLUTION, StageType, STEP } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
 import { useAuth } from "@/app/context";
-import { ArrowButton, LeftSvg, RestartSvg } from "@/app/components";
+import { ArrowButton, LeftSvg, Loading, RestartSvg } from "@/app/components";
+import { getStage } from "@/app/fetch";
+import { glitch } from "@/game/base";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
     const cnvWrapperRef = useRef<HTMLDivElement>(null);
+    const appRef = useRef<Application | null>(null);
     const { user, changeUserData } = useAuth();
     const [restarter, setRestarter] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const stageRef = useRef<StageType | null>(null);
     let loopId: number;
 
     useEffect(() => {
         setIsComplete(false);
         setIsLoading(true);
         const app = new Application();
+        appRef.current = app;
         let $cnv: HTMLCanvasElement;
         (async () => {
             // pixiアプリケーション作成
@@ -33,7 +38,9 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             $cnv = app.canvas;
             $cnv.id = "main";
             cnvWrapperRef.current?.appendChild($cnv);
-            await loadStage(id, app, "online");
+            if (!stageRef.current) stageRef.current = await getStage(id);
+            if (!stageRef.current) return;
+            await loadStage(stageRef.current.code, app);
             setIsLoading(false);
             // 更新
             let prevTime: number | undefined;
@@ -46,7 +53,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 accumulator += dt ? dt : 0;
                 while (accumulator >= STEP) {
                     update(async () => {
-                        if (user) changeUserData({ completedOnlineStageIds: [...user.completedOnlineStageIds, id] });
+                        if (user && !user.completedOnlineStageIds.includes(id)) changeUserData({ completedOnlineStageIds: [...user.completedOnlineStageIds, id] });
                         setIsComplete(true);
                     }, app);
                     accumulator -= STEP;
@@ -63,13 +70,16 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     }, [id, restarter]);
 
     return (
-        <div className="gameScreen backGround" ref={cnvWrapperRef}>
-            {isLoading && <div className="loadingStage">Loading...</div>}
+        <div className="gameScreen backGround">
+            <div id="cnvWrapper" ref={cnvWrapperRef}></div>
+            {isLoading && <Loading />}
             <div
                 className="btn restart"
                 onClick={(e) => {
-                    setRestarter(restarter + 1);
                     e.preventDefault();
+                    if (!appRef.current) return;
+                    glitch(appRef.current, 300);
+                    setTimeout(() => setRestarter(restarter + 1), 300);
                 }}>
                 <RestartSvg />
             </div>

@@ -1,7 +1,8 @@
 import { Angle, Direction, UNIT, π } from "@/constants";
 import { Block, Box, GameObj, isColorable, Portal, SpriteBox } from "./class";
-import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application } from "pixi.js";
+import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application, Container, Ticker } from "pixi.js";
 import { gameObjs } from "./main";
+import { GlitchFilter } from "pixi-filters";
 
 // キーイベント
 export let pressingEvent: Record<Direction, boolean> = {
@@ -257,6 +258,35 @@ export const updateSprites = () => {
             });
         }
     });
+};
+// グリッチ
+export const glitch = (app: Application, time: number) => {
+    const glitchFilter = new GlitchFilter({
+        slices: 10,
+        offset: 10,
+        direction: 0,
+        fillMode: 0,
+        red: { x: 0, y: 0 },
+        blue: { x: 0, y: 0 },
+        green: { x: 0, y: 0 },
+    });
+    app.stage.filters = [glitchFilter];
+    let count = 0;
+    const ticker = (_ticker: Ticker) => {
+        if (count % 4 === 0) {
+            glitchFilter.seed = Math.random();
+            glitchFilter.offset = (Math.random() - 0.5) * 200;
+            glitchFilter.red = { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 };
+            glitchFilter.blue = { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 };
+            glitchFilter.green = { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 };
+        }
+        count++;
+    };
+    app.ticker.add(ticker);
+    setTimeout(() => {
+        app.ticker.remove(ticker);
+        app.stage.filters = [];
+    }, time);
 };
 // 初期化関数
 export async function onLoad() {

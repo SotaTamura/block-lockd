@@ -1,22 +1,24 @@
 "use client";
 
-import { Application, Container, isMobile } from "pixi.js";
+import { Application, isMobile } from "pixi.js";
 import { use, useEffect, useRef, useState } from "react";
-import { RESOLUTION, STAGE_LEN, STEP } from "@/constants";
+import { RESOLUTION, STEP } from "@/constants";
 import Link from "next/link";
-import { hint, loadStage, update } from "@/game/main";
+import { loadStage, update } from "@/game/main";
 import { useAuth } from "@/app/context";
-import { ArrowButton, Checkbox, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
+import { ArrowButton, Loading, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
+import { STAGES } from "@/game/stages";
+import { glitch } from "@/game/base";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
     const cnvWrapperRef = useRef<HTMLDivElement>(null);
+    const appRef = useRef<Application | null>(null);
     const { user, changeUserData } = useAuth();
     const [restarter, setRestarter] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
     const [isHintShowed, setIsHintShowed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [hintText, setHintText] = useState("");
     let loopId: number;
 
     useEffect(() => {
@@ -24,6 +26,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
         setIsHintShowed(false);
         setIsLoading(true);
         const app = new Application();
+        appRef.current = app;
         let $cnv: HTMLCanvasElement;
         (async () => {
             // pixiアプリケーション作成
@@ -36,8 +39,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             $cnv = app.canvas;
             $cnv.id = "main";
             cnvWrapperRef.current?.appendChild($cnv);
-            await loadStage(id, app, "official");
-            setHintText(hint);
+            await loadStage(STAGES[id].code, app);
             setIsLoading(false);
             // 更新
             let prevTime: number | undefined;
@@ -50,7 +52,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 accumulator += dt ? dt : 0;
                 while (accumulator >= STEP) {
                     update(async () => {
-                        if (user) changeUserData({ completedStageIds: [...user.completedStageIds, id] });
+                        if (user && !user.completedStageIds.includes(id)) changeUserData({ completedStageIds: [...user.completedStageIds, id] });
                         setIsComplete(true);
                     }, app);
                     accumulator -= STEP;
@@ -67,14 +69,17 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     }, [id, restarter]);
 
     return (
-        <div className="gameScreen backGround" ref={cnvWrapperRef}>
-            {isLoading && <div className="loadingStage">Loading...</div>}
+        <div className="gameScreen backGround">
+            <div id="cnvWrapper" ref={cnvWrapperRef}></div>
+            {isLoading && <Loading />}
             <div className="stageNum">{id}</div>
             <div
                 className="btn restart"
                 onClick={(e) => {
-                    setRestarter(restarter + 1);
                     e.preventDefault();
+                    if (!appRef.current) return;
+                    glitch(appRef.current, 300);
+                    setTimeout(() => setRestarter(restarter + 1), 300);
                 }}>
                 <RestartSvg />
             </div>
@@ -93,12 +98,12 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             </div>
             {isHintShowed && (
                 <div
-                    className="popup"
+                    className="popup hint"
                     onClick={() => {
                         setIsHintShowed(false);
                     }}>
                     <div className="popupTitle">hint</div>
-                    <div className="hintText">{hintText}</div>
+                    <div className="hintText">{STAGES[id].hint}</div>
                 </div>
             )}
             {isMobile.any && (
@@ -112,7 +117,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             {isComplete && (
                 <div className="popup">
                     <div className="popupTitle">stage complete!</div>
-                    {id === STAGE_LEN ? (
+                    {id === Object.keys(STAGES).length ? (
                         <Link href={"/select-stage"} className="btn next">
                             <MenuSvg />
                         </Link>

@@ -1,6 +1,26 @@
 import { ReactNode, useEffect, useState } from "react";
 import { pressingEvent, pressStartEvent } from "../game/base";
 import Link from "next/link";
+import { motion } from "framer-motion";
+
+export function Loading() {
+    return (
+        <motion.div
+            className="absolute inset-0 z-50 flex items-center justify-center w-full h-full bg-[#333]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}>
+            <motion.span
+                className="text-6xl font-bold text-white"
+                initial={{ opacity: 0.5, scale: 1 }}
+                animate={{ opacity: 1, scale: [1, 1.05, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
+                Loading...
+            </motion.span>
+        </motion.div>
+    );
+}
 
 export function ArrowButton({ eventName }: { eventName: "u" | "d" | "l" | "r" }) {
     const [active, setActive] = useState<"pressed" | "">("");

@@ -4,21 +4,25 @@ import { StageType } from "@/constants";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getAllStages } from "../fetch";
-import { LeftSvg, PlayButton } from "../components";
+import { LeftSvg, Loading, PlayButton } from "../components";
 import { useAuth } from "../context";
 
 export default function Lobby() {
     const { user } = useAuth();
     const [stages, setStages] = useState<StageType[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         (async () => {
+            setIsLoading(true);
             setStages(await getAllStages());
+            setIsLoading(false);
         })();
     }, []);
 
     return (
-        <main className="backGround editor-layout text-center">
+        <main className="editor-layout text-center">
+            {isLoading && <Loading />}
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
                 <Link href={"/"} className="btn back w-[18dvmin] h-[12dvmin]">
                     <LeftSvg />
