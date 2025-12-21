@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+#　 Block Lockd
 
-## Getting Started
+アクションとパズルを融合した難しいゲームです。
+ステージを作成して公開することもできます。
 
-First, run the development server:
+##　リンク
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**[cube-escape.vercel.app](https://cube-escape.vercel.app/)**
+旧: [escape-game-4vy9.onrender.com](https://escape-game-4vy9.onrender.com/)
+旧旧: [stalwart-choux-bfc5ce.netlify.app](https://stalwart-choux-bfc5ce.netlify.app/)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 開発
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`.env`に環境変数`DATABASE_URL`, `DIRECT_URL`を設定
+`.env.local`にローカルの環境変数`NEXT_PUBLIC_API_BASE_URL=http://localhost:3000`を設定
+`npm run dev`で起動
+[http://localhost:3000](http://localhost:3000)で確認
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 使用技術
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Prisma
+Next.js
+React
+Pixi.js

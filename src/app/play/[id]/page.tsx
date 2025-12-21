@@ -1,6 +1,6 @@
 "use client";
 
-import { Application, Container } from "pixi.js";
+import { Application, Container, isMobile } from "pixi.js";
 import { use, useEffect, useRef, useState } from "react";
 import { RESOLUTION, STAGE_LEN, STEP } from "@/constants";
 import Link from "next/link";
@@ -8,28 +8,23 @@ import { hint, loadStage, update } from "@/game/main";
 import { useAuth } from "@/app/context";
 import { ArrowButton, Checkbox, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
 
-export let app: Application; // pixiアプリケーション
-export let debugContainer: Container;
-
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
-    const canvasWrapperRef = useRef<HTMLDivElement>(null);
+    const cnvWrapperRef = useRef<HTMLDivElement>(null);
     const { user, changeUserData } = useAuth();
     const [restarter, setRestarter] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
     const [isHintShowed, setIsHintShowed] = useState(false);
-    const [isDebugShowed, setIsDebugShowed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [hintText, setHintText] = useState("");
-    const isMobile = window.ontouchstart !== undefined && navigator.maxTouchPoints > 0; // タッチ端末判定
     let loopId: number;
 
     useEffect(() => {
         setIsComplete(false);
         setIsHintShowed(false);
         setIsLoading(true);
-        app = new Application();
-        let $can: HTMLCanvasElement;
+        const app = new Application();
+        let $cnv: HTMLCanvasElement;
         (async () => {
             // pixiアプリケーション作成
             await app.init({
@@ -38,16 +33,10 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 height: RESOLUTION,
                 antialias: false,
             });
-            $can = app.canvas;
-            $can.id = "main";
-            canvasWrapperRef.current?.appendChild($can);
-            debugContainer = new Container();
-            debugContainer.width = app.screen.width;
-            debugContainer.height = app.screen.height;
-            debugContainer.zIndex = 100;
-            debugContainer.visible = isDebugShowed;
-            app.stage.addChild(debugContainer);
-            await loadStage(id);
+            $cnv = app.canvas;
+            $cnv.id = "main";
+            cnvWrapperRef.current?.appendChild($cnv);
+            await loadStage(id, app, "official");
             setHintText(hint);
             setIsLoading(false);
             // 更新
@@ -63,7 +52,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                     update(async () => {
                         if (user) changeUserData({ completedStageIds: [...user.completedStageIds, id] });
                         setIsComplete(true);
-                    });
+                    }, app);
                     accumulator -= STEP;
                 }
                 prevTime = timestamp;
@@ -77,14 +66,8 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
         };
     }, [id, restarter]);
 
-    useEffect(() => {
-        if (debugContainer) {
-            debugContainer.visible = isDebugShowed;
-        }
-    }, [isDebugShowed]);
-
     return (
-        <div className="gameScreen backGround" ref={canvasWrapperRef}>
+        <div className="gameScreen backGround" ref={cnvWrapperRef}>
             {isLoading && <div className="loadingStage">Loading...</div>}
             <div className="stageNum">{id}</div>
             <div
@@ -107,14 +90,6 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                     }}>
                     ヒント
                 </div>
-                <Checkbox
-                    id="debug"
-                    checked={isDebugShowed}
-                    onChange={() => {
-                        setIsDebugShowed(!isDebugShowed);
-                    }}
-                    children={<span>当たり判定</span>}
-                />
             </div>
             {isHintShowed && (
                 <div
@@ -126,7 +101,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                     <div className="hintText">{hintText}</div>
                 </div>
             )}
-            {isMobile && (
+            {isMobile.any && (
                 <div className="controlBtns">
                     <ArrowButton eventName="u" />
                     <ArrowButton eventName="d" />
@@ -142,7 +117,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                             <MenuSvg />
                         </Link>
                     ) : (
-                        <Link href={`/game/${id + 1}`} className="btn next">
+                        <Link href={`/play/${id + 1}`} className="btn next">
                             <NextSvg />
                         </Link>
                     )}

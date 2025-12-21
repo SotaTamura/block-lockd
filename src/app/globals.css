@@ -18,6 +18,7 @@
     }
     img {
         pointer-events: none;
+        image-rendering: pixelated;
     }
     .btn,
     .miniBtn,
@@ -48,27 +49,6 @@
     .loadingTxt {
         line-height: 100dvh;
         color: #f00;
-    }
-    .homeScreen {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr 1fr;
-        grid-template-areas:
-            "title"
-            "btn";
-    }
-    .title {
-        grid-area: title;
-        margin: auto;
-        margin-top: 30dvmin;
-        font-size: 12dvmin;
-        white-space: nowrap;
-    }
-    .start {
-        grid-area: btn;
-        width: 45dvmin;
-        height: 30dvmin;
-        margin: auto;
     }
     .stageSelectScreen {
         display: grid;
@@ -112,7 +92,7 @@
         align-items: center;
     }
     .arrow.pressed,
-    .btn:not(.arrow):not(.completedBtn):active {
+    .btn:not(.arrow):not(.completedBtn, .dangerBtn):active {
         background: linear-gradient(#555, #999);
         border: #777 solid 5px;
         border-top: #333 solid 5px;
@@ -123,7 +103,7 @@
         height: 70%;
         object-fit: contain;
     }
-    .btn .btnNum {
+    .btn div {
         position: absolute;
         color: #4b4b4b;
         font-size: 70%;
@@ -144,8 +124,20 @@
         border-top: #030 solid 5px;
         border-left: #030 solid 5px;
     }
-    .completedBtn .btnNum {
+    .completedBtn div {
         color: #fff;
+    }
+    .dangerBtn {
+        background: linear-gradient(#d00, #900);
+        border: #300 solid 5px;
+        border-top: #700 solid 5px;
+        border-left: #700 solid 5px;
+    }
+    .dangerBtn:active {
+        background: linear-gradient(#500, #900);
+        border: #700 solid 5px;
+        border-top: #300 solid 5px;
+        border-left: #300 solid 5px;
     }
     .miniBtn {
         background-color: #aaa;
@@ -158,7 +150,7 @@
         position: absolute;
         top: 10px;
         right: 10px;
-        font-size: 7dvmin;
+        font-size: 30px;
     }
     .stage {
         width: 20dvmin;
@@ -183,6 +175,56 @@
             "main main main"
             "guide guide guide"
             "btn btn btn";
+    }
+    .editorScreen {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 60px calc(100dvh - 280px) 110px 110px;
+        grid-template-areas:
+            "header"
+            "main"
+            "objs"
+            "tools";
+    }
+    .objs {
+        display: flex;
+        grid-area: objs;
+        background-color: #999;
+        border-top: #777 solid 8px;
+        border-bottom: #777 solid 8px;
+        height: 110px;
+        align-items: center;
+        overflow-x: scroll;
+        touch-action: pan-x;
+        font-size: 5dvmin;
+    }
+    .tools {
+        display: flex;
+        grid-area: tools;
+        background-color: #ddd;
+        border-top: #bbb solid 8px;
+        border-bottom: #bbb solid 8px;
+        height: 110px;
+        align-items: center;
+        overflow-x: scroll;
+        touch-action: pan-x;
+    }
+    .objImg,
+    .toolImg {
+        touch-action: pan-x;
+        margin: 5px;
+        width: 55px;
+        height: 55px;
+        pointer-events: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .objImg.selected {
+        border: #0f0 solid 2px;
+    }
+    .toolImg.selected {
+        border: #00f solid 2px;
     }
     input[type="checkbox"] {
         width: 20px;
@@ -289,6 +331,23 @@
         height: 20dvmin;
         margin: auto;
     }
+    .editor-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 12dvmin 18dvmin 15dvmin 1fr;
+        grid-template-areas:
+            "header header"
+            "title title"
+            "new-link new-link"
+            "list list";
+    }
+    .unselected-tab {
+        background-color: #333;
+        color: white;
+        border: white solid 2px;
+        border-bottom: none;
+    }
+
     @media screen and (min-aspect-ratio: 1/1) {
         .gameScreen {
             grid-template-columns: 140px calc(100dvw - 280px) 70px 70px;
@@ -317,6 +376,42 @@
         }
         .guides {
             display: block;
+        }
+        .editorScreen {
+            display: grid;
+            grid-template-columns: 140px calc(100dvw - 280px) 140px;
+            grid-template-rows: 60px calc(100dvh - 60px);
+            grid-template-areas:
+                "header header header"
+                "objs main tools";
+        }
+        .objs {
+            flex-direction: column;
+            border-left: #777 solid 8px;
+            border-right: #777 solid 8px;
+            border-top: none;
+            border-bottom: none;
+            width: 140px;
+            height: calc(100dvh - 60px);
+            overflow-y: scroll;
+            overflow-x: initial;
+            touch-action: pan-y;
+        }
+        .tools {
+            flex-direction: column;
+            border-left: #bbb solid 8px;
+            border-right: #bbb solid 8px;
+            border-top: none;
+            border-bottom: none;
+            width: 140px;
+            height: calc(100dvh - 60px);
+            overflow-y: scroll;
+            overflow-x: initial;
+            touch-action: pan-y;
+        }
+        #main {
+            width: calc(100dvh - 60px);
+            height: calc(100dvh - 60px);
         }
     }
 }

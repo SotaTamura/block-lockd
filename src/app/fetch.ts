@@ -5,7 +5,7 @@ export const throwError = (err: unknown) => {
     console.error(err);
 };
 
-// project://src/app/api/stage
+// project://src/app/api/stage/route.ts
 export const getAllStages = async (): Promise<StageType[]> => {
     try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
@@ -19,14 +19,14 @@ export const getAllStages = async (): Promise<StageType[]> => {
         return [];
     }
 };
-export const postStage = async (stageData: Pick<StageType, "title" | "creatorId" | "description" | "code">) =>
+export const postStage = async (stageData: Pick<StageType, "title" | "creatorId" | "description" | "code" | "access">) =>
     await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(stageData),
     });
 
-// project://src/app/api/stage/[id]
+// project://src/app/api/stage/[id]/route.ts
 export const getStage = async (stageId: number): Promise<StageType | null> => {
     try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/${stageId}`, {
@@ -40,7 +40,7 @@ export const getStage = async (stageId: number): Promise<StageType | null> => {
         return null;
     }
 };
-export const putStage = async (newStageData: StageType) =>
+export const putStage = async (newStageData: { id: number } & Partial<Omit<StageType, "id">>) =>
     await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/${newStageData.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -52,7 +52,7 @@ export const deleteStage = async (stageId: number) =>
         headers: { "Content-Type": "application/json" },
     });
 
-// project://src/app/api/stage/user/[id]
+// project://src/app/api/stage/user/[id]/route.ts
 export const getStagesByUser = async (userId: number): Promise<StageType[]> => {
     try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/user/${userId}`, {

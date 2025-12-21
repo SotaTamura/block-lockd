@@ -22,7 +22,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
 export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
         const id = Number((await params).id);
-        const { name, password, completedStageIds } = await req.json();
+        const { name, password, completedStageIds, completedOnlineStageIds } = await req.json();
         const data: Partial<UserType> = {};
         if (name) {
             // Check if user already exists
@@ -40,6 +40,9 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
         }
         if (completedStageIds) {
             data.completedStageIds = completedStageIds;
+        }
+        if (completedOnlineStageIds) {
+            data.completedOnlineStageIds = completedOnlineStageIds;
         }
         const user = await prisma.user.update({
             data,

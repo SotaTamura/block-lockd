@@ -1,6 +1,6 @@
 import { Angle, BLOCK_STRENGTH, CORNER_LEN, Direction, MOVE_BLOCK_STRENGTH, MOVE_OBJ_CORNER_LEN, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH, Side, PLAYER_SPEED } from "@/constants";
-import { Sprite, Texture, Container } from "pixi.js";
-import { blockTexture, buttonTextures, changeTexture, drawSprite, flipX, keyTexture, ladderTexture, leverTextures, moveBlockTextures, onewayTexture, playerFallFrames, playerIdleFrames, playerJumpFrames, playerLadderIdleFrames, playerLadderMoveFrames, playerWalkFrames, portalTextures, pressingEvent, pushBlockTexture, rotate } from "./base";
+import { Sprite, Container, Application } from "pixi.js";
+import { stateChangeTexture, drawSprite, xFlipTexture, pressingEvent, rotate } from "./base";
 
 // 箱
 export class Box {
@@ -93,7 +93,8 @@ export abstract class GameObj {
     spriteBoxes: SpriteBox[];
     vx: number;
     vy: number;
-    textureState: string;
+    name: string;
+    state: string;
     isSolid: boolean;
     initStrength: number;
     strength: Record<Side, number>; //数の大小によって、各方向から押されたときに動くか動かないか決まる
@@ -116,6 +117,7 @@ export abstract class GameObj {
             w: number;
             h: number;
         }[],
+        name: string,
         textureState: string,
         isSolid: boolean,
         strength: number,
@@ -129,7 +131,8 @@ export abstract class GameObj {
         this.hitboxes = hitboxes.map((b) => new Hitbox(this, b.relX, b.relY, b.w, b.h, cornerLen));
         this.hiddenHitboxes = [];
         this.spriteBoxes = spriteBoxes.map((b) => new SpriteBox(this, b.relX, b.relY, b.w, b.h, new Box(this, b.relX, b.relY, b.w, b.h)));
-        this.textureState = textureState;
+        this.name = name;
+        this.state = textureState;
         this.isSolid = isSolid;
         this.initStrength = strength;
         this.strength = { t: strength, b: strength, l: strength, r: strength };
@@ -174,7 +177,11 @@ export abstract class GameObj {
                     // 1. 現在、自分の底が相手の上より上にある
                     // 2. 次のフレームで、自分の底が相手の上に達する、またはそれを越える
                     // 3. 水平方向で重なっている（現在または次のフレームで）
-                    if (thisBox.innerB <= objBox.t && thisBox.b + this.vy >= objBox.t + obj.vy && !((thisBox.innerR <= objBox.l || thisBox.innerL >= objBox.r) && (thisBox.innerR + this.vx <= objBox.l + obj.vx || thisBox.innerL + this.vx >= objBox.r + obj.vx))) {
+                    if (
+                        thisBox.innerB <= objBox.t &&
+                        thisBox.b + this.vy >= objBox.t + obj.vy &&
+                        !((thisBox.innerR <= objBox.l || thisBox.innerL >= objBox.r) && (thisBox.innerR + this.vx <= objBox.l + obj.vx || thisBox.innerL + this.vx >= objBox.r + obj.vx))
+                    ) {
                         // 衝突した場合、新しいY座標を計算（相手の真上に着地）
                         const newY = objBox.t - thisBox.relB;
                         // 新しい垂直速度を計算。moveBlockの強さのオブジェクト同士なら速度を0に、そうでなければ相手の速度に合わせる（動く床など）
@@ -222,7 +229,11 @@ export abstract class GameObj {
             for (const thisBox of [...this.hitboxes, ...this.hiddenHitboxes]) {
                 for (const objBox of obj.hitboxes) {
                     if (this.hiddenHitboxes.includes(thisBox) && !(obj instanceof Portal)) continue;
-                    if (thisBox.innerT >= objBox.b && thisBox.t + this.vy <= objBox.b + obj.vy && !((thisBox.innerR <= objBox.l || thisBox.innerL >= objBox.r) && (thisBox.innerR + this.vx <= objBox.l + obj.vx || thisBox.innerL + this.vx >= objBox.r + obj.vx))) {
+                    if (
+                        thisBox.innerT >= objBox.b &&
+                        thisBox.t + this.vy <= objBox.b + obj.vy &&
+                        !((thisBox.innerR <= objBox.l || thisBox.innerL >= objBox.r) && (thisBox.innerR + this.vx <= objBox.l + obj.vx || thisBox.innerL + this.vx >= objBox.r + obj.vx))
+                    ) {
                         const newY = objBox.b - thisBox.relT;
                         const newVy = this.strength.t === obj.strength.b && this.strength.t === MOVE_BLOCK_STRENGTH ? 0 : obj.vy;
                         if (newY > resolvedCollision.y) {
@@ -265,7 +276,11 @@ export abstract class GameObj {
             for (const thisBox of [...this.hitboxes, ...this.hiddenHitboxes]) {
                 for (const objBox of obj.hitboxes) {
                     if (this.hiddenHitboxes.includes(thisBox) && !(obj instanceof Portal)) continue;
-                    if (thisBox.innerL >= objBox.r && thisBox.l + this.vx <= objBox.r + obj.vx && !((thisBox.innerB <= objBox.t || thisBox.innerT >= objBox.b) && (thisBox.innerB + this.vy <= objBox.t + obj.vy || thisBox.innerT + this.vy >= objBox.b + obj.vy))) {
+                    if (
+                        thisBox.innerL >= objBox.r &&
+                        thisBox.l + this.vx <= objBox.r + obj.vx &&
+                        !((thisBox.innerB <= objBox.t || thisBox.innerT >= objBox.b) && (thisBox.innerB + this.vy <= objBox.t + obj.vy || thisBox.innerT + this.vy >= objBox.b + obj.vy))
+                    ) {
                         const newX = objBox.r - thisBox.relL;
                         const newVx = this.strength.l === obj.strength.r && this.strength.l === MOVE_BLOCK_STRENGTH ? 0 : obj.vx;
                         if (newX > resolvedCollision.x) {
@@ -308,7 +323,11 @@ export abstract class GameObj {
             for (const thisBox of [...this.hitboxes, ...this.hiddenHitboxes]) {
                 for (const objBox of obj.hitboxes) {
                     if (this.hiddenHitboxes.includes(thisBox) && !(obj instanceof Portal)) continue;
-                    if (thisBox.innerR <= objBox.l && thisBox.r + this.vx >= objBox.l + obj.vx && !((thisBox.innerB <= objBox.t || thisBox.innerT >= objBox.b) && (thisBox.innerB + this.vy <= objBox.t + obj.vy || thisBox.innerT + this.vy >= objBox.b + obj.vy))) {
+                    if (
+                        thisBox.innerR <= objBox.l &&
+                        thisBox.r + this.vx >= objBox.l + obj.vx &&
+                        !((thisBox.innerB <= objBox.t || thisBox.innerT >= objBox.b) && (thisBox.innerB + this.vy <= objBox.t + obj.vy || thisBox.innerT + this.vy >= objBox.b + obj.vy))
+                    ) {
                         const newX = objBox.l - thisBox.relR;
                         const newVx = this.strength.r === obj.strength.l && this.strength.r === MOVE_BLOCK_STRENGTH ? 0 : obj.vx;
                         if (newX < resolvedCollision.x) {
@@ -339,7 +358,7 @@ export abstract class GameObj {
     }
     // --- 衝突処理いろいろ ここまで ---
     // ポータル
-    handlePortal(portals: Portal[]) {
+    handlePortal(portals: Portal[], app: Application) {
         for (const p of portals) {
             const entrance = p.triggers[0];
             const exitPortals = portals.filter((p2) => p2.id === p.id && p2 !== p);
@@ -387,7 +406,14 @@ export abstract class GameObj {
                             spriteBox.counterpart.r.relX -= Math.min(spriteBox.r - entrance.l, spriteBox.w);
                             spriteBox.counterpart.r.w += Math.min(spriteBox.r - entrance.l, spriteBox.w);
                         } else {
-                            spriteBox.counterpart.r = new SpriteBox(this, exit.r - this.x, distanceY + spriteBox.relY, spriteBox.r - entrance.l, spriteBox.h, new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h));
+                            spriteBox.counterpart.r = new SpriteBox(
+                                this,
+                                exit.r - this.x,
+                                distanceY + spriteBox.relY,
+                                spriteBox.r - entrance.l,
+                                spriteBox.h,
+                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h)
+                            );
                             spriteBox.counterpart.r.counterpart.l = spriteBox;
                             this.spriteBoxes.push(spriteBox.counterpart.r);
                         }
@@ -397,7 +423,7 @@ export abstract class GameObj {
                             spriteBox.counterpart.r.counterpart.l = null;
                             spriteBox.counterpart.r.w = Math.round(spriteBox.counterpart.r.w * 1000) / 1000;
                         }
-                        drawSprite(this);
+                        drawSprite(this, app);
                     }
                 }
             }
@@ -437,7 +463,14 @@ export abstract class GameObj {
                         if (spriteBox.counterpart.l) {
                             spriteBox.counterpart.l.w += Math.min(entrance.r - spriteBox.l, spriteBox.w);
                         } else {
-                            spriteBox.counterpart.l = new SpriteBox(this, exit.l - entrance.r + spriteBox.relX, distanceY + spriteBox.relY, entrance.r - spriteBox.l, spriteBox.h, new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h));
+                            spriteBox.counterpart.l = new SpriteBox(
+                                this,
+                                exit.l - entrance.r + spriteBox.relX,
+                                distanceY + spriteBox.relY,
+                                entrance.r - spriteBox.l,
+                                spriteBox.h,
+                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h)
+                            );
                             spriteBox.counterpart.l.counterpart.r = spriteBox;
                             this.spriteBoxes.push(spriteBox.counterpart.l);
                         }
@@ -449,7 +482,7 @@ export abstract class GameObj {
                             spriteBox.counterpart.l.counterpart.r = null;
                             spriteBox.counterpart.l.w = Math.round(spriteBox.counterpart.l.w * 1000) / 1000;
                         }
-                        drawSprite(this);
+                        drawSprite(this, app);
                     }
                 }
             }
@@ -489,7 +522,14 @@ export abstract class GameObj {
                             spriteBox.counterpart.d.relY -= Math.min(spriteBox.b - entrance.t, spriteBox.h);
                             spriteBox.counterpart.d.h += Math.min(spriteBox.b - entrance.t, spriteBox.h);
                         } else {
-                            spriteBox.counterpart.d = new SpriteBox(this, distanceX + spriteBox.relX, exit.b - this.y, spriteBox.w, spriteBox.b - entrance.t, new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h));
+                            spriteBox.counterpart.d = new SpriteBox(
+                                this,
+                                distanceX + spriteBox.relX,
+                                exit.b - this.y,
+                                spriteBox.w,
+                                spriteBox.b - entrance.t,
+                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h)
+                            );
                             spriteBox.counterpart.d.counterpart.u = spriteBox;
                             this.spriteBoxes.push(spriteBox.counterpart.d);
                         }
@@ -499,7 +539,7 @@ export abstract class GameObj {
                             spriteBox.counterpart.d.counterpart.u = null;
                             spriteBox.counterpart.d.h = Math.round(spriteBox.counterpart.d.h * 1000) / 1000;
                         }
-                        drawSprite(this);
+                        drawSprite(this, app);
                     }
                 }
             }
@@ -539,7 +579,14 @@ export abstract class GameObj {
                         if (spriteBox.counterpart.u) {
                             spriteBox.counterpart.u.h += Math.min(entrance.b - spriteBox.t, spriteBox.h);
                         } else {
-                            spriteBox.counterpart.u = new SpriteBox(this, distanceX + spriteBox.relX, exit.t - entrance.b + spriteBox.relY, spriteBox.w, entrance.b - spriteBox.t, new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h));
+                            spriteBox.counterpart.u = new SpriteBox(
+                                this,
+                                distanceX + spriteBox.relX,
+                                exit.t - entrance.b + spriteBox.relY,
+                                spriteBox.w,
+                                entrance.b - spriteBox.t,
+                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h)
+                            );
                             spriteBox.counterpart.u.counterpart.d = spriteBox;
                             this.spriteBoxes.push(spriteBox.counterpart.u);
                         }
@@ -551,7 +598,7 @@ export abstract class GameObj {
                             spriteBox.counterpart.u.counterpart.d = null;
                             spriteBox.counterpart.u.h = Math.round(spriteBox.counterpart.u.h * 1000) / 1000;
                         }
-                        drawSprite(this);
+                        drawSprite(this, app);
                     }
                 }
             }
@@ -565,21 +612,6 @@ interface Colorable extends GameObj {
 export function isColorable(obj: GameObj): obj is Colorable {
     return "color" in obj;
 }
-// アニメーション
-interface NonAnimated extends GameObj {
-    baseTextures: Record<string, Texture>; //元となるテクスチャ
-    generatedTextures: Map<string, Texture>; //"状態+groupD8の値"をインデックスとして、回転・反転後のテクスチャをキャッシュする
-}
-export function isNonAnimated(obj: GameObj): obj is NonAnimated {
-    return "baseTextures" in obj && "generatedTextures" in obj;
-}
-interface Animated extends GameObj {
-    baseFrames: Record<string, Texture[]>;
-    generatedFrames: Map<string, Texture[]>;
-}
-export function isAnimated(obj: GameObj): obj is Animated {
-    return "baseFrames" in obj && "generatedFrames" in obj;
-}
 // トリガーボックス
 interface hasTriggers extends GameObj {
     triggers: Box[];
@@ -588,21 +620,9 @@ export function isHasTriggers(obj: GameObj): obj is hasTriggers {
     return "triggers" in obj;
 }
 // プレイヤー
-export class Player extends GameObj implements Animated {
-    baseFrames: Record<string, Texture[]>;
-    generatedFrames: Map<string, Texture[]>;
+export class Player extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Angle) {
-        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "idle", true, PLAYER_STRENGTH, MOVE_OBJ_CORNER_LEN);
-        this.baseFrames = {
-            idle: playerIdleFrames,
-            walk: playerWalkFrames,
-            jump: playerJumpFrames,
-            fall: playerFallFrames,
-            ladderMove: playerLadderMoveFrames,
-            ladderIdle: playerLadderIdleFrames,
-        };
-        this.generatedFrames = new Map();
-        this.generatedFrames.set("idle_0", playerIdleFrames);
+        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "player", "idle", true, PLAYER_STRENGTH, MOVE_OBJ_CORNER_LEN);
     }
     override collideBottom(objs: GameObj[]) {
         let resolvedCollision = {
@@ -618,7 +638,12 @@ export class Player extends GameObj implements Animated {
             for (const thisBox of [...this.hitboxes, ...this.hiddenHitboxes]) {
                 for (const objBox of obj.hitboxes) {
                     if (this.hiddenHitboxes.includes(thisBox) && !(obj instanceof Portal)) continue;
-                    if (((obj instanceof Ladder && !pressingEvent.d && thisBox.b <= objBox.t && thisBox.b + this.vy >= objBox.t + obj.vy) || !(obj instanceof Ladder)) && thisBox.innerB <= objBox.t && thisBox.b + this.vy >= objBox.t + obj.vy && !((thisBox.innerR <= objBox.l || thisBox.innerL >= objBox.r) && (thisBox.innerR + this.vx < objBox.l + obj.vx || thisBox.innerL + this.vx > objBox.r + obj.vx))) {
+                    if (
+                        ((obj instanceof Ladder && !pressingEvent.d && thisBox.b <= objBox.t && thisBox.b + this.vy >= objBox.t + obj.vy) || !(obj instanceof Ladder)) &&
+                        thisBox.innerB <= objBox.t &&
+                        thisBox.b + this.vy >= objBox.t + obj.vy &&
+                        !((thisBox.innerR <= objBox.l || thisBox.innerL >= objBox.r) && (thisBox.innerR + this.vx < objBox.l + obj.vx || thisBox.innerL + this.vx > objBox.r + obj.vx))
+                    ) {
                         const newY = objBox.t - thisBox.relB;
                         const newVy = this.strength.b === obj.strength.t && this.strength.b === MOVE_BLOCK_STRENGTH ? 0 : obj.vy;
 
@@ -681,99 +706,72 @@ export class Player extends GameObj implements Animated {
         const currentRotation = (this.container.children[0] as Sprite).texture.rotate;
         if (pressingEvent.l && pressingEvent.r) this.vx = 0;
         else if (pressingEvent.l) {
-            if (currentRotation === 0) flipX(this);
+            if (currentRotation === 0) xFlipTexture(this);
             this.vx = -PLAYER_SPEED;
         } else if (pressingEvent.r) {
-            if (currentRotation === 12) flipX(this);
+            if (currentRotation === 12) xFlipTexture(this);
             this.vx = PLAYER_SPEED;
         } else this.vx = 0;
     }
     handleTexture() {
         if (this.inLadder) {
-            if (pressingEvent.u || pressingEvent.d) changeTexture(this, "ladderMove");
-            else changeTexture(this, "ladderIdle");
-        } else if (!this.nextBlock.b) changeTexture(this, "jump");
+            if (pressingEvent.u || pressingEvent.d) stateChangeTexture(this, "ladderMove");
+            else stateChangeTexture(this, "ladderIdle");
+        } else if (!this.nextBlock.b) stateChangeTexture(this, "jump");
         else {
-            if (pressingEvent.l || pressingEvent.r) changeTexture(this, "walk");
-            else changeTexture(this, "idle");
+            if (pressingEvent.l || pressingEvent.r) stateChangeTexture(this, "walk");
+            else stateChangeTexture(this, "idle");
         }
     }
 }
 // ブロック
-export class Block extends GameObj implements Colorable, NonAnimated {
+export class Block extends GameObj implements Colorable {
     color: string | undefined;
-    baseTextures: Record<string, Texture>;
-    generatedTextures: Map<string, Texture>;
     constructor(x: number, y: number, w: number, h: number, ang: Angle, isSolid: boolean, color: string | undefined) {
-        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "default", isSolid, BLOCK_STRENGTH);
+        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "block", "default", isSolid, BLOCK_STRENGTH);
         this.color = color;
-        this.baseTextures = { default: blockTexture };
-        this.generatedTextures = new Map();
-        this.generatedTextures.set("default_0", blockTexture);
     }
 }
 // ハシゴ
-export class Ladder extends GameObj implements NonAnimated, hasTriggers {
-    baseTextures: Record<string, Texture>;
-    generatedTextures: Map<string, Texture>;
+export class Ladder extends GameObj implements hasTriggers {
     triggers: Box[];
     constructor(x: number, y: number, w: number, h: number, ang: Angle) {
-        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "default", false, BLOCK_STRENGTH);
-        this.baseTextures = { default: ladderTexture };
-        this.generatedTextures = new Map();
-        this.generatedTextures.set("default_0", ladderTexture);
+        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "ladder", "default", false, BLOCK_STRENGTH);
         this.triggers = [new Box(this, 0, 0, w, h)];
     }
 }
 // 鍵
-export class Key extends GameObj implements Colorable, NonAnimated, hasTriggers {
+export class Key extends GameObj implements Colorable, hasTriggers {
     color: string | undefined;
-    baseTextures: Record<string, Texture>;
-    generatedTextures: Map<string, Texture>;
     triggers: Box[];
     constructor(x: number, y: number, w: number, h: number, ang: Angle, color: string | undefined) {
-        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "default", false, -1);
+        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "key", "default", false, -1);
         this.color = color;
-        this.baseTextures = { default: keyTexture };
-        this.generatedTextures = new Map();
-        this.generatedTextures.set("default_0", keyTexture);
         this.triggers = [new Box(this, 0.2, 0.2, w - 0.4, h - 0.4)];
     }
 }
 // 一方通行ブロック
-export class Oneway extends GameObj implements Colorable, NonAnimated {
+export class Oneway extends GameObj implements Colorable {
     color: string | undefined;
-    baseTextures: Record<string, Texture>;
-    generatedTextures: Map<string, Texture>;
     constructor(x: number, y: number, w: number, h: number, ang: Angle, color: string | undefined) {
-        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "default", true, BLOCK_STRENGTH);
+        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "oneway", "default", true, BLOCK_STRENGTH);
         this.color = color;
-        this.baseTextures = { default: onewayTexture };
-        this.generatedTextures = new Map();
-        this.generatedTextures.set("default_0", onewayTexture);
     }
 }
 // レバー
-export class Lever extends GameObj implements Colorable, NonAnimated, hasTriggers {
+export class Lever extends GameObj implements Colorable, hasTriggers {
     color: string | undefined;
-    baseTextures: Record<string, Texture>;
-    generatedTextures: Map<string, Texture>;
     isBeingContacted: boolean;
     triggers: Box[];
     constructor(x: number, y: number, w: number, h: number, ang: Angle, color: string | undefined) {
-        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "off", false, -1);
+        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "lever", "off", false, -1);
         this.color = color;
-        this.baseTextures = { off: leverTextures[0], on: leverTextures[1] };
-        this.generatedTextures = new Map();
-        this.generatedTextures.set("off_0", leverTextures[0]);
         this.isBeingContacted = false;
         this.triggers = [new Box(this, 0.2, 0.2, w - 0.4, h - 0.4)];
     }
 }
 // ポータル
-export class Portal extends GameObj implements NonAnimated, hasTriggers {
-    baseTextures: Record<string, Texture>;
-    generatedTextures: Map<string, Texture>;
+export class Portal extends GameObj implements hasTriggers {
     triggers: Box[];
     id: string;
     constructor(x: number, y: number, w: number, h: number, ang: Angle, id: string) {
@@ -787,13 +785,11 @@ export class Portal extends GameObj implements NonAnimated, hasTriggers {
                 { relX: 0, relY: h / 2, w: w, h: 0 },
             ],
             [{ relX: 0, relY: 0, w: w, h: h }],
-            "default",
+            "portal",
+            "front",
             true,
             BLOCK_STRENGTH
         );
-        this.baseTextures = { default: portalTextures[0] };
-        this.generatedTextures = new Map();
-        this.generatedTextures.set("default_0", portalTextures[0]);
         this.id = id;
         this.triggers = [new Box(this, 0, 0, w, h / 2)];
         [...this.hitboxes, ...this.triggers].forEach((t) => {
@@ -802,14 +798,9 @@ export class Portal extends GameObj implements NonAnimated, hasTriggers {
     }
 }
 // 押しブロック
-export class PushBlock extends GameObj implements NonAnimated {
-    baseTextures: Record<string, Texture>;
-    generatedTextures: Map<string, Texture>;
+export class PushBlock extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Angle) {
-        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "default", true, PUSH_BLOCK_STRENGTH, 0.2);
-        this.baseTextures = { default: pushBlockTexture };
-        this.generatedTextures = new Map();
-        this.generatedTextures.set("default_0", pushBlockTexture);
+        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "pushBlock", "default", true, PUSH_BLOCK_STRENGTH, 0.2);
     }
     handleLadder(ladders: Ladder[]) {
         // ハシゴ
@@ -824,18 +815,13 @@ export class PushBlock extends GameObj implements NonAnimated {
     }
 }
 // ボタン
-export class Button extends GameObj implements Colorable, NonAnimated, hasTriggers {
+export class Button extends GameObj implements Colorable, hasTriggers {
     color: string | undefined;
-    baseTextures: Record<string, Texture>;
-    generatedTextures: Map<string, Texture>;
     isPressed: Boolean;
     triggers: Box[];
     constructor(x: number, y: number, w: number, h: number, ang: Angle, color: string | undefined) {
-        super(x, y, ang, [{ relX: 0, relY: (3 / 4) * h, w: w, h: h / 4 }], [{ relX: 0, relY: 0, w: w, h: h }], "off", true, BLOCK_STRENGTH);
+        super(x, y, ang, [{ relX: 0, relY: (3 / 4) * h, w: w, h: h / 4 }], [{ relX: 0, relY: 0, w: w, h: h }], "button", "off", true, BLOCK_STRENGTH);
         this.color = color;
-        this.baseTextures = { off: buttonTextures[0], on: buttonTextures[1] };
-        this.generatedTextures = new Map();
-        this.generatedTextures.set("off_0", buttonTextures[0]);
         this.isPressed = false;
         this.triggers = [new Box(this, 0, h / 2, w, h / 4)];
         [...this.hitboxes, ...this.triggers].forEach((b) => {
@@ -844,17 +830,12 @@ export class Button extends GameObj implements Colorable, NonAnimated, hasTrigge
     }
 }
 // 駆動ブロック
-export class MoveBlock extends GameObj implements Colorable, NonAnimated {
+export class MoveBlock extends GameObj implements Colorable {
     color: string | undefined;
-    baseTextures: Record<string, Texture>;
-    generatedTextures: Map<string, Texture>;
     isActivated: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Angle, color: string | undefined, isActivated: boolean) {
-        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], isActivated ? "on" : "off", true, MOVE_BLOCK_STRENGTH);
+        super(x, y, ang, [{ relX: 0, relY: 0, w: w, h: h }], [{ relX: 0, relY: 0, w: w, h: h }], "moveBlock", isActivated ? "on" : "off", true, MOVE_BLOCK_STRENGTH);
         this.color = color;
-        this.baseTextures = { off: moveBlockTextures[0], on: moveBlockTextures[1] };
-        this.generatedTextures = new Map();
-        this.generatedTextures.set(`${isActivated ? "on" : "off"}_0`, moveBlockTextures[isActivated ? 1 : 0]);
         this.isActivated = isActivated;
     }
 }

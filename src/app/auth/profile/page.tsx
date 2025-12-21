@@ -31,6 +31,7 @@ export default function Profile() {
             window.alert("新しい名前を入力してください。");
         } else {
             changeUserData({ name: newNameRef.current.value });
+            window.alert("名前を変更しました。");
         }
     };
 
@@ -102,7 +103,16 @@ export default function Profile() {
                             ユーザー名
                         </label>
                         <div className="flex items-center space-x-[2dvmin]">
-                            <input ref={newNameRef} id="username" name="username" type="text" autoComplete="username" required className="w-full border-gray-600 focus:outline-none focus:border-blue-500 bg-white text-[16px]" style={{ padding: "1.5dvmin", borderWidth: "0.2dvmin", color: "black" }} />
+                            <input
+                                ref={newNameRef}
+                                id="username"
+                                name="username"
+                                type="text"
+                                autoComplete="username"
+                                required
+                                className="w-full border-gray-600 focus:outline-none focus:border-blue-500 bg-white text-[16px]"
+                                style={{ padding: "1.5dvmin", borderWidth: "0.2dvmin", color: "black" }}
+                            />
                             <button onClick={handleChangeName} className="miniBtn font-bold text-white bg-gray-600 hover:bg-gray-700 w-1/3" style={{ fontSize: "4dvmin" }}>
                                 更新
                             </button>
@@ -116,11 +126,29 @@ export default function Profile() {
                         <label htmlFor="current-password" className="block text-left" style={{ fontSize: "3dvmin" }}>
                             現在のパスワード
                         </label>
-                        <input ref={currentPasswordRef} id="current-password" name="current-password" type="password" autoComplete="current-password" required className="w-full border-gray-600 focus:outline-none focus:border-blue-500 bg-white text-[16px]" style={{ padding: "1.5dvmin", borderWidth: "0.2dvmin", color: "black" }} />
+                        <input
+                            ref={currentPasswordRef}
+                            id="current-password"
+                            name="current-password"
+                            type="password"
+                            autoComplete="current-password"
+                            required
+                            className="w-full border-gray-600 focus:outline-none focus:border-blue-500 bg-white text-[16px]"
+                            style={{ padding: "1.5dvmin", borderWidth: "0.2dvmin", color: "black" }}
+                        />
                         <label htmlFor="new-password" className="block text-left" style={{ fontSize: "3dvmin", marginTop: "1dvmin" }}>
                             新しいパスワード
                         </label>
-                        <input ref={newPasswordRef} id="new-password" name="new-password" type="password" autoComplete="new-password" required className="w-full border-gray-600 focus:outline-none focus:border-blue-500 bg-white text-[16px]" style={{ padding: "1.5dvmin", borderWidth: "0.2dvmin", color: "black" }} />
+                        <input
+                            ref={newPasswordRef}
+                            id="new-password"
+                            name="new-password"
+                            type="password"
+                            autoComplete="new-password"
+                            required
+                            className="w-full border-gray-600 focus:outline-none focus:border-blue-500 bg-white text-[16px]"
+                            style={{ padding: "1.5dvmin", borderWidth: "0.2dvmin", color: "black" }}
+                        />
                         <div className="flex justify-end">
                             <button onClick={handleChangePassword} className="miniBtn w-1/5 font-bold text-white bg-gray-600 hover:bg-gray-700" style={{ fontSize: "4dvmin", marginTop: "2dvmin" }}>
                                 更新

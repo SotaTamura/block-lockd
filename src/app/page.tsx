@@ -2,13 +2,13 @@
 
 import { useAuth } from "@/app/context";
 import Link from "next/link";
-import { RightSvg } from "./components";
+import { WrenchSvg, RightSvg, WorldSvg } from "./components";
 
 export default function Home() {
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
 
     return (
-        <div className="homeScreen backGround">
+        <div className="backGround">
             {user ? (
                 <div className="loginBtn">
                     <p>{user.name}</p>
@@ -23,20 +23,18 @@ export default function Home() {
                     </Link>
                 </div>
             )}
-            <p className="title">Cube Escape</p>
-            <Link className="btn start" href={"/select-stage"}>
-                <RightSvg />
-            </Link>
-            {/* <div className="flex my-5">
-                <Link href={user ? "/editor" : "/auth/login"} className=" text-center rounded-md p-2 m-auto bg-slate-300 font-semibold">
-                    作成
+            <p className="mt-[30dvh] text-[length:12dvmin] m-auto whitespace-nowrap">Block Lockd</p>
+            <div className="w-[30dvh] h-[30dvh] m-auto flex flex-wrap mt-[10dvh]">
+                <Link className="btn w-full h-1/2" href={"/select-stage"}>
+                    <RightSvg />
+                </Link>
+                <Link href={user ? "/editor" : "/auth/login"} className="btn w-1/2 h-1/2">
+                    <WrenchSvg />
+                </Link>
+                <Link href={"/select-online-stage"} className="btn w-1/2 h-1/2">
+                    <WorldSvg />
                 </Link>
             </div>
-            <div className="flex my-5">
-                <Link href={"/online-stages"} className=" text-center rounded-md p-2 m-auto bg-slate-300 font-semibold">
-                    オンラインステージ
-                </Link>
-            </div> */}
         </div>
     );
 }
