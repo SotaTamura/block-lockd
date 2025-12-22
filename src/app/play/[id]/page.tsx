@@ -1,12 +1,13 @@
 "use client";
 
-import { Application, Container, isMobile } from "pixi.js";
+import { Application, isMobile } from "pixi.js";
 import { use, useEffect, useRef, useState } from "react";
-import { RESOLUTION, STAGE_LEN, STEP } from "@/constants";
+import { RESOLUTION, STEP } from "@/constants";
 import Link from "next/link";
 import { hint, loadStage, update } from "@/game/main";
 import { useAuth } from "@/app/context";
-import { ArrowButton, Checkbox, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
+import { ArrowButton, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
+import { STAGES } from "@/game/stages";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
@@ -36,7 +37,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             $cnv = app.canvas;
             $cnv.id = "main";
             cnvWrapperRef.current?.appendChild($cnv);
-            await loadStage(id, app, "official");
+            await loadStage(STAGES[id - 1], app);
             setHintText(hint);
             setIsLoading(false);
             // 更新
@@ -112,7 +113,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             {isComplete && (
                 <div className="popup">
                     <div className="popupTitle">stage complete!</div>
-                    {id === STAGE_LEN ? (
+                    {id === STAGES.length ? (
                         <Link href={"/select-stage"} className="btn next">
                             <MenuSvg />
                         </Link>

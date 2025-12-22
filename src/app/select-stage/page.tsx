@@ -1,9 +1,9 @@
 "use client";
 
-import { STAGE_LEN } from "@/constants";
 import { useAuth } from "@/app/context";
 import Link from "next/link";
 import { LeftSvg, StageButton } from "../components";
+import { STAGES } from "@/game/stages";
 
 export default function SelectStage() {
     const { user } = useAuth();
@@ -16,7 +16,7 @@ export default function SelectStage() {
             <div className="selectStageText text-[length:10dvmin]">ステージを選択</div>
             <div className="stageWrapperContainer">
                 <div className="stageWrapper">
-                    {Array.from({ length: STAGE_LEN }, (_, k) => (
+                    {Array.from({ length: STAGES.length }, (_, k) => (
                         <StageButton i={k + 1} key={k + 1} isCompleted={user?.completedStageIds.includes(k + 1) || false} />
                     ))}
                 </div>

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { loadStage, update } from "@/game/main";
 import { useAuth } from "@/app/context";
 import { ArrowButton, LeftSvg, RestartSvg } from "@/app/components";
+import { getStage } from "@/app/fetch";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
@@ -33,7 +34,9 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             $cnv = app.canvas;
             $cnv.id = "main";
             cnvWrapperRef.current?.appendChild($cnv);
-            await loadStage(id, app, "online");
+            const data = await getStage(id);
+            if (!data) return;
+            await loadStage(data.code, app);
             setIsLoading(false);
             // 更新
             let prevTime: number | undefined;

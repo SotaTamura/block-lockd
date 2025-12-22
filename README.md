@@ -24,10 +24,14 @@
 
 ## 使用技術
 
-Prisma
+TypeScript
 
 Next.js
 
-React
+Tailwind CSS
+
+Prisma
 
 Pixi.js
+
+React

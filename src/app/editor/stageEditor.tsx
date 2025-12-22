@@ -430,7 +430,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             $cnv = app.canvas;
             $cnv.id = "main";
             cnvWrapperRef.current?.appendChild($cnv);
-            await loadStage(0, app, editorObjsRef.current);
+            await loadStage(editorObjsRef.current, app);
             setIsLoading(false);
             let prevTime: number | undefined;
             let accumulator = 0;

@@ -1,8 +1,7 @@
 import { Application, BitmapText } from "pixi.js";
 import { Block, Button, GameObj, Key, Ladder, Lever, MoveBlock, Oneway, Player, Portal, PushBlock } from "./class";
 import { blockDashLine, stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites } from "./base";
-import { Angle, GRAVITY, JUMP_SPEED, MAP_BLOCK_LEN, PLAYER_STRENGTH, PX_PER_UNIT, TiledStageDataType, UNIT, MOVE_BLOCK_SPEED, TextureName, colorMap, parseBase, PROPS_LEN } from "@/constants";
-import { getStage } from "@/app/fetch";
+import { Angle, GRAVITY, JUMP_SPEED, MAP_BLOCK_LEN, PLAYER_STRENGTH, UNIT, MOVE_BLOCK_SPEED, colorMap, parseBase, PROPS_LEN } from "@/constants";
 import { EditorObj } from "@/app/editor/stageEditor";
 import { gunzipSync } from "zlib";
 
@@ -77,7 +76,7 @@ const objCreator: { [gid: number]: (...args: [x: number, y: number, w: number, h
     12: (x, y, w, h, ang, color) => new MoveBlock(x, y, w, h, ang, color, true),
 };
 // マップ作成
-export const loadStage = async (i: number, app: Application, dataType: "official" | "online" | EditorObj[]) => {
+export const loadStage = async (data: string | EditorObj[], app: Application) => {
     // 初期化
     gameObjs = [];
     players = [];
@@ -91,42 +90,8 @@ export const loadStage = async (i: number, app: Application, dataType: "official
     pushBlocks = [];
     buttons = [];
     moveBlocks = [];
-    if (dataType === "official") {
-        let data: { default: TiledStageDataType } | null;
-        try {
-            data = await import(`./stagesJSON/stage${i}.json`);
-        } catch {
-            data = null;
-        }
-        if (!data) return;
-        hint = data.default.properties[0].value;
-        const allObjs = data.default.layers.flatMap((layer) => (layer.objects ? layer.objects.map((obj) => ({ ...obj, color: layer.tintcolor })) : []));
-        for (let obj of allObjs) {
-            let newW = obj.width / PX_PER_UNIT;
-            let newH = obj.height / PX_PER_UNIT;
-            let newX = obj.x / PX_PER_UNIT;
-            let newY = obj.y / PX_PER_UNIT;
-            if (obj.rotation === 0) {
-                newY -= newH;
-            } else if (obj.rotation === 90) {
-                [newW, newH] = [newH, newW];
-            } else if (obj.rotation === 180) {
-                newX -= newW;
-            } else if (obj.rotation === -90) {
-                [newW, newH] = [newH, newW];
-                newX -= newW;
-                newY -= newH;
-            }
-            const create = objCreator[obj.gid];
-            if (!create) throw new Error(`unknown gid ${obj.gid}`);
-            const newObj = create(newX, newY, newW, newH, obj.rotation, obj.color, obj.type);
-            gameObjs.push(newObj);
-            setSprite(newObj, app);
-        }
-    } else if (dataType === "online") {
-        const data = await getStage(i);
-        if (!data) return;
-        const splitCode = gunzipSync(Buffer.from(data.code, "base64")).toString("utf-8").split(";");
+    if (typeof data === "string") {
+        const splitCode = gunzipSync(Buffer.from(data, "base64")).toString("utf-8").split(";");
         for (const obj of splitCode) {
             const [base64Mask, joinedMaskedProps] = obj.split(":");
             let mask = parseBase(base64Mask, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_");
@@ -156,7 +121,7 @@ export const loadStage = async (i: number, app: Application, dataType: "official
             setSprite(newObj, app);
         }
     } else {
-        for (const obj of dataType) {
+        for (const obj of data) {
             const create = objCreator[obj.gid];
             if (!create) throw new Error(`unknown gid ${obj.gid}`);
             const newObj = create(obj.x, obj.y, obj.w, obj.h, obj.ang, colorMap[obj.color], obj.tag);

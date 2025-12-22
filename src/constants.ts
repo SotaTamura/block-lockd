@@ -1,6 +1,5 @@
 // 定数
 export const π = Math.PI;
-export const STAGE_LEN = 20;
 export const STEP = 1000 / 60;
 export const PROPS_LEN = 8;
 export const RESOLUTION = 1024;
@@ -37,50 +36,6 @@ export type UserType = {
     completedOnlineStageIds: number[];
 };
 export type Angle = 0 | 90 | 180 | -90;
-export type TiledStageDataType = {
-    compressionlevel: number;
-    height: number;
-    infinite: boolean;
-    layers: {
-        draworder: string;
-        id: number;
-        name: string;
-        objects: {
-            gid: number;
-            height: number;
-            id: number;
-            name: string;
-            rotation: Angle;
-            type: string;
-            visible: boolean;
-            width: number;
-            x: number;
-            y: number;
-        }[];
-        opacity: number;
-        type: string;
-        visible: boolean;
-        x: number;
-        y: number;
-        tintcolor?: string;
-    }[];
-    nextlayerid: number;
-    nextobjectid: number;
-    orientation: string;
-    properties: {
-        name: string;
-        type: string;
-        value: string;
-    }[];
-    renderorder: string;
-    tiledversion: string;
-    tileheight: number;
-    tilesets: { firstgid: number; source: string }[];
-    tilewidth: number;
-    type: string;
-    version: string;
-    width: number;
-};
 export type TextureName = "player0" | "block" | "block_deactivated" | "ladder" | "key" | "oneway" | "portal_front" | "lever_off" | "pushblock" | "button_off" | "moveblock_off" | "moveblock_on";
 export type EditorTool = "pencil" | "eraser" | "move" | "resize" | "color" | "rotate";
 export type Side = "t" | "b" | "l" | "r";
