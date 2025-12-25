@@ -4,10 +4,10 @@ import { Application, isMobile } from "pixi.js";
 import { use, useEffect, useRef, useState } from "react";
 import { RESOLUTION, STEP } from "@/constants";
 import Link from "next/link";
-import { hint, loadStage, update } from "@/game/main";
+import { loadStage, update } from "@/game/main";
 import { useAuth } from "@/app/context";
 import { ArrowButton, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
-import { STAGES } from "@/game/stages";
+import { HINTS, STAGES } from "@/game/stages";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
@@ -17,7 +17,6 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const [isComplete, setIsComplete] = useState(false);
     const [isHintShowed, setIsHintShowed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [hintText, setHintText] = useState("");
     let loopId: number;
 
     useEffect(() => {
@@ -38,7 +37,6 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             $cnv.id = "main";
             cnvWrapperRef.current?.appendChild($cnv);
             await loadStage(STAGES[id - 1], app);
-            setHintText(hint);
             setIsLoading(false);
             // 更新
             let prevTime: number | undefined;
@@ -99,7 +97,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                         setIsHintShowed(false);
                     }}>
                     <div className="popupTitle">hint</div>
-                    <div className="hintText">{hintText}</div>
+                    <div className="hintText">{HINTS[id - 1]}</div>
                 </div>
             )}
             {isMobile.any && (

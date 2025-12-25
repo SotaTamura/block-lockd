@@ -5,7 +5,6 @@ import { Angle, GRAVITY, JUMP_SPEED, MAP_BLOCK_LEN, PLAYER_STRENGTH, UNIT, MOVE_
 import { EditorObj } from "@/app/editor/stageEditor";
 import { gunzipSync } from "zlib";
 
-export let hint: string;
 export let gameObjs: GameObj[];
 export let players: Player[];
 export let blocks: Block[];
