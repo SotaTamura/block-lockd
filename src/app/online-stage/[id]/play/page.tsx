@@ -66,7 +66,8 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     }, [id, restarter]);
 
     return (
-        <div className="gameScreen backGround" ref={cnvWrapperRef}>
+        <div className="gameScreen backGround">
+            <div id="cnvWrapper" ref={cnvWrapperRef}></div>
             {isLoading && <div className="loadingStage">Loading...</div>}
             <div
                 className="btn restart"

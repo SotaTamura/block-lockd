@@ -42,26 +42,26 @@
         position: fixed;
         top: 0;
         left: 0;
-        width: 100dvw;
-        height: 100dvh;
+        width: 100svw;
+        height: 100svh;
         background: radial-gradient(#aaa, #555);
     }
     .loadingTxt {
-        line-height: 100dvh;
+        line-height: 100svh;
         color: #f00;
     }
     .stageSelectScreen {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: 12dvmin 18dvmin 1fr;
+        grid-template-rows: 12svmin 18svmin 1fr;
         grid-template-areas:
             "back ...."
             "txt txt"
             "stage stage";
     }
     .back {
-        width: 18dvmin;
-        height: 12dvmin;
+        width: 18svmin;
+        height: 12svmin;
         grid-area: back;
     }
     .selectStageText {
@@ -153,38 +153,50 @@
         font-size: 30px;
     }
     .stage {
-        width: 20dvmin;
-        height: 14dvmin;
-        line-height: 11dvmin;
-        font-size: 11dvmin;
+        width: 20svmin;
+        height: 14svmin;
+        line-height: 11svmin;
+        font-size: 11svmin;
         margin: 1%;
     }
     .stageNum {
         grid-area: num;
         text-align: center;
         margin: auto;
-        font-size: 8dvmin;
+        font-size: 8svmin;
         overflow: hidden;
     }
     .gameScreen {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
-        grid-template-rows: 60px calc(100dvh - 280px) 40px 180px;
+        grid-template-rows: 60px calc(100svh - 280px) 40px 180px;
         grid-template-areas:
             "num menu restart"
             "main main main"
             "guide guide guide"
             "btn btn btn";
+        height: 100%;
     }
     .editorScreen {
         display: grid;
         grid-template-columns: 1fr;
-        grid-template-rows: 60px calc(100dvh - 280px) 110px 110px;
+        grid-template-rows: 60px calc(100svh - 280px) 110px 110px;
         grid-template-areas:
             "header"
             "main"
             "objs"
             "tools";
+        height: 100%;
+    }
+    .testScreen {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 60px calc(100svh - 280px) 220px;
+        grid-template-areas:
+            "header"
+            "main"
+            "btn";
+        height: 100%;
     }
     .objs {
         display: flex;
@@ -196,7 +208,7 @@
         align-items: center;
         overflow-x: scroll;
         touch-action: pan-x;
-        font-size: 5dvmin;
+        font-size: 5svmin;
     }
     .tools {
         display: flex;
@@ -242,27 +254,31 @@
         margin: 0 10px;
         padding: 0 5px;
     }
-    #main {
-        width: 100dvmin;
-        height: 100dvmin;
-        max-width: calc(100dvmax - 280px);
-        max-height: calc(100dvmax - 280px);
-        margin: auto;
+    #cnvWrapper {
         grid-area: main;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    #main {
+        aspect-ratio: 1 / 1;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
     }
     .loadingStage {
         grid-area: main;
     }
     .restart {
         grid-area: restart;
-        width: 33dvw;
+        width: 33svw;
         max-width: 90px;
         aspect-ratio: 1.5;
         margin: auto;
     }
     .menu {
         grid-area: menu;
-        width: 33dvw;
+        width: 33svw;
         max-width: 90px;
         aspect-ratio: 1.5;
         margin: auto;
@@ -270,7 +286,7 @@
     .controlBtns {
         grid-area: btn;
         margin: 0 auto;
-        width: 100dvw;
+        width: 100%;
         max-width: 270px;
         aspect-ratio: 1.5;
         display: grid;
@@ -311,30 +327,30 @@
         text-align: center;
     }
     .popupTitle {
-        font-size: 10dvmin;
+        font-size: 10svmin;
         z-index: 11;
-        margin: 10dvmin;
+        margin: 10svmin;
         grid-area: title;
     }
     .hintText {
         z-index: 11;
         grid-area: detail;
         width: 100%;
-        font-size: 6dvmin;
+        font-size: 6svmin;
         white-space: pre-line;
         overflow: scroll;
     }
     .next {
         z-index: 11;
         grid-area: detail;
-        width: 30dvmin;
-        height: 20dvmin;
+        width: 30svmin;
+        height: 20svmin;
         margin: auto;
     }
     .editor-layout {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: 12dvmin 18dvmin 15dvmin 1fr;
+        grid-template-rows: 12svmin 18svmin 15svmin 1fr;
         grid-template-areas:
             "header header"
             "title title"
@@ -350,8 +366,8 @@
 
     @media screen and (min-aspect-ratio: 1/1) {
         .gameScreen {
-            grid-template-columns: 140px calc(100dvw - 280px) 70px 70px;
-            grid-template-rows: 22dvh 30dvh 48dvh;
+            grid-template-columns: 140px calc(100svw - 280px) 70px 70px;
+            grid-template-rows: 22svh 30svh 48svh;
             grid-template-areas:
                 "num  main menu restart"
                 ".... main guide guide"
@@ -360,7 +376,7 @@
         .menu,
         .restart,
         .arrow {
-            height: 22dvh;
+            height: 22svh;
             max-height: 105px;
             width: initial;
             aspect-ratio: 0.66;
@@ -368,8 +384,8 @@
         }
         .controlBtns {
             display: grid;
-            grid-template-columns: 70px 70px calc(100dvw - 280px) 140px;
-            grid-template-rows: 24dvh 24dvh;
+            grid-template-columns: 70px 70px calc(100svw - 280px) 140px;
+            grid-template-rows: 24svh 24svh;
             grid-template-areas:
                 "l r . u"
                 "l r . d";
@@ -378,12 +394,19 @@
             display: block;
         }
         .editorScreen {
-            display: grid;
-            grid-template-columns: 140px calc(100dvw - 280px) 140px;
-            grid-template-rows: 60px calc(100dvh - 60px);
+            grid-template-columns: 140px calc(100svw - 280px) 140px;
+            grid-template-rows: 60px calc(100svh - 60px);
             grid-template-areas:
                 "header header header"
                 "objs main tools";
+        }
+        .testScreen {
+            grid-template-columns: 140px calc(100svw - 280px) 140px;
+            grid-template-rows: 60px 1fr 1fr;
+            grid-template-areas:
+                "header header header"
+                ".... main ...."
+                "btn  main ....";
         }
         .objs {
             flex-direction: column;
@@ -392,7 +415,7 @@
             border-top: none;
             border-bottom: none;
             width: 140px;
-            height: calc(100dvh - 60px);
+            height: calc(100svh - 60px);
             overflow-y: scroll;
             overflow-x: initial;
             touch-action: pan-y;
@@ -404,14 +427,14 @@
             border-top: none;
             border-bottom: none;
             width: 140px;
-            height: calc(100dvh - 60px);
+            height: calc(100svh - 60px);
             overflow-y: scroll;
             overflow-x: initial;
             touch-action: pan-y;
         }
-        #main {
-            width: calc(100dvh - 60px);
-            height: calc(100dvh - 60px);
-        }
     }
+}
+#stage-editor-main.backGround {
+    width: 100%;
+    height: 100%;
 }
