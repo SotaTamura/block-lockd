@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getStagesByUser } from "../fetch";
 import { useRouter } from "next/navigation";
-import { LeftSvg, PencilSvg, PlayButton } from "../components";
+import { LeftSvg, Loading, PencilSvg, PlayButton } from "../components";
 
 export default function MyLobby() {
     const router = useRouter();
@@ -25,7 +25,8 @@ export default function MyLobby() {
     }, [user, router]);
 
     return (
-        <main className="backGround editor-layout text-center">
+        <main className="editor-layout text-center">
+            {!stages && <Loading />}
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
                 <Link href={"/"} className="btn back w-[18dvmin] h-full">
                     <LeftSvg />

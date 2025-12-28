@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { onLoad } from "@/game/base";
+import { Loading } from "./components";
 
 export default function App({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
@@ -14,7 +15,7 @@ export default function App({ children }: { children: React.ReactNode }) {
     }, []);
 
     if (isLoading) {
-        return <div className="backGround">Loading...</div>;
+        return <Loading />;
     }
 
     return <>{children}</>;

@@ -1,15 +1,16 @@
 "use client";
 
-import { LeftSvg } from "@/app/components";
+import { LeftSvg, Loading } from "@/app/components";
 import { useAuth } from "@/app/context";
 import { deleteUser, postLogin, putUser } from "@/app/fetch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Profile() {
     const { user, logout, changeUserData } = useAuth();
     const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
     const newNameRef = useRef<HTMLInputElement | null>(null);
     const currentPasswordRef = useRef<HTMLInputElement | null>(null);
     const newPasswordRef = useRef<HTMLInputElement | null>(null);
@@ -30,8 +31,9 @@ export default function Profile() {
         if (!newNameRef.current?.value) {
             window.alert("新しい名前を入力してください。");
         } else {
+            setIsLoading(true);
             changeUserData({ name: newNameRef.current.value });
-            window.alert("名前を変更しました。");
+            setIsLoading(false);
         }
     };
 
@@ -45,6 +47,7 @@ export default function Profile() {
         } else if (!newPasswordRef.current?.value) {
             window.alert("新しいパスワードを入力してください。");
         } else {
+            setIsLoading(true);
             const res = await postLogin({
                 name: user.name,
                 password: currentPasswordRef.current.value,
@@ -64,12 +67,14 @@ export default function Profile() {
             } else {
                 window.alert("現在のパスワードが正しくありません。");
             }
+            setIsLoading(false);
         }
     };
 
     const handleDeleteUser = async (e: React.MouseEvent) => {
         e.preventDefault();
         if (user && window.confirm("本当にアカウントを削除しますか？")) {
+            setIsLoading(true);
             const res = await deleteUser(user.id);
             if (res.ok) {
                 window.alert("アカウントを削除しました。");
@@ -78,21 +83,23 @@ export default function Profile() {
                 const data = await res.json();
                 window.alert(data.message);
             }
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="backGround">
+        <div>
+            {isLoading && <Loading />}
             <Link href="/" className="btn back">
                 <LeftSvg />
             </Link>
-            <div className="flex flex-col items-center h-full">
+            <div className="flex flex-col items-center grow overflow-y-auto py-10">
                 <div
                     className="bg-[#aaa] bg-opacity-75 border-[#333] flex flex-col items-center space-y-[2dvmin]"
                     style={{
                         padding: "4dvmin",
                         borderWidth: "1dvmin",
-                        width: "80dvmin",
+                        width: "min(90vw, 500px)",
                         maxWidth: "500px",
                     }}>
                     <button onClick={logout} className="miniBtn font-bold text-white bg-gray-500 hover:bg-gray-600 w-3/5" style={{ padding: "1.5dvmin", fontSize: "4dvmin" }}>

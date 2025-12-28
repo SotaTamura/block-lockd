@@ -383,6 +383,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         const app = new Application();
         appRef.current = app;
         (async () => {
+            setIsLoading(true);
             await app.init({
                 backgroundAlpha: 0,
                 width: RESOLUTION,
@@ -393,6 +394,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             $cnv.id = "main";
             $wrapper.appendChild($cnv);
             setIsAppReady(true);
+            setIsLoading(false);
         })();
         return () => {
             document.removeEventListener("keydown", switchToolByKey);
@@ -521,6 +523,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                     access: accessRef.current,
                 };
                 if ((checkChange && (initData?.title !== title || initData.description !== description || initData.code !== code) && window.confirm("変更を保存しますか？")) || !checkChange) {
+                    setIsLoading(true);
                     if (initData) {
                         await putStage({
                             id: initData.id,
@@ -532,6 +535,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                             ...newData,
                         });
                     }
+                    setIsLoading(false);
                 }
                 router.push("/editor");
                 router.refresh();
@@ -542,6 +546,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     const handleDelete = async (e: React.MouseEvent) => {
         e.preventDefault();
         if (user && window.confirm("本当にこのステージを削除しますか？")) {
+            setIsLoading(true);
             const res = await deleteStage(initData?.id as number);
             if (res.ok) {
                 window.alert("ステージを削除しました。");
@@ -551,6 +556,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 const data = await res.json();
                 window.alert(data.message);
             }
+            setIsLoading(false);
         }
     };
 
@@ -561,7 +567,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     };
 
     return (
-        <main id="stage-editor-main" className="backGround text-center">
+        <main id="stage-editor-main" className="text-center">
             <div className="[grid-area:header] flex justify-between items-center px-[2svmin] fixed w-full">
                 <div
                     className="btn back w-[25%] h-15"

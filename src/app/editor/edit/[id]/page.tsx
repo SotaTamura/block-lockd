@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import StageEditor from "../../stageEditor";
 import { StageType } from "@/constants";
+import { Loading } from "@/app/components";
 
 export default function EditStage({ params }: { params: Promise<{ id: number }> }) {
     const { id } = use(params);
@@ -36,7 +37,7 @@ export default function EditStage({ params }: { params: Promise<{ id: number }> 
     }, [user, router, id]);
 
     if (!stageData) {
-        return <div>Loading...</div>; // Or some other loading indicator
+        return <Loading />; // Or some other loading indicator
     }
 
     return <StageEditor initData={stageData} />;

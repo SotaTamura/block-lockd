@@ -6,7 +6,7 @@ import { RESOLUTION, STEP } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
 import { useAuth } from "@/app/context";
-import { ArrowButton, LeftSvg, RestartSvg } from "@/app/components";
+import { ArrowButton, LeftSvg, Loading, RestartSvg } from "@/app/components";
 import { getStage } from "@/app/fetch";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
@@ -68,7 +68,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     return (
         <div className="gameScreen backGround">
             <div id="cnvWrapper" ref={cnvWrapperRef}></div>
-            {isLoading && <div className="loadingStage">Loading...</div>}
+            {isLoading && <Loading />}
             <div
                 className="btn restart"
                 onClick={(e) => {

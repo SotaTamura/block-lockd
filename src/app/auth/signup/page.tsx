@@ -1,13 +1,14 @@
 "use client";
 
-import { LeftSvg } from "@/app/components";
+import { LeftSvg, Loading } from "@/app/components";
 import { useAuth } from "@/app/context";
 import { postUser, throwError } from "@/app/fetch";
 import Link from "next/link";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 
 export default function SignupPage() {
     const { login } = useAuth();
+    const [isLoading, setIsLoading] = useState(true);
     const nameRef = useRef<HTMLInputElement | null>(null);
     const passwordRef = useRef<HTMLInputElement | null>(null);
 
@@ -16,6 +17,7 @@ export default function SignupPage() {
         if (!nameRef.current?.value || !passwordRef.current?.value) {
             window.alert("ユーザー名とパスワードは必須です。");
         } else {
+            setIsLoading(true);
             try {
                 const res = await postUser({ name: nameRef.current.value, password: passwordRef.current.value });
                 const data = await res.json();
@@ -27,11 +29,13 @@ export default function SignupPage() {
             } catch (err) {
                 throwError(err);
             }
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="backGround">
+        <div>
+            {isLoading && <Loading />}
             <Link href="/" className="btn back">
                 <LeftSvg />
             </Link>
@@ -52,13 +56,29 @@ export default function SignupPage() {
                             <label htmlFor="name" className="block" style={{ marginBottom: "1dvmin", fontSize: "4dvmin" }}>
                                 ユーザー名
                             </label>
-                            <input ref={nameRef} id="name" name="name" type="text" required className="w-full border-gray-600 focus:outline-none focus:border-blue-500 bg-white text-[16px]" style={{ padding: "1.5dvmin", borderWidth: "0.2dvmin", color: "black" }} />
+                            <input
+                                ref={nameRef}
+                                id="name"
+                                name="name"
+                                type="text"
+                                required
+                                className="w-full border-gray-600 focus:outline-none focus:border-blue-500 bg-white text-[16px]"
+                                style={{ padding: "1.5dvmin", borderWidth: "0.2dvmin", color: "black" }}
+                            />
                         </div>
                         <div className="w-full">
                             <label htmlFor="password" className="block" style={{ marginBottom: "1dvmin", fontSize: "4dvmin" }}>
                                 パスワード
                             </label>
-                            <input ref={passwordRef} id="password" name="password" type="password" required className="w-full border-gray-600 focus:outline-none focus:border-blue-500 bg-white text-[16px]" style={{ padding: "1.5dvmin", borderWidth: "0.2dvmin", color: "black" }} />
+                            <input
+                                ref={passwordRef}
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                className="w-full border-gray-600 focus:outline-none focus:border-blue-500 bg-white text-[16px]"
+                                style={{ padding: "1.5dvmin", borderWidth: "0.2dvmin", color: "black" }}
+                            />
                         </div>
                         <button type="submit" className="miniBtn w-5/6 font-bold text-white bg-gray-600 hover:bg-gray-700" style={{ padding: "1.5dvmin", fontSize: "8dvmin", marginTop: "4dvmin" }}>
                             登録

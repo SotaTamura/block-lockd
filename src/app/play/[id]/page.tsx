@@ -6,7 +6,7 @@ import { RESOLUTION, STEP } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
 import { useAuth } from "@/app/context";
-import { ArrowButton, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
+import { ArrowButton, Loading, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
 import { HINTS, STAGES } from "@/game/stages";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
@@ -68,7 +68,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     return (
         <div className="gameScreen backGround">
             <div id="cnvWrapper" ref={cnvWrapperRef}></div>
-            {isLoading && <div className="loadingStage">Loading...</div>}
+            {isLoading && <Loading />}
             <div className="stageNum">{id}</div>
             <div
                 className="btn restart"
