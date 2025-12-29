@@ -26,7 +26,7 @@ export default function MyLobby() {
 
     return (
         <main className="editor-layout text-center">
-            {!stages && <Loading />}
+            {!stages.length && <Loading />}
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
                 <Link href={"/"} className="btn back w-[18dvmin] h-full">
                     <LeftSvg />
