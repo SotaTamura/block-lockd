@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const res = await putUser({ id: user.id, ...newUserData });
             if (res.ok) {
                 setUser({ ...user, ...newUserData });
-                alert("名前を変更しました。");
+                if ("name" in newUserData) alert("名前を変更しました。");
             } else {
                 const data = await res.json();
                 alert(data.message);
