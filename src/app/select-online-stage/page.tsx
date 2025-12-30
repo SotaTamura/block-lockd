@@ -10,16 +10,19 @@ import { useAuth } from "../context";
 export default function Lobby() {
     const { user } = useAuth();
     const [stages, setStages] = useState<StageType[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         (async () => {
+            setIsLoading(true);
             setStages(await getAllStages());
+            setIsLoading(false);
         })();
     }, []);
 
     return (
         <main className="editor-layout text-center">
-            {!stages.length && <Loading />}
+            {isLoading && <Loading />}
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
                 <Link href={"/"} className="btn back w-[18dvmin] h-[12dvmin]">
                     <LeftSvg />

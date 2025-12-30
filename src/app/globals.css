@@ -14,7 +14,6 @@
         -moz-user-select: none;
         -webkit-user-select: none;
         color: #fff;
-        touch-action: none;
     }
     img {
         pointer-events: none;
@@ -24,6 +23,7 @@
     .miniBtn,
     img {
         -webkit-touch-callout: none;
+        touch-action: none;
     }
     .stageWrapper,
     .stage,
@@ -330,6 +330,16 @@
         z-index: 11;
         margin: 10svmin;
         grid-area: title;
+    }
+    .popup.hint::before {
+        content: "×";
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        font-size: 30px;
+        cursor: pointer;
+        color: white;
+        padding: 0 5px;
     }
     .hintText {
         z-index: 11;

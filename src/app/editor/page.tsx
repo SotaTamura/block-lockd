@@ -12,6 +12,7 @@ export default function MyLobby() {
     const router = useRouter();
     const { user } = useAuth();
     const [stages, setStages] = useState<StageType[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (!user) {
@@ -19,14 +20,16 @@ export default function MyLobby() {
             router.refresh();
         } else {
             (async () => {
+                setIsLoading(true);
                 setStages(await getStagesByUser(user.id));
+                setIsLoading(false);
             })();
         }
     }, [user, router]);
 
     return (
         <main className="editor-layout text-center">
-            {!stages.length && <Loading />}
+            {isLoading && <Loading />}
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
                 <Link href={"/"} className="btn back w-[18dvmin] h-full">
                     <LeftSvg />
