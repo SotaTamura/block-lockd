@@ -133,17 +133,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                     onClick={() => {
                         setIsHintShowed(false);
                     }}>
-                    <div className="popupTitle">
-                        hint
-                        <div
-                            className="close-button"
-                            onClick={(e) => {
-                                e.stopPropagation(); // Prevent closing the popup when clicking the button
-                                setIsHintShowed(false);
-                            }}>
-                            &times;
-                        </div>
-                    </div>
+                    <div className="popupTitle">hint</div>
                     <div className="hintText">{HINTS[id - 1]}</div>
                 </div>
             )}
