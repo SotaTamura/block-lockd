@@ -8,7 +8,7 @@ import React, { useRef, useState } from "react";
 
 export default function SignupPage() {
     const { login } = useAuth();
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const nameRef = useRef<HTMLInputElement | null>(null);
     const passwordRef = useRef<HTMLInputElement | null>(null);
 
@@ -41,7 +41,7 @@ export default function SignupPage() {
             </Link>
             <div className="flex flex-col items-center justify-center h-4/5">
                 <div
-                    className="bg-[#aaa] bg-opacity-75 border-[#333]"
+                    className="bg-[#aaa] bg-opacity-75 border-[#333] mt-10"
                     style={{
                         padding: "4dvmin",
                         borderWidth: "1dvmin",
