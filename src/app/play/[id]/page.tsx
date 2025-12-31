@@ -1,6 +1,6 @@
 "use client";
 
-import { Application, isMobile, Ticker } from "pixi.js";
+import { Application, isMobile } from "pixi.js";
 import { use, useEffect, useRef, useState } from "react";
 import { RESOLUTION, STEP } from "@/constants";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { loadStage, update } from "@/game/main";
 import { useAuth } from "@/app/context";
 import { ArrowButton, Loading, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
 import { HINTS, STAGES } from "@/game/stages";
-import { GlitchFilter } from "pixi-filters";
+import { glitch } from "@/game/base";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
@@ -77,40 +77,9 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 className="btn restart"
                 onClick={(e) => {
                     e.preventDefault();
-                    if (appRef.current) {
-                        const glitchFilter = new GlitchFilter({
-                            slices: 10,
-                            offset: 10,
-                            direction: 0,
-                            fillMode: 0,
-                            red: { x: 0, y: 0 },
-                            blue: { x: 0, y: 0 },
-                            green: { x: 0, y: 0 },
-                        });
-                        appRef.current.stage.filters = [glitchFilter];
-                        let count = 0;
-                        const ticker = (_ticker: Ticker) => {
-                            if (count % 4 === 0) {
-                                glitchFilter.seed = Math.random();
-                                glitchFilter.offset = (Math.random() - 0.5) * 200;
-                                glitchFilter.red = { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 };
-                                glitchFilter.blue = { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 };
-                                glitchFilter.green = { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 };
-                            }
-                            count++;
-                        };
-                        appRef.current.ticker.add(ticker);
-
-                        setTimeout(() => {
-                            if (appRef.current) {
-                                appRef.current.ticker.remove(ticker);
-                                appRef.current.stage.filters = [];
-                            }
-                            setRestarter(restarter + 1);
-                        }, 300);
-                    } else {
-                        setRestarter(restarter + 1);
-                    }
+                    if (!appRef.current) return;
+                    glitch(appRef.current, 300);
+                    setTimeout(() => setRestarter(restarter + 1), 300);
                 }}>
                 <RestartSvg />
             </div>

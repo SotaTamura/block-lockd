@@ -7,10 +7,9 @@ import { ArrowButton, BucketSvg, Checkbox, CheckSvg, EraserSvg, LeftSvg, MoveSvg
 import { Angle, MAP_BLOCK_LEN, TextureName, RESOLUTION, STEP, UNIT, textureMap, colorMap, nameStateMap, π, StageType, convertBase, parseBase, PROPS_LEN, EditorTool, toolMap } from "@/constants";
 import { loadStage, update } from "@/game/main";
 import { Application, Container, Graphics, isMobile, Sprite, Texture, Rectangle, FederatedPointerEvent, BitmapText, Cursor, Ticker } from "pixi.js";
-import { getRotatedTexture } from "@/game/base";
+import { getRotatedTexture, glitch } from "@/game/base";
 import { deleteStage, postStage, putStage } from "../fetch";
 import { gunzipSync, gzipSync } from "zlib";
-import { GlitchFilter } from "pixi-filters";
 
 export class EditorObj {
     gid: number;
@@ -563,40 +562,9 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     };
 
     const handleRestartTest = () => {
-        if (appRef.current) {
-            const glitchFilter = new GlitchFilter({
-                slices: 10,
-                offset: 10,
-                direction: 0,
-                fillMode: 0,
-                red: { x: 0, y: 0 },
-                blue: { x: 0, y: 0 },
-                green: { x: 0, y: 0 },
-            });
-            appRef.current.stage.filters = [glitchFilter];
-            let count = 0;
-            const ticker = (_ticker: Ticker) => {
-                if (count % 4 === 0) {
-                    glitchFilter.seed = Math.random();
-                    glitchFilter.offset = (Math.random() - 0.5) * 200;
-                    glitchFilter.red = { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 };
-                    glitchFilter.blue = { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 };
-                    glitchFilter.green = { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 };
-                }
-                count++;
-            };
-            appRef.current.ticker.add(ticker);
-
-            setTimeout(() => {
-                if (appRef.current) {
-                    appRef.current.ticker.remove(ticker);
-                    appRef.current.stage.filters = [];
-                }
-                setRestarter((r) => r + 1);
-            }, 300);
-        } else {
-            setRestarter((r) => r + 1);
-        }
+        if (!appRef.current) return;
+        glitch(appRef.current, 300);
+        setTimeout(() => setRestarter(restarter + 1), 300);
     };
 
     return (
