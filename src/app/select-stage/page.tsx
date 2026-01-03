@@ -16,7 +16,7 @@ export default function SelectStage() {
             <div className="selectStageText text-[length:10dvmin]">ステージを選択</div>
             <div className="stageWrapperContainer">
                 <div className="stageWrapper">
-                    {Array.from({ length: STAGES.length }, (_, k) => (
+                    {Array.from({ length: Object.keys(STAGES).length }, (_, k) => (
                         <StageButton i={k + 1} key={k + 1} isCompleted={user?.completedStageIds.includes(k + 1) || false} />
                     ))}
                 </div>

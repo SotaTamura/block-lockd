@@ -7,7 +7,7 @@ import Link from "next/link";
 import { loadStage, update } from "@/game/main";
 import { useAuth } from "@/app/context";
 import { ArrowButton, Loading, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
-import { HINTS, STAGES } from "@/game/stages";
+import { STAGES } from "@/game/stages";
 import { glitch } from "@/game/base";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
@@ -39,7 +39,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             $cnv = app.canvas;
             $cnv.id = "main";
             cnvWrapperRef.current?.appendChild($cnv);
-            await loadStage(STAGES[id - 1], app);
+            await loadStage(STAGES[id].code, app);
             setIsLoading(false);
             // 更新
             let prevTime: number | undefined;
@@ -52,7 +52,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 accumulator += dt ? dt : 0;
                 while (accumulator >= STEP) {
                     update(async () => {
-                        if (user) changeUserData({ completedStageIds: [...user.completedStageIds, id] });
+                        if (user && !user.completedStageIds.includes(id)) changeUserData({ completedStageIds: [...user.completedStageIds, id] });
                         setIsComplete(true);
                     }, app);
                     accumulator -= STEP;
@@ -103,7 +103,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                         setIsHintShowed(false);
                     }}>
                     <div className="popupTitle">hint</div>
-                    <div className="hintText">{HINTS[id - 1]}</div>
+                    <div className="hintText">{STAGES[id].hint}</div>
                 </div>
             )}
             {isMobile.any && (
@@ -117,7 +117,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             {isComplete && (
                 <div className="popup">
                     <div className="popupTitle">stage complete!</div>
-                    {id === STAGES.length ? (
+                    {id === Object.keys(STAGES).length ? (
                         <Link href={"/select-stage"} className="btn next">
                             <MenuSvg />
                         </Link>

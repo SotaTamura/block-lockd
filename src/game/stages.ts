@@ -1,44 +1,96 @@
-export const STAGES = [
-    "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",
-];
-export const HINTS = [
-    "矢印キーで左右移動・ジャンプ\n上下キーでハシゴを上り下りできる\nステージの外へ脱出しよう",
-    "鍵を取ると、それと同じ色のブロックが消える",
-    "既に消えているブロックは、その色の鍵を取ると復活する",
-    "鍵は全て取るとは限らない",
-    "同じ色の鍵を取るたび、その色のブロックの状態が切り替わる",
-    "一方通行ブロック\n矢印の逆の向きに進むことはできない\n色がついているものは、その色の鍵を取ると向きが180°切り替わる",
-    "2つの黄色の鍵を取るタイミングが大事",
-    "自分で考えよう^_^",
-    "ポータル\n同じアルファベットが書かれたポータル同士を行き来できる",
-    "レバー\nその色のブロックの状態を何度でも切り替えることができる",
-    "自分で考えよう^_^",
-    "一度に両方のプレイヤーが動く",
-    "自分で考えよう^_^",
-    "押しブロック\n左右に押せる\nジャンプで上に押し上げることもできる\n複数まとめて押せる\nポータルでテレポートする",
-    "ボタン\n押し始めた瞬間と、離した瞬間に、その色のブロックの状態を切り替える\nプレイヤーまたは押しブロックで押せる",
-    "協力してジャンプしよう",
-    "スピードが大事",
-    "駆動ブロック\n動力を与えられると矢印部分が光り、その方向に動き始める\nプレイヤーや押しブロックは押される\n壁に当たると止まる\nもう一度動力を与えられると元に戻り、止まる",
-    "操作には慣れてきたかな?",
-    "ブロックをポータル間に跨らせた状態で静止させてみよう",
-];
+export const STAGES: Record<
+    number,
+    {
+        code: string;
+        hint: string;
+    }
+> = {
+    1: {
+        code: "H4sIAAAAAAAAAzXOOw7AMAgD0At5COSf3Kdjx56/hgSJ4WE5KH0VCEd2v0qhGRiBHmj7WQpRNKhzoFIfNU+cfWE5I9+OQCqHNxTJcMKCul9TtUbxNFmheUzw/dH9p3jxBzl65G66AAAA",
+        hint: "矢印キーで左右移動・ジャンプ\n上下キーでハシゴを上り下りできる\nステージの外へ脱出しよう",
+    },
+    2: {
+        code: "H4sIAAAAAAAAAzWOuxHAMAhDF1JhGX/OZp+UKTN/BE6O5gkEgnN3ECTMmSxCPSwAnfeuWBgqO8JS1H9CNNmmWMtsHl0WMO48wWDYzC+JgY6VRJF9RAX3s5jvWHLJSVpKiKEQRtwLUAkNVbYAAAA=",
+        hint: "鍵を取ると、それと同じ色のブロックが消える",
+    },
+    3: {
+        code: "H4sIAAAAAAAAA1VPOwKFMAy6EINJf9rex/GNnl9I4/AmIEDSjllhGGsE9sSWWBNLoifaeqbDDkVp/rZozNuYDcaMSiE6nL2gjsGqPbPIN0dF2QNGtP5PSldtuacID3DVd0vn1h1BWiWo4cTH6G/KKB/Ud6/JqRmRE+NDVF+liesF6iUhTBIBAAA=",
+        hint: "既に消えているブロックは、その色の鍵を取ると復活する",
+    },
+    4: {
+        code: "H4sIAAAAAAAAA12QSw4DIQxDL2RVGCZQ4D5ddtnzNyF8pl1Ewi92ArA0QX1oQTpNiIqilV1SO2kdM+IxXVqcnQtUpb5Pi2DChYigRJzUEXAUpwlxo5FLkB2jA/7Hks0u99mWWiA7qHj+TrZlB+WFyBszpHuDg+6XPo4+37UNL9UB1Ij0t/XEZB7nMJ7GuG1m7KXR/ql+Ae2hFwtyAQAA",
+        hint: "鍵は全て取るとは限らない",
+    },
+    5: {
+        code: "H4sIAAAAAAAAA1WQSxbFIAhDN8TpMX5o1f102GHX/wit2je7CUhA7K0IsqikjpfL5LiVj8qS/ypLwfluUZC8ELYyjDglzpbYi/AdREcfUcXqD6rlYrj7cutyOWnYmA+zVWLHxSg5JJo4uYan9suQJ3lg5EmYHSAnb7Feex6epmozMfBYyNXJSfh9L+oXbcxiH8Igu6bYXuqplULHikTPL65eOxBpB6L2vYHl/AMMk7kfvAEAAA==",
+        hint: "同じ色の鍵を取るたび、その色のブロックの状態が切り替わる",
+    },
+    6: {
+        code: "H4sIAAAAAAAAA0WQsRXDMAhEF6IwFhKW1HqEzKAyZebPAcJ+NP/g4AGso1IlPkgmG3diOgMLsAWyxeR7NGIoQQ2mD6TVTsg2TWmoqWaUhAK4AwR9u1gTNF0aLqErXYV6upgzBeIFvGKgPIpdrdjKz7iDbUG2S9Dvu26sL+qL/UW2D6xAu+I3TjgLGnV+wT65e9oo1jULdlxRf/ok7/eC/7HGEP9v2fkj04dhwzx/vvwBbi2jL6oBAAA=",
+        hint: "一方通行ブロック\n矢印の逆の向きに進むことはできない\n色がついているものは、その色の鍵を取ると向きが180°切り替わる",
+    },
+    7: {
+        code: "H4sIAAAAAAAAA1WSSZLDIAxFL6SFPwgw5gpZ5gxe9v2XjdBQSsVVeU+yBmyPhwmVeA2FpnB55LJIt0A3L/HPC+NpBJbLpBMKdeUhTYwBugnKdWNZ+D5d5mJ7lduO764kMSxP1z2phiHbzDJCWIvggiQzuKWKmcfcuWKmITNV3LqnFwRzijc92/rY7mVX73O/6SjFk/dPbuRU1ZR3EZOn/dG9Sd/Ee4yDRtAM2hMDq2FThLG0627zyGvPyu9nH95iuO4WqlbFjPthPd1pi6UcK8FXKoLyUa0/4Xb0xK/9Qz/hS96PfJYyFPwP2R+3EMsCAAA=",
+        hint: "2つの黄色の鍵を取るタイミングが大事",
+    },
+    8: {
+        code: "H4sIAAAAAAAAA0VRyY3EMAxrSBhYPhO7hXluDXnOc+tfUscOYkBkRImyvHYXlXX02U2qLJkgy35eR9eeBKLMV+Qnvnr014iCNJmUDRmgLeFkhcOVAm3AKzAs2cclt3SHKKuJB3GUdmKlbTMk5TXgrDk1K2dMrRFrxBaxRxwRU397xCnnvW0CLWhezwN2c9R2fpjgIsKUCSdRPBLMBCvBleD2vWl9jf8rVF+s0vPyZ+BmL1/VZxNS15Jgmq8MLriXNS3c70C/j1mw6FCE3WKm8OCbWt5WqolLaAuJphqsm6JYArdQ9uh/TcwfCzICAAA=",
+        hint: "自分で考えよう",
+    },
+    9: {
+        code: "H4sIAAAAAAAAA02QSxqDIAyEL5QFCQpKV616g57BpfdfdiZBy8fmnzyGgbOZJBwtr8tRRWdHnQfOwSdZIKxjvbHKLGFhssoUW+oYk7QzL0+y9IHVSa+WUVSDMVSFWrhrLz3BBWNGUVuRcOyoaWAd2AbOD9uwa+Oyjds2rtuzb8yUGePy1yIeG9/GeB69W8wcTJHX2W5Gdb1nlOcp+1t3WBX+Axq2twpL/ts7BEOh8lcF6hMKHlyDqq5W2frY5Dm3aGRetfdO8h+mrF0mOe57vXVEvOyha2Pi8gNAtM4wLgIAAA==",
+        hint: "ポータル\n同じアルファベットが書かれたポータル同士を行き来できる",
+    },
+    10: {
+        code: "H4sIAAAAAAAAAz1RMXIEIQz7kOcGmwV2oUpylypl3rDllXl/JBuY2UICYUvadzdJolLG7Qi4jjegFpxqHKuzY9jdm6jyy/Ix7Ae0ComBautF6qMItEPvnnFXcZfXjCyaQqXk2fckaXItuSbO8vMLikA0co4WKIUUwiP2+DjFWxv2pL0Y/jnZQQNg8Qq7cDCs4coAn1PFBozsjkSM9Ip8jGsIxYwvuDg4E10sZBtNM80bsKGRgu/yTIR6qPGcnBn5uEH0UWYWzmr067ITj9pekTbKU53JqrfDFMcugUO/gl1RA9hvZwGnsKHvRRk9g/7FX0o0Jin8ZKy/wjV/VfVVbgxxF0obWQzheq+MqVpn7Wr/y/Vs2GoCAAA=",
+        hint: "自分で考えよう",
+    },
+    11: {
+        code: "H4sIAAAAAAAAA01QQQ6DMAz7UIRIaFrWnAYcOe4NHDnu/XMS0FCLZMdx6nB2oRGHqx2A7LDY6VAdj4PaNwR2hR5cBiWNQjphYL2toeIzTlGp0GQNGCbjMwCjKDepIBwdeOlqAfJyvabkGMkA4zOBHL1Rc5FWkx0kAkvyzXnxO9H7onFAGshML1r+bTAtxnuveJx5iDcpNplQ0Qz0gewZfC9fonX1gOJaYMFYTex+Nt767C2MfvyLpJJUsHhEKj/EkEVfkQEAAA==",
+        hint: "レバー\nその色のブロックの状態を何度でも切り替えることができる",
+    },
+    12: {
+        code: "H4sIAAAAAAAAA1VRWw4CIRC7EDE7vIaFLxOP4Bn89NPz2xZUDCTbzpbSGZ49hgPL6ngAGuAHWcEeT+JCRVH9lILVCs2seYghDReyVSkhC1UsX8iOcI7XhBYyzhh/NBihNowO0KRlEmWraoZoqY0SfGSUJsnDlBNUNdLEOxIXLRJ/ti+mX1x43v3o8oJq9pLRgR2UlKADdWKfuQmjBmC3Xqll3A+JO0k7yTspO6k7aTvxnZw7UfM/9pfB/kLYTBG9O5vBvo546+yGKa7UNdzkGq1IW++KXvlCuHjc4XWirBGTVJGEMXi34BfkewN+T0swUgIAAA==",
+        hint: "自分で考えよう",
+    },
+    13: {
+        code: "H4sIAAAAAAAAA1WRS47DMAxDL2QUkX9y7FWBnGWWXc75SzKaeoos9ChZFiO/Zk4HPmvrB2gbCWR7MQ9MNfUVAtKi4Uxt/YIclHGC2VNZ1S1ZTXmZT/QU6rrsmp3pgQb7qPNL2fEtTdInTKQzoh3LOKRoBi6muywXJHQlF9F9E3Xlbr+8sig7cKKG84Zu1o2Hy21dsLFu7BsH8fo7u0X9L7oE7dsnlog1YovYI3rEoehR96h71B11zhj8b/wL1oRcbL5ph2Q9CZyQB7fcb3NcQddC1JA1P/t0nvdHS8+Vr8lH5tqeGMmntyrgI78B+R08t0oCAAA=",
+        hint: "一度に両方のプレイヤーが動く",
+    },
+    14: {
+        code: "H4sIAAAAAAAAAz1ROQ7DMAz7kFBY8tl4KpC3ZPTY95ei5aIIRLI6yGRdJgk/rfMB1A2Xwwo2qCaSNr8uF9EkJnV2ZxkCEQEbpMsQo/iWvrUEsUBceyZL2ecU0AiHVIj6cCrzwKKs0WvUtsksjfsN1buaX8B03/hcGli117xp+nhhgGh3Ws5ltf9/z5VJ7bRmd4vwUxcwrvgDFwXRLGqOWqLWqC2qpgPOpJ5RPbPK474fVipW6A023KXHDtY26Vf1N5/dlmP/ZnVDbIIv6xfBq8pn2g2CbwJioGjzN8T0NyHTxioF54XmARlBPXRULT8HKqM6OwIAAA==",
+        hint: "自分で考えよう",
+    },
+    15: {
+        code: "H4sIAAAAAAAAA0VQSQ6DQAz7kFWRTIYBckLqW3rk2PfXDoMqDl4mi8N1OBZ+tuaH1ET7pNZhll/xBnM0RA6pv+9wBPanwbDlVXRDKybe6tnR4WkyOY1dLU3Tgn67/T59jR6s6uh511NxdWjHRJ/4+DGxFzqD3LhPtCXtfazQZMea4szBc9M+B0+rjasytbrXbrHBQqLSdrXS93EMHc8/caa/KQLLS68n1zEkBnHXgigSzHcVeiVXicUPiY77LH0BAAA=",
+        hint: "押しブロック\n左右に押せる\nジャンプで上に押し上げることもできる\n複数まとめて押せる\nポータルでテレポートする",
+    },
+    16: {
+        code: "H4sIAAAAAAAAAz1POQ7DMAz7kFBY8qHYmgrkLRkz9v0lFbdwBlI8pNzLpODNuIAUSFtCgC464ua4Jw3z5dD5vcNOkCn66mKgeq4jNZMqFvrUYVTAPkmGNGAKLghldaGhh/qqvOLnxRiW+hBFrsHE5MAz2gfMfdtx6L9aGfbw3VKxZbICd9GADRnzpVyR6sGq1PIP2ha1fQFmQJIIHQEAAA==",
+        hint: "階段を作ろう",
+    },
+    17: {
+        code: "H4sIAAAAAAAAA11SOQ7DMAz7kFBYvo+pQMeOfUPGjn1/SSkO0CJAQIoUHck5ZpSAR+t6A2oRxWsdViYrVg8CLVhZVZIkdyfJ4uYoHYpVowzxtExHNL04bN6laenbs5TJ5h7AZX1YlgoWbsVdmQIi1bqNexD9eswENfOhA+EBvDvO5nfMY1FvE8WMCU6QNygb1A3aBlfX2ADL2EgvFC90pSsOf80qzebntM77Hx9/HENchWP31xXbbBwky33FBzB9sN2XPmZH6pBzXgoBbZ0KUMdS0HgywzzLGNer1J48WXjBEQs6afyl6ZfmTdssjOH6Pn457VYg2TX69+y927C2Ld2/BT+hfAF+OuJNjQIAAA==",
+        hint: "ボタン\n押し始めた瞬間と、離した瞬間に、その色のブロックの状態を切り替える\nプレイヤーまたは押しブロックで押せる",
+    },
+    18: {
+        code: "H4sIAAAAAAAAA1VQSRLDIAz7kCcTg00Wrn1C35Bjjn1/JRvS6XCwhIVkc59FVhxt/QJUQu83oYNp6dvANgTE3j+Ji5iUaBTZqNaQE6dJhaAGPHA9kS8wWXw4VqlLOjahUe1KYjgrhLgOIR9BsIzxNJwzz9DQBx94oNfJ6MYY0g0UrU24kIk/tY5qUXX9AZ+g9dfZcmakTOyZyPmgKYk1dhg4Y5QPcJ+LTGZ/rAZ7J+GHaLaMJpqGCNnnmrvk0mNl5z9zIfxsjI050cyq9gWU967V5AEAAA==",
+        hint: "協力してジャンプしよう",
+    },
+    19: {
+        code: "H4sIAAAAAAAAAzVPMRLDIAz7kAdsDJQw5S5jxr4hY8e+v5JNj8GSkYR4DpOCo319AqpoWw+gSiX8ElZxsBoSVZKEvKlrANpfC5NzbalookU8A8NbM5HrDpHSPAWyiBm56hQP6UvfxBU4C9yggzGNQl6GlIFhRCqfKZDqFcyDMSr4a2ttHIPQ5Vx2AcPmWJxMaayGRvl6GCQ/OtHVMdFf5p62p9oP1C6e5k0BAAA=",
+        hint: "スピードが大事",
+    },
+    20: {
+        code: "H4sIAAAAAAAAA2VQMQ4DIQz7EDpdAlwOmCrd2LF7t4439v21E64dqkjIdoJjOLumFSUyXoBCWMdJWMEmhqipzAk2vhiHXnj96S2Zo4aqoelCw3WpQ61b2lODcBt6gEhmIym4WOyTlIccfadxRmcLloNpsBpsD2bBSrAWrA55dI9Gz0ID7gilYcm7M6S4qQEbzXFFELHMWHUq259CLfMc8iRvPpNRl4IUheaQkPNOyTjg3+Hv8FX8teLJ/ArjIg4XSPkA7cZfG6UBAAA=",
+        hint: "駆動ブロック\n動力を与えられると矢印部分が光り、その方向に動き始める\nプレイヤーや押しブロックは押される\n壁に当たると止まる\nもう一度動力を与えられると元に戻り、止まる",
+    },
+    21: {
+        code: "H4sIAAAAAAAAA02ROxqEIAyEL5SCABKFale02nN4/yPsJBL0o2CGP+QBV40UKFJsFxTnKQMWlyYm89jdr2Pn4CK6uEN5eas4VXC1uigu8iirYaXFXkVNIqbP7RQkSm4BGfD7QAb8OtzA9sk2oN0RTqhPJEDdEbLQMdECdDjSTs6JtJGzca9FHw19YYZhk52olar5TP6qtWdx0xdUGL6rxz15YcF642xDuZN74Cc3e3Kplso+wMrnP3sLNVPmAQAA",
+        hint: "操作には慣れてきたかな?",
+    },
+    22: {
+        code: "H4sIAAAAAAAAA0VQO67DMAy7EBFEshUn9tQiY8eeIWPHd/5Hyv3ACylRpKxXd6x8VsaL0GAGH39ZtbIECJYY1yxU7B8Y35HAzrJGHE1qGlzJNk58NCu2rFr6DL96o4M6jtvwBykt4UlbrzPMWo4UDvtJiafoPgkVla37sLPbCl+0CcWaCrbMUYWLFnnjEF6nc3Bd1m3iXdi/Gm4/7Nk3KD8Y87Y1NObUuSKC3zvYPKAbEbEXONjVV3ghWvCiJsc8ZgZkxdaZICJpXq5IcGatcKPy05u+y1UfYrsIj8d/KMlQ/wFhUc+ZyAEAAA==",
+        hint: "ブロックをポータル間に跨らせた状態で静止させてみよう",
+    },
+};
