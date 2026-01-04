@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/app/context";
+import { useAuth, useStage } from "@/app/context";
 import { StageType } from "@/constants";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -11,7 +11,7 @@ import { LeftSvg, Loading, PencilSvg, PlayButton } from "../components";
 export default function MyLobby() {
     const router = useRouter();
     const { user } = useAuth();
-    const [stages, setStages] = useState<StageType[]>([]);
+    const { stages, setStages } = useStage();
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -21,11 +21,11 @@ export default function MyLobby() {
         } else {
             (async () => {
                 setIsLoading(true);
-                setStages(await getStagesByUser(user.id));
+                setStages((await getStagesByUser(user.id)).reverse());
                 setIsLoading(false);
             })();
         }
-    }, [user, router]);
+    }, [user, router, setStages]);
 
     return (
         <main className="editor-layout text-center">

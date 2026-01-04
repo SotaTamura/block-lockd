@@ -1,24 +1,20 @@
 "use client";
 
 import { RightSvg, LeftSvg, Loading } from "@/app/components";
-import { getStage, throwError } from "@/app/fetch";
+import { useStage } from "@/app/context";
 import { StageType } from "@/constants";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 
 export default function Overview({ params }: { params: Promise<{ id: number }> }) {
-    const { id } = use(params);
+    const id = Number(use(params).id);
     const [stage, setStage] = useState<StageType | null>(null);
+    const { getStageById } = useStage();
 
     useEffect(() => {
-        (async () => {
-            try {
-                setStage(await getStage(id));
-            } catch (err) {
-                throwError(err);
-            }
-        })();
-    }, [id]);
+        const stageFromContext = getStageById(id);
+        if (stageFromContext) setStage(stageFromContext);
+    }, [id, getStageById]);
 
     return (
         <main className="text-center">

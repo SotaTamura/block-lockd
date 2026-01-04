@@ -2,8 +2,11 @@
 
 import { UserType } from "@/constants";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 import { putUser, throwError } from "./fetch";
+import { StageType } from "@/constants";
+
+// 認証
 interface AuthContextType {
     user: Omit<UserType, "password"> | null;
     login: (userData: Omit<UserType, "password">) => void;
@@ -52,6 +55,31 @@ export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {
         throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
+};
+
+// ステージデータ
+interface StageContextType {
+    stages: StageType[];
+    setStages: (stages: StageType[]) => void;
+    getStageById: (id: number) => StageType | undefined;
+}
+
+const StageContext = createContext<StageContextType | undefined>(undefined);
+
+export const StageProvider = ({ children }: { children: ReactNode }) => {
+    const [stages, setStages] = useState<StageType[]>([]);
+
+    const getStageById = useCallback((id: number) => stages.find((stage) => stage.id === id), [stages]);
+
+    return <StageContext.Provider value={{ stages, setStages, getStageById }}>{children}</StageContext.Provider>;
+};
+
+export const useStage = () => {
+    const context = useContext(StageContext);
+    if (context === undefined) {
+        throw new Error("useStage must be used within a StageProvider");
     }
     return context;
 };

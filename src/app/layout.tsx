@@ -4,9 +4,12 @@ import "./globals.css";
 export const metadata: Metadata = {
     title: "Block Lockd",
     description: "A puzzle x action game.",
+    appleWebApp: {
+        title: "Block Lockd",
+    },
 };
 
-import { AuthProvider } from "@/app/context";
+import { AuthProvider, StageProvider } from "@/app/context";
 import App from "@/app/app";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,7 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <html lang="ja">
             <body>
                 <AuthProvider>
-                    <App>{children}</App>
+                    <StageProvider>
+                        <App>{children}</App>
+                    </StageProvider>
                 </AuthProvider>
             </body>
         </html>

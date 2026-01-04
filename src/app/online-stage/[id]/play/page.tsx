@@ -5,9 +5,9 @@ import { use, useEffect, useRef, useState } from "react";
 import { RESOLUTION, StageType, STEP } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
-import { useAuth } from "@/app/context";
+import { useAuth, useStage } from "@/app/context";
 import { ArrowButton, LeftSvg, Loading, RestartSvg } from "@/app/components";
-import { getStage } from "@/app/fetch";
+import { getStage, throwError } from "@/app/fetch";
 import { glitch } from "@/game/base";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
@@ -15,6 +15,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const cnvWrapperRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<Application | null>(null);
     const { user, changeUserData } = useAuth();
+    const { getStageById } = useStage();
     const [restarter, setRestarter] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +39,8 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             $cnv = app.canvas;
             $cnv.id = "main";
             cnvWrapperRef.current?.appendChild($cnv);
-            if (!stageRef.current) stageRef.current = await getStage(id);
+            const stageFromContext = getStageById(id);
+            if (stageFromContext) stageRef.current = stageFromContext;
             if (!stageRef.current) return;
             await loadStage(stageRef.current.code, app);
             setIsLoading(false);
@@ -67,7 +69,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             window.cancelAnimationFrame(loopId);
             app.destroy(true, { children: true });
         };
-    }, [id, restarter]);
+    }, [id, restarter, getStageById, user, changeUserData]);
 
     return (
         <div className="gameScreen backGround">

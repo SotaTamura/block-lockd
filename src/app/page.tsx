@@ -24,7 +24,6 @@ export default function Home() {
                 </div>
             )}
             <img src={"/logo.png"} className="mt-[20dvh] h-[24dvmin] m-auto" />
-            {/* <p className="mt-[30dvh] text-[length:12dvmin] m-auto whitespace-nowrap">Block Lockd</p> */}
             <div className="w-[30dvh] h-[30dvh] m-auto flex flex-wrap mt-[10dvh]">
                 <Link className="btn w-full h-1/2" href={"/select-stage"}>
                     <RightSvg />
