@@ -16,30 +16,35 @@ export const PLAYER_SPEED = 0.08;
 export const MOVE_BLOCK_SPEED = 0.04;
 export const CORNER_LEN = 0.05;
 export const MOVE_OBJ_CORNER_LEN = 0.2;
+export const SFX_MIN_INTERVAL = 50;
 // 型
 export type StageType = {
     id: number;
     createdAt: Date;
     updatedAt: Date;
     title: string;
-    creatorId: number;
+    creatorId: string;
     creatorName: string;
     description: string;
     code: string;
     access: number;
 };
 export type UserType = {
-    id: number;
+    id: string;
     name: string;
-    password: string;
     completedStageIds: number[];
     completedOnlineStageIds: number[];
 };
+export type SettingsType = {
+    lang: Language;
+    bgm: boolean;
+    sfx: boolean;
+    font: boolean;
+};
 export type Angle = 0 | 90 | 180 | -90;
-export type TextureName = "player0" | "block" | "block_deactivated" | "ladder" | "key" | "oneway" | "portal_front" | "lever_off" | "pushblock" | "button_off" | "moveblock_off" | "moveblock_on";
-export type EditorTool = "pencil" | "eraser" | "move" | "resize" | "color" | "rotate";
 export type Side = "t" | "b" | "l" | "r";
 export type Direction = "u" | "d" | "l" | "r";
+export type Language = "ja" | "us" | "gb" | "cn" | "tw";
 // 変換
 export const colorMap: Record<number, string | undefined> = {
     0: undefined, //white
@@ -52,42 +57,7 @@ export const colorMap: Record<number, string | undefined> = {
     7: "#ff8ad8", //carnation
     8: "#fd8208", //orange
 };
-export const textureMap: Record<number, TextureName> = {
-    1: "player0",
-    2: "block",
-    3: "block_deactivated",
-    4: "ladder",
-    5: "key",
-    6: "oneway",
-    7: "portal_front",
-    8: "lever_off",
-    9: "pushblock",
-    10: "button_off",
-    11: "moveblock_off",
-    12: "moveblock_on",
-};
-export const nameStateMap: Record<number, { name: string; state: string }> = {
-    1: { name: "player", state: "static" },
-    2: { name: "block", state: "default" },
-    3: { name: "block", state: "deactivated" },
-    4: { name: "ladder", state: "default" },
-    5: { name: "key", state: "default" },
-    6: { name: "oneway", state: "default" },
-    7: { name: "portal", state: "front" },
-    8: { name: "lever", state: "off" },
-    9: { name: "pushBlock", state: "default" },
-    10: { name: "button", state: "off" },
-    11: { name: "moveBlock", state: "off" },
-    12: { name: "moveBlock", state: "on" },
-};
-export const toolMap: Record<string, EditorTool> = {
-    t: "pencil",
-    x: "eraser",
-    m: "move",
-    s: "resize",
-    c: "color",
-    r: "rotate",
-};
+
 // 関数
 export const convertBase = (m: number, chars: string) => {
     if (!Number.isInteger(m) || m < 0) throw new Error("m must be a non-negative integer");

@@ -1,6 +1,6 @@
-import { Angle, Direction, UNIT, π } from "@/constants";
+import { Angle, Direction, SFX_MIN_INTERVAL, UNIT, π } from "@/constants";
 import { Block, Box, GameObj, isColorable, Portal, SpriteBox } from "./class";
-import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application, Container, Ticker } from "pixi.js";
+import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application } from "pixi.js";
 import { gameObjs } from "./main";
 import { GlitchFilter } from "pixi-filters";
 
@@ -80,7 +80,7 @@ export const getTexture = (name: string, state: string, newRotId: number) => {
                     new Texture({
                         source: texture.source,
                         rotate: newRotId,
-                    })
+                    }),
             );
         } else {
             newTexture = new Texture({
@@ -272,7 +272,7 @@ export const glitch = (app: Application, time: number) => {
     });
     app.stage.filters = [glitchFilter];
     let count = 0;
-    const ticker = (_ticker: Ticker) => {
+    const ticker = () => {
         if (count % 4 === 0) {
             glitchFilter.seed = Math.random();
             glitchFilter.offset = (Math.random() - 0.5) * 200;
@@ -284,12 +284,158 @@ export const glitch = (app: Application, time: number) => {
     };
     app.ticker.add(ticker);
     setTimeout(() => {
+        if (!app.renderer) return;
         app.ticker.remove(ticker);
         app.stage.filters = [];
     }, time);
 };
+// 音声
+export const BGM_PATHS = ["/menu.mp3", "/bgm0.mp3", "/bgm1.mp3", "/bgm2.mp3", "/bgm3.mp3", "/bgm4.mp3", "/bgm5.mp3", "/bgm6.mp3"] as const;
+export const SFX_PATHS = ["/walk.mp3", "/jump.mp3", "/key.mp3", "/ladder.mp3", "/lever.mp3", "/button.mp3", "/restart.mp3", "/goal.mp3"] as const;
+export type BgmPath = (typeof BGM_PATHS)[number];
+export type SfxPath = (typeof SFX_PATHS)[number];
+export const bgmBuffers: Map<BgmPath, AudioBuffer> = new Map();
+export const sfxBuffers: Map<SfxPath, AudioBuffer> = new Map();
+let currentBgm: BgmPath | null = null;
+let bgmSource: AudioBufferSourceNode | null = null;
+let bgmGain: GainNode | null = null;
+const activeSfx: Map<SfxPath, { buffer: AudioBufferSourceNode; lastPlayed: number }> = new Map();
+let audioContext: AudioContext | null = null;
+function getAudioContext() {
+    if (typeof window === "undefined") return null;
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return audioContext;
+}
+export async function loadAudio(path: BgmPath | SfxPath): Promise<AudioBuffer> {
+    const ctx = getAudioContext();
+    if (!ctx) throw new Error("AudioContext not available");
+    if (ctx.state === "suspended") {
+        await ctx.resume();
+    }
+    return await ctx.decodeAudioData(await (await fetch(path)).arrayBuffer());
+}
+export async function loadAllBgm() {
+    const buffers = await Promise.all(
+        BGM_PATHS.map(async (p) => {
+            try {
+                return await loadAudio(p);
+            } catch (e) {
+                console.error(`Failed to load BGM: ${p}`, e);
+                return null;
+            }
+        }),
+    );
+    BGM_PATHS.forEach((p, i) => {
+        const buffer = buffers[i];
+        if (buffer) bgmBuffers.set(p, buffer);
+    });
+}
+export async function loadAllSfx() {
+    const buffers = await Promise.all(
+        SFX_PATHS.map(async (p) => {
+            try {
+                return await loadAudio(p);
+            } catch (e) {
+                console.error(`Failed to load SFX: ${p}`, e);
+                return null;
+            }
+        }),
+    );
+    SFX_PATHS.forEach((p, i) => {
+        const buffer = buffers[i];
+        if (buffer) sfxBuffers.set(p, buffer);
+    });
+}
+export function stopBgm() {
+    if (bgmSource) {
+        bgmSource.stop();
+        bgmSource.disconnect();
+        bgmSource = null;
+        bgmGain = null;
+    }
+    currentBgm = null;
+}
+export function playBgm(path: BgmPath) {
+    if (path === currentBgm) return;
+    const buffer = bgmBuffers.get(path);
+    if (!buffer) return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    stopBgm();
+    bgmSource = ctx.createBufferSource();
+    bgmSource.buffer = buffer;
+    bgmSource.loop = true;
+    bgmGain = ctx.createGain();
+    bgmGain.gain.value = 0.5;
+    bgmSource.connect(bgmGain);
+    bgmGain.connect(ctx.destination);
+    bgmSource.start(0);
+    currentBgm = path;
+}
+let sfxGain: GainNode | null = null;
+function getSfxGain() {
+    const ctx = getAudioContext();
+    if (!ctx) return null;
+    if (!sfxGain) {
+        sfxGain = ctx.createGain();
+        sfxGain.connect(ctx.destination);
+    }
+    return sfxGain;
+}
+export function stopSfx(path: SfxPath, obj: GameObj | null) {
+    if (obj && !obj.playedSfxs.includes(path)) return;
+    const source = activeSfx.get(path)?.buffer;
+    if (!source) return;
+    if (obj) obj.playedSfxs = obj.playedSfxs.filter((p) => p !== path);
+    source.stop();
+    source.disconnect();
+    activeSfx.delete(path);
+}
+export function playSfx(path: SfxPath, obj: GameObj | null, volume: number = 1, disableDuplicate: boolean = false) {
+    const now = performance.now();
+    if (activeSfx.has(path) && (disableDuplicate || now - activeSfx.get(path)!?.lastPlayed < SFX_MIN_INTERVAL)) return;
+    const buffer = sfxBuffers.get(path);
+    if (!buffer) return;
+    if (obj) obj.playedSfxs.push(path);
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const sfxGain = getSfxGain();
+    if (!sfxGain) return;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const gain = ctx.createGain();
+    gain.gain.value = volume;
+    source.connect(gain);
+    gain.connect(sfxGain);
+    activeSfx.set(path, { buffer: source, lastPlayed: now });
+    source.start(0);
+    source.onended = () => {
+        if (activeSfx.get(path)?.buffer === source) activeSfx.delete(path);
+        source.disconnect();
+        gain.disconnect();
+    };
+}
+
 // 初期化関数
 export async function onLoad() {
+    // キーイベント
+    document.addEventListener("keydown", (e) => {
+        if (!Object.keys(keyMap).includes(e.key)) return;
+        const direction = keyMap[e.key];
+        pressingEvent[direction] = true;
+        pressStartEvent[direction] = !pressingTimeForKeyboard[direction] ? true : false;
+        pressingTimeForKeyboard[direction] = pressingTimeForKeyboard[direction] >= 0 ? pressingTimeForKeyboard[direction] + 1 : 0;
+    });
+    document.addEventListener("keyup", (e) => {
+        if (!Object.keys(keyMap).includes(e.key)) return;
+        const direction = keyMap[e.key];
+        pressingEvent[direction] = false;
+        pressingTimeForKeyboard[direction] = 0;
+        pressStartEvent[direction] = false;
+    });
+
     // 画像のパスを配列にまとめる
     const assetUrls = [
         ...Array.from({ length: 7 }, (_, i) => `/player${i}.png`),
@@ -309,10 +455,8 @@ export async function onLoad() {
         "/moveblock_off.png",
         "/moveblock_on.png",
     ];
-
     // すべてのアセットを並行して読み込む
     const textures = await Assets.load(assetUrls);
-
     // 読み込んだテクスチャをgeneratedTexturesに割り当てる
     const playerTextures = Array.from({ length: 7 }, (_, i) => textures[`/player${i}.png`]);
     generatedTextures.set("player_static_0", playerTextures[0]);
@@ -336,27 +480,11 @@ export async function onLoad() {
     generatedTextures.set("button_on_0", textures["/button_on.png"]);
     generatedTextures.set("moveBlock_off_0", textures["/moveblock_off.png"]);
     generatedTextures.set("moveBlock_on_0", textures["/moveblock_on.png"]);
-
     // nearest-neighbor scaling を適用
     assetUrls.forEach((url) => {
         const texture = textures[url];
         if (texture) {
             texture.source.scaleMode = "nearest";
         }
-    });
-    // キーイベント
-    document.addEventListener("keydown", (e) => {
-        if (!Object.keys(keyMap).includes(e.key)) return;
-        const direction = keyMap[e.key];
-        pressingEvent[direction] = true;
-        pressStartEvent[direction] = !pressingTimeForKeyboard[direction] ? true : false;
-        pressingTimeForKeyboard[direction] = pressingTimeForKeyboard[direction] >= 0 ? pressingTimeForKeyboard[direction] + 1 : 0;
-    });
-    document.addEventListener("keyup", (e) => {
-        if (!Object.keys(keyMap).includes(e.key)) return;
-        const direction = keyMap[e.key];
-        pressingEvent[direction] = false;
-        pressingTimeForKeyboard[direction] = 0;
-        pressStartEvent[direction] = false;
     });
 }

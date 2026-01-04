@@ -1,65 +1,71 @@
 import { PrismaClient } from "@/generated/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcrypt";
 import { UserType } from "@/constants";
 
 const prisma = new PrismaClient();
 
+// project://src/app/context.tsx
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
-        const id = Number((await params).id);
-        const user = await prisma.user.findFirst({ where: { id } });
+        const id = (await params).id;
+        const user = await prisma.user.findFirst({
+            where: { id },
+            include: { onlineStageCompletions: true },
+        });
         if (!user) {
-            return NextResponse.json({ message: "ユーザーが見つかりません" }, { status: 404 });
+            return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
-        const { password, ...userWithoutPassword } = user;
-        return NextResponse.json({ message: "success", user: userWithoutPassword }, { status: 200 });
-    } catch (err) {
-        return NextResponse.json({ message: "error", err }, { status: 500 });
+        const userWithIds = {
+            ...user,
+            completedOnlineStageIds: user.onlineStageCompletions.map((c) => c.stageId),
+        };
+        return NextResponse.json({ message: "success", user: userWithIds }, { status: 200 });
+    } catch (error) {
+        return NextResponse.json({ message: "error", error }, { status: 500 });
     }
 };
 
+// project://src/app/context.tsx
 export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
-        const id = Number((await params).id);
-        const { name, password, completedStageIds, completedOnlineStageIds } = await req.json();
-        const data: Partial<UserType> = {};
+        const id = (await params).id;
+        const { name, completedStageIds, completedOnlineStageIds } = await req.json();
+        const data: any = {};
         if (name) {
-            // Check if user already exists
-            if (
-                await prisma.user.findFirst({
-                    where: { name },
-                })
-            ) {
-                return NextResponse.json({ message: "このユーザー名は既に使用されています" }, { status: 409 });
-            }
             data.name = name;
-        }
-        if (password) {
-            data.password = await bcrypt.hash(password, 10);
         }
         if (completedStageIds) {
             data.completedStageIds = completedStageIds;
         }
         if (completedOnlineStageIds) {
-            data.completedOnlineStageIds = completedOnlineStageIds;
+            data.onlineStageCompletions = {
+                deleteMany: {},
+                create: completedOnlineStageIds.map((stageId: number) => ({ stageId })),
+            };
         }
         const user = await prisma.user.update({
             data,
             where: { id },
+            include: { onlineStageCompletions: true },
         });
-        return NextResponse.json({ message: "success", user: user }, { status: 200 });
-    } catch (err) {
-        return NextResponse.json({ message: "error", err }, { status: 500 });
+        const userWithIds = {
+            ...user,
+            completedOnlineStageIds: user.onlineStageCompletions.map((c) => c.stageId),
+        };
+        return NextResponse.json({ message: "success", user: userWithIds }, { status: 200 });
+    } catch (error) {
+        return NextResponse.json({ message: "error", error }, { status: 500 });
     }
 };
 
+
+// project://src/app/context.tsx
 export const DELETE = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
-        const id = Number((await params).id);
-        const user = await prisma.user.delete({ where: { id } });
-        return NextResponse.json({ message: "success", user: user }, { status: 200 });
-    } catch (err) {
-        return NextResponse.json({ message: "error", err }, { status: 500 });
+        const id = (await params).id;
+        await prisma.user.delete({ where: { id } });
+        return NextResponse.json({ message: "success" }, { status: 200 });
+    } catch (error) {
+        return NextResponse.json({ message: "error", error }, { status: 500 });
     }
 };

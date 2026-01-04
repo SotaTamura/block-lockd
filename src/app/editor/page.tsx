@@ -1,35 +1,50 @@
 "use client";
 
-import { useAuth } from "@/app/context";
+import { useAuth, useSettings, useStage } from "@/app/context";
 import { StageType } from "@/constants";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { getStagesByUser } from "../fetch";
 import { useRouter } from "next/navigation";
-import { LeftSvg, Loading, PencilSvg, PlayButton } from "../components";
+import { LeftSvg, PencilSvg, PlayButton } from "../components";
+import { playBgm } from "@/game/base";
+import { TranslatableString, translate } from "../translate";
 
 export default function MyLobby() {
     const router = useRouter();
     const { user } = useAuth();
-    const [stages, setStages] = useState<StageType[]>([]);
+    const { stages, setStages } = useStage();
     const [isLoading, setIsLoading] = useState(false);
+    const {
+        settings: { lang },
+    } = useSettings();
+    const t = (str: TranslatableString) => translate(str, lang);
 
     useEffect(() => {
+        playBgm("/menu.mp3");
         if (!user) {
-            router.push("/auth/login");
+            router.push("/");
             router.refresh();
         } else {
             (async () => {
                 setIsLoading(true);
-                setStages(await getStagesByUser(user.id));
+                try {
+                    // project://src/app/api/stage/user/[id]/route.ts
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/user/${user.id}`, {
+                        cache: "no-store",
+                    });
+                    if (!res.ok) setStages([]);
+                    setStages(((await res.json()).stages || []).reverse());
+                } catch (error) {
+                    alert(error);
+                    setStages([]);
+                }
                 setIsLoading(false);
             })();
         }
-    }, [user, router]);
+    }, [user, router, setStages]);
 
     return (
         <main className="editor-layout text-center">
-            {isLoading && <Loading />}
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
                 <Link href={"/"} className="btn back w-[18dvmin] h-full">
                     <LeftSvg />
@@ -37,7 +52,7 @@ export default function MyLobby() {
             </div>
 
             <div className="[grid-area:title] flex justify-center items-center">
-                <h1 className="text-[length:10dvmin]">マイステージ</h1>
+                <h1 className="text-[length:10dvmin]">{t("マイステージ")}</h1>
             </div>
 
             <div className="[grid-area:new-link] flex justify-center items-center">
@@ -48,21 +63,25 @@ export default function MyLobby() {
 
             <div className="[grid-area:list] bg-[#333] overflow-y-auto py-[2dvmin]">
                 <div className="flex flex-col items-center gap-[2dvmin]">
-                    {stages.map((stage: StageType) => (
-                        <div key={stage.id} className="w-[90%] max-w-200 bg-[#4a4a4a] p-[2dvmin] border-[3px] border-[#222] text-left">
-                            <div className="flex justify-between items-center mb-[1.5dvmin]">
-                                <div className="text-[length:3dvmin]">
-                                    <h2 className="text-[length:5dvmin] font-semibold">{stage.title}</h2>
-                                </div>
-                                <div className="flex flex-row gap-2">
-                                    <Link href={`/editor/edit/${stage.id}`} className="btn text-[length:3dvmin] py-[1dvmin] px-[2dvmin] border-[3px]">
-                                        <PencilSvg />
-                                    </Link>
-                                    <PlayButton i={stage.id} isCompleted={user?.completedOnlineStageIds.includes(stage.id) || false} />
+                    {isLoading ? (
+                        <div className="text-[length:5dvmin]">Loading...</div>
+                    ) : (
+                        stages.map((stage: StageType) => (
+                            <div key={stage.id} className="w-[90%] max-w-200 bg-[#4a4a4a] p-[2dvmin] border-[3px] border-[#222] text-left">
+                                <div className="flex justify-between items-center mb-[1.5dvmin]">
+                                    <div className="text-[length:3dvmin]">
+                                        <h2 className="text-[length:5dvmin] font-semibold">{stage.title}</h2>
+                                    </div>
+                                    <div className="flex flex-row gap-2">
+                                        <Link href={`/editor/edit/${stage.id}`} className="btn text-[length:3dvmin] py-[1dvmin] px-[2dvmin] border-[3px]">
+                                            <PencilSvg />
+                                        </Link>
+                                        <PlayButton i={stage.id} isCompleted={user?.completedOnlineStageIds.includes(stage.id) || false} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </div>
         </main>

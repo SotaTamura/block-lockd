@@ -5,17 +5,8 @@ import { motion } from "framer-motion";
 
 export function Loading() {
     return (
-        <motion.div
-            className="absolute inset-0 z-50 flex items-center justify-center w-full h-full bg-[#333]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}>
-            <motion.span
-                className="text-6xl font-bold text-white"
-                initial={{ opacity: 0.5, scale: 1 }}
-                animate={{ opacity: 1, scale: [1, 1.05, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
+        <motion.div className="absolute inset-0 z-50 flex items-center justify-center w-full h-full bg-[#333]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+            <motion.span className="text-6xl font-bold text-white" initial={{ opacity: 0.5, scale: 1 }} animate={{ opacity: 1, scale: [1, 1.05, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
                 Loading...
             </motion.span>
         </motion.div>
@@ -48,9 +39,9 @@ export function ArrowButton({ eventName }: { eventName: "u" | "d" | "l" | "r" })
     );
 }
 
-export function Checkbox({ id, checked, onChange, children }: { id: string; checked: boolean; onChange: () => void; children: ReactNode }) {
+export function Checkbox({ id, checked, onChange, children, className }: { id: string; checked: boolean; onChange: () => void; children: ReactNode; className?: string }) {
     return (
-        <label htmlFor={id} className="guide">
+        <label htmlFor={id} className={className || "guide"}>
             <input type="checkbox" name={id} id={id} checked={checked} onChange={onChange} />
             {children}
         </label>
@@ -67,14 +58,6 @@ export function Toggle({ id, checked, disabled, onChange, children }: { id: stri
             </div>
             {children && <span className="ml-2">{children}</span>}
         </label>
-    );
-}
-
-export function StageButton({ i, isCompleted }: { i: number; isCompleted: boolean }) {
-    return (
-        <Link href={`/play/${i}`} className={`btn stage ${isCompleted ? "completedBtn" : ""}`}>
-            <div>{i}</div>
-        </Link>
     );
 }
 
@@ -455,6 +438,133 @@ export function MoveSvg() {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" id="_x32_" x="0" y="0" opacity="1" style={{ width: "32px", height: "32px" }} version="1.1" viewBox="0 0 512 512">
             <path fill="#4b4b4b" d="m512 256-114-73.836v42.014H287.822V114h42.023L256.008 0l-73.844 114h42.031v110.178H114.017v-42.014L0 256l114.017 73.836v-42.014h110.178V398h-42.031l73.844 114 73.837-114h-42.023V287.822H398v42.014z"></path>
+        </svg>
+    );
+}
+
+export function VolumeSvg() {
+    return (
+        <svg
+            id="_x32_"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlnsXlink="http://www.w3.org/1999/xlink"
+            x="0px"
+            y="0px"
+            viewBox="0 0 512 512"
+            style={{
+                width: 32,
+                height: 32,
+                opacity: 1,
+            }}
+            xmlSpace="preserve">
+            <style type="text/css">{"\n\t.st0{fill:#4B4B4B;}\n"}</style>
+            <g>
+                <path
+                    className="st0"
+                    d="M0,206.254v99.491c0,20.663,16.752,37.418,37.414,37.418h69.667V168.844H37.414 C16.752,168.844,0,185.591,0,206.254z"
+                    style={{
+                        fill: "rgb(75, 75, 75)",
+                    }}
+                />
+                <path
+                    className="st0"
+                    d="M280.326,99.026c-3.768-2.31-8.464-2.5-12.403-0.494l-138.431,70.313v174.319l138.431,70.313 c3.94,1.996,8.635,1.806,12.403-0.503c3.764-2.31,6.059-6.416,6.059-10.826V109.86C286.386,105.441,284.09,101.335,280.326,99.026z "
+                    style={{
+                        fill: "rgb(75, 75, 75)",
+                    }}
+                />
+                <path
+                    className="st0"
+                    d="M408.522,162.666c-5.066-5.626-13.725-6.073-19.346-1.007c-5.618,5.057-6.068,13.715-1.007,19.341 c19.15,21.252,28.713,48.074,28.718,75c-0.005,26.936-9.567,53.756-28.713,74.998c-5.066,5.618-4.615,14.285,1.002,19.351 c5.617,5.056,14.28,4.61,19.341-1.007c23.842-26.451,35.775-59.944,35.765-93.342C444.291,222.61,432.358,189.107,408.522,162.666z "
+                    style={{
+                        fill: "rgb(75, 75, 75)",
+                    }}
+                />
+                <path
+                    className="st0"
+                    d="M458.88,117.33c-5.061-5.617-13.72-6.064-19.342-0.998c-5.622,5.056-6.073,13.715-1.007,19.341 c30.722,34.092,46.068,77.156,46.077,120.326c-0.01,43.168-15.355,86.232-46.077,120.334c-5.066,5.618-4.614,14.276,1.007,19.342 c5.622,5.066,14.28,4.62,19.346-1.008C494.289,355.367,512.01,305.631,512,256C512.01,206.368,494.289,156.631,458.88,117.33z"
+                    style={{
+                        fill: "rgb(75, 75, 75)",
+                    }}
+                />
+                <path
+                    className="st0"
+                    d="M338.764,207.032c-5.622,5.057-6.073,13.725-1.007,19.342c7.594,8.43,11.362,18.98,11.371,29.626 c-0.009,10.644-3.777,21.194-11.371,29.634c-5.066,5.618-4.614,14.276,1.007,19.341c5.622,5.066,14.28,4.609,19.341-1.007 c12.261-13.601,18.43-30.832,18.415-47.968c0.015-17.137-6.154-34.359-18.415-47.96 C353.044,202.414,344.382,201.967,338.764,207.032z"
+                    style={{
+                        fill: "rgb(75, 75, 75)",
+                    }}
+                />
+            </g>
+        </svg>
+    );
+}
+export function MuteSvg() {
+    return (
+        <svg
+            id="_x32_"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlnsXlink="http://www.w3.org/1999/xlink"
+            x="0px"
+            y="0px"
+            viewBox="0 0 512 512"
+            style={{
+                width: 32,
+                height: 32,
+                opacity: 1,
+            }}
+            xmlSpace="preserve">
+            <style type="text/css">{"\n\t.st0{fill:#4B4B4B;}\n"}</style>
+            <g>
+                <path
+                    className="st0"
+                    d="M0,204.883V307.12c0,21.22,17.212,38.437,38.442,38.437h71.582V166.446H38.442 C17.212,166.446,0,183.653,0,204.883z"
+                    style={{
+                        fill: "rgb(75, 75, 75)",
+                    }}
+                />
+                <path
+                    className="st0"
+                    d="M288.033,94.716c-3.872-2.382-8.696-2.568-12.744-0.517l-142.237,72.246v179.112l142.237,72.246 c4.048,2.051,8.872,1.856,12.744-0.517c3.872-2.373,6.226-6.582,6.226-11.123V105.839 C294.259,101.298,291.905,97.089,288.033,94.716z"
+                    style={{
+                        fill: "rgb(75, 75, 75)",
+                    }}
+                />
+                <path
+                    className="st0"
+                    d="M453.117,253.467l54.386-54.394c5.996-5.996,5.996-15.713,0-21.709c-5.996-5.996-15.713-5.996-21.709,0 l-54.386,54.385l-54.394-54.385c-5.997-5.996-15.713-5.996-21.709,0c-5.997,5.996-5.997,15.713,0,21.709l54.384,54.394 l-54.384,54.385c-5.997,5.996-5.997,15.713,0,21.709c5.996,5.996,15.712,5.996,21.709,0l54.394-54.386l54.386,54.386 c5.996,5.996,15.713,5.996,21.709,0c5.996-5.996,5.996-15.713,0-21.709L453.117,253.467z"
+                    style={{
+                        fill: "rgb(75, 75, 75)",
+                    }}
+                />
+            </g>
+        </svg>
+    );
+}
+export function GearSvg() {
+    return (
+        <svg
+            id="_x32_"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlnsXlink="http://www.w3.org/1999/xlink"
+            x="0px"
+            y="0px"
+            viewBox="0 0 512 512"
+            style={{
+                width: 32,
+                height: 32,
+                opacity: 1,
+            }}
+            xmlSpace="preserve">
+            <style type="text/css">{"\n\t.st0{fill:#4B4B4B;}\n"}</style>
+            <g>
+                <path
+                    className="st0"
+                    d="M499.453,210.004l-55.851-2.58c-5.102-0.23-9.608-3.395-11.546-8.103l-11.508-27.695 c-1.937-4.728-0.997-10.145,2.455-13.914l37.668-41.332c4.718-5.188,4.546-13.205-0.421-18.182l-46.434-46.443 c-4.986-4.967-13.003-5.159-18.2-0.412l-41.312,37.668c-3.778,3.443-9.206,4.402-13.924,2.436l-27.694-11.488 c-4.718-1.946-7.864-6.454-8.094-11.565l-2.589-55.831C301.675,5.534,295.883,0,288.864,0h-65.708 c-7.02,0-12.831,5.534-13.156,12.562l-2.571,55.831c-0.23,5.111-3.376,9.618-8.094,11.565L171.64,91.447 c-4.737,1.966-10.165,1.007-13.924-2.436l-41.331-37.668c-5.198-4.746-13.215-4.564-18.201,0.412L51.769,98.198 c-4.986,4.977-5.158,12.994-0.422,18.182l37.668,41.332c3.452,3.769,4.373,9.186,2.416,13.914l-11.469,27.695 c-1.956,4.708-6.444,7.873-11.564,8.103l-55.832,2.58c-7.019,0.316-12.562,6.118-12.562,13.147v65.699 c0,7.019,5.543,12.83,12.562,13.148l55.832,2.579c5.12,0.229,9.608,3.394,11.564,8.103l11.469,27.694 c1.957,4.728,1.036,10.146-2.416,13.914l-37.668,41.313c-4.756,5.217-4.564,13.224,0.403,18.201l46.471,46.443 c4.967,4.977,12.965,5.15,18.182,0.422l41.312-37.677c3.759-3.443,9.207-4.392,13.924-2.435l27.694,11.478 c4.719,1.956,7.864,6.464,8.094,11.575l2.571,55.831c0.325,7.02,6.136,12.562,13.156,12.562h65.708 c7.02,0,12.812-5.542,13.138-12.562l2.589-55.831c0.23-5.111,3.376-9.619,8.094-11.575l27.694-11.478 c4.718-1.957,10.146-1.008,13.924,2.435l41.312,37.677c5.198,4.728,13.215,4.555,18.2-0.422l46.434-46.443 c4.967-4.977,5.139-12.984,0.421-18.201l-37.668-41.313c-3.452-3.768-4.412-9.186-2.455-13.914l11.508-27.694 c1.937-4.709,6.444-7.874,11.546-8.103l55.851-2.579c7.019-0.318,12.542-6.129,12.542-13.148v-65.699 C511.995,216.122,506.472,210.32,499.453,210.004z M256.01,339.618c-46.164,0-83.622-37.438-83.622-83.612 c0-46.184,37.458-83.622,83.622-83.622s83.602,37.438,83.602,83.622C339.612,302.179,302.174,339.618,256.01,339.618z"
+                    style={{
+                        fill: "rgb(75, 75, 75)",
+                    }}
+                />
+            </g>
         </svg>
     );
 }

@@ -5,22 +5,25 @@ import { use, useEffect, useRef, useState } from "react";
 import { RESOLUTION, StageType, STEP } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
-import { useAuth } from "@/app/context";
+import { useAuth, useStage } from "@/app/context";
 import { ArrowButton, LeftSvg, Loading, RestartSvg } from "@/app/components";
-import { getStage } from "@/app/fetch";
-import { glitch } from "@/game/base";
+import { BgmPath, glitch, playBgm, playSfx } from "@/game/base";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
     const cnvWrapperRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<Application | null>(null);
-    const { user, changeUserData } = useAuth();
+    const { user, changeData } = useAuth();
+    const { getStageById } = useStage();
     const [restarter, setRestarter] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const stageRef = useRef<StageType | null>(null);
     let loopId: number;
 
+    useEffect(() => {
+        playBgm(`/bgm${Math.floor(Math.random() * 7)}.mp3` as BgmPath);
+    }, [id]);
     useEffect(() => {
         setIsComplete(false);
         setIsLoading(true);
@@ -38,7 +41,8 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             $cnv = app.canvas;
             $cnv.id = "main";
             cnvWrapperRef.current?.appendChild($cnv);
-            if (!stageRef.current) stageRef.current = await getStage(id);
+            const stageFromContext = getStageById(id);
+            if (stageFromContext) stageRef.current = stageFromContext;
             if (!stageRef.current) return;
             await loadStage(stageRef.current.code, app);
             setIsLoading(false);
@@ -53,7 +57,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 accumulator += dt ? dt : 0;
                 while (accumulator >= STEP) {
                     update(async () => {
-                        if (user && !user.completedOnlineStageIds.includes(id)) changeUserData({ completedOnlineStageIds: [...user.completedOnlineStageIds, id] });
+                        if (user && !user.completedOnlineStageIds.includes(id)) changeData({ completedOnlineStageIds: [...user.completedOnlineStageIds, id] });
                         setIsComplete(true);
                     }, app);
                     accumulator -= STEP;
@@ -67,7 +71,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             window.cancelAnimationFrame(loopId);
             app.destroy(true, { children: true });
         };
-    }, [id, restarter]);
+    }, [id, restarter, getStageById, changeData]);
 
     return (
         <div className="gameScreen backGround">
@@ -78,6 +82,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 onClick={(e) => {
                     e.preventDefault();
                     if (!appRef.current) return;
+                    playSfx("/restart.mp3", null);
                     glitch(appRef.current, 300);
                     setTimeout(() => setRestarter(restarter + 1), 300);
                 }}>

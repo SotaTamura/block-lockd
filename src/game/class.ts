@@ -1,6 +1,6 @@
 import { Angle, BLOCK_STRENGTH, CORNER_LEN, Direction, MOVE_BLOCK_STRENGTH, MOVE_OBJ_CORNER_LEN, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH, Side, PLAYER_SPEED } from "@/constants";
 import { Sprite, Container, Application } from "pixi.js";
-import { stateChangeTexture, drawSprite, xFlipTexture, pressingEvent, rotate } from "./base";
+import { stateChangeTexture, drawSprite, xFlipTexture, pressingEvent, rotate, playSfx, stopSfx, SfxPath } from "./base";
 
 // 箱
 export class Box {
@@ -101,6 +101,7 @@ export abstract class GameObj {
     nextBlock: Record<Side, GameObj | null>;
     inLadder: Ladder | null;
     container: Container;
+    playedSfxs: SfxPath[];
     constructor(
         x: number,
         y: number,
@@ -121,7 +122,7 @@ export abstract class GameObj {
         textureState: string,
         isSolid: boolean,
         strength: number,
-        cornerLen: number = CORNER_LEN
+        cornerLen: number = CORNER_LEN,
     ) {
         this.x = x;
         this.y = y;
@@ -139,6 +140,7 @@ export abstract class GameObj {
         this.nextBlock = { t: null, b: null, l: null, r: null };
         this.inLadder = null;
         this.container = new Container();
+        this.playedSfxs = [];
     }
     get boundingBox(): { l: number; r: number; t: number; b: number } {
         const allBoxes = [...this.hitboxes, ...this.spriteBoxes];
@@ -412,7 +414,7 @@ export abstract class GameObj {
                                 distanceY + spriteBox.relY,
                                 spriteBox.r - entrance.l,
                                 spriteBox.h,
-                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h)
+                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h),
                             );
                             spriteBox.counterpart.r.counterpart.l = spriteBox;
                             this.spriteBoxes.push(spriteBox.counterpart.r);
@@ -469,7 +471,7 @@ export abstract class GameObj {
                                 distanceY + spriteBox.relY,
                                 entrance.r - spriteBox.l,
                                 spriteBox.h,
-                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h)
+                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h),
                             );
                             spriteBox.counterpart.l.counterpart.r = spriteBox;
                             this.spriteBoxes.push(spriteBox.counterpart.l);
@@ -528,7 +530,7 @@ export abstract class GameObj {
                                 exit.b - this.y,
                                 spriteBox.w,
                                 spriteBox.b - entrance.t,
-                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h)
+                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h),
                             );
                             spriteBox.counterpart.d.counterpart.u = spriteBox;
                             this.spriteBoxes.push(spriteBox.counterpart.d);
@@ -585,7 +587,7 @@ export abstract class GameObj {
                                 exit.t - entrance.b + spriteBox.relY,
                                 spriteBox.w,
                                 entrance.b - spriteBox.t,
-                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h)
+                                new Box(this, distanceX + spriteBox.origin.relX, distanceY + spriteBox.origin.relY, spriteBox.origin.w, spriteBox.origin.h),
                             );
                             spriteBox.counterpart.u.counterpart.d = spriteBox;
                             this.spriteBoxes.push(spriteBox.counterpart.u);
@@ -698,7 +700,8 @@ export class Player extends GameObj {
                 } else {
                     this.vy = -PLAYER_SPEED;
                 } //梯子を登る
-            } else if (pressingEvent.d) this.vy = PLAYER_SPEED; // 梯子を下る
+            } else if (pressingEvent.d)
+                this.vy = PLAYER_SPEED; // 梯子を下る
             else this.vy = 0;
         }
     }
@@ -715,12 +718,28 @@ export class Player extends GameObj {
     }
     handleTexture() {
         if (this.inLadder) {
-            if (pressingEvent.u || pressingEvent.d) stateChangeTexture(this, "ladderMove");
-            else stateChangeTexture(this, "ladderIdle");
-        } else if (!this.nextBlock.b) stateChangeTexture(this, "jump");
-        else {
-            if (pressingEvent.l || pressingEvent.r) stateChangeTexture(this, "walk");
-            else stateChangeTexture(this, "idle");
+            if (pressingEvent.u || pressingEvent.d) {
+                stateChangeTexture(this, "ladderMove");
+                playSfx("/ladder.mp3", this, 3, true);
+            } else {
+                stateChangeTexture(this, "ladderIdle");
+                stopSfx("/ladder.mp3", this);
+            }
+            stopSfx("/walk.mp3", this);
+        } else {
+            if (!this.nextBlock.b) {
+                stateChangeTexture(this, "jump");
+                stopSfx("/walk.mp3", this);
+            } else {
+                if (pressingEvent.l || pressingEvent.r) {
+                    stateChangeTexture(this, "walk");
+                    playSfx("/walk.mp3", this, 5, true);
+                } else {
+                    stateChangeTexture(this, "idle");
+                    stopSfx("/walk.mp3", this);
+                }
+            }
+            stopSfx("/ladder.mp3", this);
         }
     }
 }
@@ -788,7 +807,7 @@ export class Portal extends GameObj implements hasTriggers {
             "portal",
             "front",
             true,
-            BLOCK_STRENGTH
+            BLOCK_STRENGTH,
         );
         this.id = id;
         this.triggers = [new Box(this, 0, 0, w, h / 2)];

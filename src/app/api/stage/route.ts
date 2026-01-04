@@ -3,30 +3,25 @@ import { PrismaClient } from "@/generated/prisma";
 
 const prisma = new PrismaClient();
 
-export const GET = async (_req: NextRequest) => {
+export const GET = async () => {
     try {
-        const stages = await prisma.stage.findMany({ where: { access: 0 } });
-        const creatorIds = stages.map((stage) => stage.creatorId);
-        const creators = await prisma.user.findMany({
-            where: {
-                id: {
-                    in: creatorIds,
-                },
-            },
+        const stages = await prisma.stage.findMany({
+            where: { access: 0 },
+            include: { creator: true },
         });
-        const creatorMap = new Map(creators.map((creator) => [creator.id, creator.name]));
         return NextResponse.json(
             {
                 message: "success",
                 stages: stages.map((stage) => ({
                     ...stage,
-                    creatorName: creatorMap.get(stage.creatorId) || "不明",
+                    creatorId: stage.creatorId || "",
+                    creatorName: stage.creator?.name || "Unknown",
                 })),
             },
-            { status: 200 }
+            { status: 200 },
         );
-    } catch (err) {
-        return NextResponse.json({ message: "error", err }, { status: 500 });
+    } catch (error) {
+        return NextResponse.json({ message: "error", error }, { status: 500 });
     }
 };
 
@@ -37,7 +32,7 @@ export const POST = async (req: NextRequest) => {
             data: { title, creatorId, description, code, access },
         });
         return NextResponse.json({ message: "success", stage: stage }, { status: 201 });
-    } catch (err) {
-        return NextResponse.json({ message: "error", err }, { status: 500 });
+    } catch (error) {
+        return NextResponse.json({ message: "error", error }, { status: 500 });
     }
 };

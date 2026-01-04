@@ -66,7 +66,7 @@ export const STAGES: Record<
         hint: "押しブロック\n左右に押せる\nジャンプで上に押し上げることもできる\n複数まとめて押せる\nポータルでテレポートする",
     },
     16: {
-        code: "H4sIAAAAAAAAAz1POQ7DMAz7kFBY8qHYmgrkLRkz9v0lFbdwBlI8pNzLpODNuIAUSFtCgC464ua4Jw3z5dD5vcNOkCn66mKgeq4jNZMqFvrUYVTAPkmGNGAKLghldaGhh/qqvOLnxRiW+hBFrsHE5MAz2gfMfdtx6L9aGfbw3VKxZbICd9GADRnzpVyR6sGq1PIP2ha1fQFmQJIIHQEAAA==",
+        code: "H4sIAAAAAAAAAz1Pyw7DMAj7ITTVJCRrOE3qt+zY475/Nu0mcsD4ATmX28ba880O7NCrZROGkafGUTB9rkle75V+EOyGR5gT4ljP4tyaeeKK42gj+hQY1tmLmEZTRW8SRGKupit+Wo4paRcAfZ0iOQfLJR8Uxy3nof9oyDzyoEApzcA9u0J4mSTcUca5oCXF6iNRXP0vbhL9C71u8gYfAQAA",
         hint: "階段を作ろう",
     },
     17: {
@@ -90,7 +90,7 @@ export const STAGES: Record<
         hint: "操作には慣れてきたかな?",
     },
     22: {
-        code: "H4sIAAAAAAAAA0VQO67DMAy7EBFEshUn9tQiY8eeIWPHd/5Hyv3ACylRpKxXd6x8VsaL0GAGH39ZtbIECJYY1yxU7B8Y35HAzrJGHE1qGlzJNk58NCu2rFr6DL96o4M6jtvwBykt4UlbrzPMWo4UDvtJiafoPgkVla37sLPbCl+0CcWaCrbMUYWLFnnjEF6nc3Bd1m3iXdi/Gm4/7Nk3KD8Y87Y1NObUuSKC3zvYPKAbEbEXONjVV3ghWvCiJsc8ZgZkxdaZICJpXq5IcGatcKPy05u+y1UfYrsIj8d/KMlQ/wFhUc+ZyAEAAA==",
+        code: "H4sIAAAAAAAAA0VQO67DMAy7kBBEkn+xpxYZO/YMGTu+8z9SalBkIWmKYvSZJjs+9fUBVFEVW3+hqm9VALa6rhSKjBtWUcuRKgMyR0w63Qi4gjVM3J5dWqgaOcuu2ZHAF5fHshcoIkEMtM+Sy7THiGPYTlg8TM8kcBQoz6Xn1F1sYxOYOVXxhPhC7CzCXiVfmhy0JskWiQex3aYYaUvfswlLGHZ9s1V6xEVPqd+f9/h5HvIAPoRnO9ADwThhn4zAnRGIIys3xH1jYSi65z4SWjOPhjM0R0P/+ZUXQPUX2SBxhIzYpFL+AW7djN7bAQAA",
         hint: "ブロックをポータル間に跨らせた状態で静止させてみよう",
     },
 };

@@ -1,6 +1,6 @@
 import { Application, BitmapText } from "pixi.js";
 import { Block, Button, GameObj, Key, Ladder, Lever, MoveBlock, Oneway, Player, Portal, PushBlock } from "./class";
-import { blockDashLine, stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites } from "./base";
+import { blockDashLine, stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites, playSfx, stopBgm } from "./base";
 import { Angle, GRAVITY, JUMP_SPEED, MAP_BLOCK_LEN, PLAYER_STRENGTH, UNIT, MOVE_BLOCK_SPEED, colorMap, parseBase, PROPS_LEN } from "@/constants";
 import { EditorObj } from "@/app/editor/stageEditor";
 import { gunzipSync } from "zlib";
@@ -159,17 +159,20 @@ export const loadStage = async (data: string | EditorObj[], app: Application) =>
 };
 export let isComplete = false;
 export const update = (handleComplete: () => void, app: Application) => {
+    if (!app.renderer) return;
     // 鍵
     for (const key of keys)
         if (players.some((player) => player.isColliding(key.triggers[0]))) {
             remove(key);
             activate(key.color);
+            playSfx("/key.mp3", key, 5);
         }
     // レバー
     for (const lever of levers) {
         const isColliding = players.some((player) => player.isColliding(lever.triggers[0]));
         if (isColliding) {
             if (!lever.isBeingContacted) {
+                playSfx("/lever.mp3", lever, 5);
                 activate(lever.color);
                 stateChangeTexture(lever, lever.state === "on" ? "off" : "on");
                 lever.isBeingContacted = true;
@@ -183,6 +186,7 @@ export const update = (handleComplete: () => void, app: Application) => {
         const isPressed = [...players, ...pushBlocks, ...moveBlocks].some((obj) => obj.isColliding(button.triggers[0]));
         if (isPressed) {
             if (!button.isPressed) {
+                playSfx("/button.mp3", button, 5);
                 activate(button.color);
                 stateChangeTexture(button, "on");
                 button.isPressed = true;
@@ -258,6 +262,7 @@ export const update = (handleComplete: () => void, app: Application) => {
                 if (bottom) {
                     obj.vy = JUMP_SPEED;
                     obj.strength.t = PLAYER_STRENGTH;
+                    playSfx("/jump.mp3", obj);
                 }
             }
             obj.collideTop(otherSolidObjs); // 天井衝突
@@ -276,6 +281,8 @@ export const update = (handleComplete: () => void, app: Application) => {
             // ゴール
             remove(player);
             if (players.length === 0) {
+                stopBgm();
+                playSfx("/goal.mp3", null, 3);
                 handleComplete();
             }
         }
