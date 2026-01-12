@@ -83,6 +83,19 @@ export const postLogin = async (loginData: Pick<UserType, "name" | "password">) 
         body: JSON.stringify(loginData),
     });
 
+// project://src/app/api/user/me/route.ts
+export const getUserMe = async (): Promise<Omit<UserType, "password"> | null> => {
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/me`, { cache: "no-store" });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.user || null;
+    } catch (err) {
+        throwError(err);
+        return null;
+    }
+};
+
 // project://src/app/api/user/[id]/route.ts
 export const getUser = async (userId: number): Promise<Omit<UserType, "password"> | null> => {
     try {

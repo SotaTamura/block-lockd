@@ -3,7 +3,7 @@
 import { UserType } from "@/constants";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useState, ReactNode, useCallback } from "react";
-import { putUser, throwError } from "./fetch";
+import { getUserMe, putUser, throwError } from "./fetch";
 import { StageType } from "@/constants";
 
 // 認証
@@ -12,6 +12,7 @@ interface AuthContextType {
     login: (userData: Omit<UserType, "password">) => void;
     logout: () => void;
     changeUserData: (newUserData: Partial<Omit<UserType, "id">>) => void;
+    checkUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,7 +49,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    return <AuthContext.Provider value={{ user, login, logout, changeUserData }}>{children}</AuthContext.Provider>;
+    const checkUser = useCallback(async () => {
+        setUser(await getUserMe());
+    }, []);
+
+    return <AuthContext.Provider value={{ user, login, logout, changeUserData, checkUser }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
