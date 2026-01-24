@@ -6,9 +6,8 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowButton, BucketSvg, Checkbox, CheckSvg, EraserSvg, LeftSvg, MoveSvg, PencilSvg, ResizeSvg, RestartSvg, RestartSvgWhite, RotateRightSvg, Toggle, TrashSvg } from "@/app/components";
 import { Angle, MAP_BLOCK_LEN, TextureName, RESOLUTION, STEP, UNIT, textureMap, colorMap, nameStateMap, π, StageType, convertBase, parseBase, PROPS_LEN, EditorTool, toolMap } from "@/constants";
 import { loadStage, update } from "@/game/main";
-import { Application, Container, Graphics, isMobile, Sprite, Texture, Rectangle, FederatedPointerEvent, BitmapText, Cursor, Ticker } from "pixi.js";
+import { Application, Container, Graphics, isMobile, Sprite, Texture, Rectangle, FederatedPointerEvent, BitmapText, Cursor } from "pixi.js";
 import { getRotatedTexture, glitch } from "@/game/base";
-import { deleteStage, postStage, putStage } from "../fetch";
 import { gunzipSync, gzipSync } from "zlib";
 
 export class EditorObj {
@@ -36,7 +35,7 @@ export class EditorObj {
         onContainerClick: (e: FederatedPointerEvent, obj: EditorObj) => void,
         onContainerHover: (obj: EditorObj) => void,
         onResizeDotClick: (obj: EditorObj) => void,
-        currentSelectedTool: EditorTool
+        currentSelectedTool: EditorTool,
     ) {
         this.gid = gid;
         this.x = x;
@@ -170,7 +169,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 handleContainerClick,
                 handleContainerHover,
                 handleResizeDotClick,
-                selectedToolRef.current
+                selectedToolRef.current,
             );
             app.stage.addChild(newObj.container);
             let i = editorObjsRef.current.length;
@@ -512,7 +511,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                         const base64Mask = convertBase(mask, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_");
                         return base64Mask + ":" + maskedProps.join(",");
                     })
-                    .join(";")
+                    .join(";"),
             ).toString("base64");
             if (!code) {
                 window.alert("ステージに何も設置されていません。");
@@ -526,14 +525,18 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 if ((checkChange && (initData?.title !== title || initData.description !== description || initData.code !== code) && window.confirm("変更を保存しますか？")) || !checkChange) {
                     setIsLoading(true);
                     if (initData) {
-                        await putStage({
-                            id: initData.id,
-                            ...newData,
+                        // project://src/app/api/stage/[id]/route.ts
+                        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/${initData.id}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: initData.id, ...newData }),
                         });
                     } else {
-                        await postStage({
-                            creatorId: user.id,
-                            ...newData,
+                        //project://src/app/api/stage/route.ts
+                        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ creatorId: user.id, ...newData }),
                         });
                     }
                     setIsLoading(false);
@@ -548,7 +551,11 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         e.preventDefault();
         if (user && window.confirm("本当にこのステージを削除しますか？")) {
             setIsLoading(true);
-            const res = await deleteStage(initData?.id as number);
+            // project://src/app/api/stage/[id]/route.ts
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/${initData?.id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+            });
             if (res.ok) {
                 window.alert("ステージを削除しました。");
                 router.push("/editor");

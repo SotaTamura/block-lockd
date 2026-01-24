@@ -2,33 +2,24 @@
 
 import { LeftSvg, Loading } from "@/app/components";
 import { useAuth } from "@/app/context";
-import { postUser, throwError } from "@/app/fetch";
 import Link from "next/link";
 import React, { useRef, useState } from "react";
 
 export default function SignupPage() {
-    const { login } = useAuth();
+    const { signup } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const nameRef = useRef<HTMLInputElement | null>(null);
     const passwordRef = useRef<HTMLInputElement | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!nameRef.current?.value || !passwordRef.current?.value) {
+        const name = nameRef.current?.value;
+        const password = passwordRef.current?.value;
+        if (!name || !password) {
             window.alert("ユーザー名とパスワードは必須です。");
         } else {
             setIsLoading(true);
-            try {
-                const res = await postUser({ name: nameRef.current.value, password: passwordRef.current.value });
-                const data = await res.json();
-                if (res.ok) {
-                    login(data.user);
-                } else {
-                    alert(data.message);
-                }
-            } catch (err) {
-                throwError(err);
-            }
+            signup(name, password);
             setIsLoading(false);
         }
     };

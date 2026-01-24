@@ -7,7 +7,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     try {
         const stages = await prisma.stage.findMany({
             where: {
-                creatorId: Number((await params).id),
+                creatorId: (await params).id,
             },
         });
         const creatorIds = stages.map((stage) => stage.creatorId);
@@ -27,9 +27,9 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
                     creatorName: creatorMap.get(stage.creatorId) || "Unknown",
                 })),
             },
-            { status: 200 }
+            { status: 200 },
         );
-    } catch (err) {
-        return NextResponse.json({ message: "error", err }, { status: 500 });
+    } catch (error) {
+        return NextResponse.json({ message: "error", error }, { status: 500 });
     }
 };

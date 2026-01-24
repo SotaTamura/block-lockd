@@ -1,6 +1,6 @@
 import { Angle, Direction, UNIT, π } from "@/constants";
 import { Block, Box, GameObj, isColorable, Portal, SpriteBox } from "./class";
-import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application, Container, Ticker } from "pixi.js";
+import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application } from "pixi.js";
 import { gameObjs } from "./main";
 import { GlitchFilter } from "pixi-filters";
 
@@ -272,7 +272,7 @@ export const glitch = (app: Application, time: number) => {
     });
     app.stage.filters = [glitchFilter];
     let count = 0;
-    const ticker = (_ticker: Ticker) => {
+    const ticker = () => {
         if (count % 4 === 0) {
             glitchFilter.seed = Math.random();
             glitchFilter.offset = (Math.random() - 0.5) * 200;

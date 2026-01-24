@@ -13,16 +13,15 @@ datasource db {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   title String
-  creatorId Int
+  creatorId String
   description String
   code String
   access Int
  }
 
 model User {
-  id Int @id @default(autoincrement())
+  id String @id
   name String @unique
-  password String
   completedStageIds Int[] @default([])
   completedOnlineStageIds Int[] @default([])
 }

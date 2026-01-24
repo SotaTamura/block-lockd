@@ -7,14 +7,13 @@ import Link from "next/link";
 import { loadStage, update } from "@/game/main";
 import { useAuth, useStage } from "@/app/context";
 import { ArrowButton, LeftSvg, Loading, RestartSvg } from "@/app/components";
-import { getStage, throwError } from "@/app/fetch";
 import { glitch } from "@/game/base";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
     const cnvWrapperRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<Application | null>(null);
-    const { user, changeUserData } = useAuth();
+    const { user, changeData } = useAuth();
     const { getStageById } = useStage();
     const [restarter, setRestarter] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
@@ -55,7 +54,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 accumulator += dt ? dt : 0;
                 while (accumulator >= STEP) {
                     update(async () => {
-                        if (user && !user.completedOnlineStageIds.includes(id)) changeUserData({ completedOnlineStageIds: [...user.completedOnlineStageIds, id] });
+                        if (user && !user.completedOnlineStageIds.includes(id)) changeData({ completedOnlineStageIds: [...user.completedOnlineStageIds, id] });
                         setIsComplete(true);
                     }, app);
                     accumulator -= STEP;
@@ -69,7 +68,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             window.cancelAnimationFrame(loopId);
             app.destroy(true, { children: true });
         };
-    }, [id, restarter, getStageById, user, changeUserData]);
+    }, [id, restarter, getStageById, changeData]);
 
     return (
         <div className="gameScreen backGround">

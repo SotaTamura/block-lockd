@@ -3,7 +3,7 @@ import { PrismaClient } from "@/generated/prisma";
 
 const prisma = new PrismaClient();
 
-export const GET = async (_req: NextRequest) => {
+export const GET = async () => {
     try {
         const stages = await prisma.stage.findMany({ where: { access: 0 } });
         const creatorIds = stages.map((stage) => stage.creatorId);
@@ -23,10 +23,10 @@ export const GET = async (_req: NextRequest) => {
                     creatorName: creatorMap.get(stage.creatorId) || "不明",
                 })),
             },
-            { status: 200 }
+            { status: 200 },
         );
-    } catch (err) {
-        return NextResponse.json({ message: "error", err }, { status: 500 });
+    } catch (error) {
+        return NextResponse.json({ message: "error", error }, { status: 500 });
     }
 };
 
@@ -37,7 +37,7 @@ export const POST = async (req: NextRequest) => {
             data: { title, creatorId, description, code, access },
         });
         return NextResponse.json({ message: "success", stage: stage }, { status: 201 });
-    } catch (err) {
-        return NextResponse.json({ message: "error", err }, { status: 500 });
+    } catch (error) {
+        return NextResponse.json({ message: "error", error }, { status: 500 });
     }
 };

@@ -22,16 +22,15 @@ export type StageType = {
     createdAt: Date;
     updatedAt: Date;
     title: string;
-    creatorId: number;
+    creatorId: string;
     creatorName: string;
     description: string;
     code: string;
     access: number;
 };
 export type UserType = {
-    id: number;
+    id: string;
     name: string;
-    password: string;
     completedStageIds: number[];
     completedOnlineStageIds: number[];
 };

@@ -14,7 +14,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
     const cnvWrapperRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<Application | null>(null);
-    const { user, changeUserData } = useAuth();
+    const { user, changeData } = useAuth();
     const [restarter, setRestarter] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
     const [isHintShowed, setIsHintShowed] = useState(false);
@@ -52,7 +52,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 accumulator += dt ? dt : 0;
                 while (accumulator >= STEP) {
                     update(async () => {
-                        if (user && !user.completedStageIds.includes(id)) changeUserData({ completedStageIds: [...user.completedStageIds, id] });
+                        if (user && !user.completedStageIds.includes(id)) changeData({ completedStageIds: [...user.completedStageIds, id] });
                         setIsComplete(true);
                     }, app);
                     accumulator -= STEP;

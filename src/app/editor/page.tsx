@@ -4,7 +4,6 @@ import { useAuth, useStage } from "@/app/context";
 import { StageType } from "@/constants";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { getStagesByUser } from "../fetch";
 import { useRouter } from "next/navigation";
 import { LeftSvg, Loading, PencilSvg, PlayButton } from "../components";
 
@@ -21,7 +20,17 @@ export default function MyLobby() {
         } else {
             (async () => {
                 setIsLoading(true);
-                setStages((await getStagesByUser(user.id)).reverse());
+                try {
+                    // project://src/app/api/stage/user/[id]/route.ts
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/user/${user.id}`, {
+                        cache: "no-store",
+                    });
+                    if (!res.ok) setStages([]);
+                    setStages(((await res.json()).stages || []).reverse());
+                } catch (error) {
+                    alert(error);
+                    setStages([]);
+                }
                 setIsLoading(false);
             })();
         }

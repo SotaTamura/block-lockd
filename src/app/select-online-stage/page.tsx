@@ -1,9 +1,7 @@
 "use client";
 
-import { StageType } from "@/constants";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { getAllStages } from "../fetch";
 import { Checkbox, LeftSvg, Loading, PlayButton } from "../components";
 import { useAuth, useStage } from "../context";
 
@@ -16,7 +14,17 @@ export default function Lobby() {
     useEffect(() => {
         (async () => {
             setIsLoading(true);
-            setStages((await getAllStages()).reverse());
+            try {
+                // project://src/app/api/stage/route.ts
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
+                    cache: "no-store",
+                });
+                if (!res.ok) setStages([]);
+                setStages(((await res.json()).stages || []).reverse());
+            } catch (error) {
+                alert(error);
+                setStages([]);
+            }
             setIsLoading(false);
         })();
     }, [setStages]);
