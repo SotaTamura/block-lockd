@@ -63,7 +63,7 @@ export default function App({ children }: { children: React.ReactNode }) {
         })();
     }, []);
     return (
-        <>
+        <div suppressHydrationWarning>
             {isInitLoading || (isAudioLoading && <Loading />)}
             {!isAudioSelected && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center w-full h-full bg-[#333]">
@@ -91,6 +91,6 @@ export default function App({ children }: { children: React.ReactNode }) {
                 </div>
             )}
             {children}
-        </>
+        </div>
     );
 }

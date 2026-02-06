@@ -317,15 +317,35 @@ export async function loadAudio(path: BgmPath | SfxPath): Promise<AudioBuffer> {
     return await ctx.decodeAudioData(await (await fetch(path)).arrayBuffer());
 }
 export async function loadAllBgm() {
-    const buffers = await Promise.all(BGM_PATHS.map((p) => loadAudio(p)));
+    const buffers = await Promise.all(
+        BGM_PATHS.map(async (p) => {
+            try {
+                return await loadAudio(p);
+            } catch (e) {
+                console.error(`Failed to load BGM: ${p}`, e);
+                return null;
+            }
+        }),
+    );
     BGM_PATHS.forEach((p, i) => {
-        bgmBuffers.set(p, buffers[i]);
+        const buffer = buffers[i];
+        if (buffer) bgmBuffers.set(p, buffer);
     });
 }
 export async function loadAllSfx() {
-    const buffers = await Promise.all(SFX_PATHS.map((p) => loadAudio(p)));
+    const buffers = await Promise.all(
+        SFX_PATHS.map(async (p) => {
+            try {
+                return await loadAudio(p);
+            } catch (e) {
+                console.error(`Failed to load SFX: ${p}`, e);
+                return null;
+            }
+        }),
+    );
     SFX_PATHS.forEach((p, i) => {
-        sfxBuffers.set(p, buffers[i]);
+        const buffer = buffers[i];
+        if (buffer) sfxBuffers.set(p, buffer);
     });
 }
 export function stopBgm() {
