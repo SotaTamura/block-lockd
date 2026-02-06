@@ -1,25 +1,35 @@
 "use client";
 
 import { LeftSvg, Loading } from "@/app/components";
-import { useAuth } from "@/app/context";
+import { useAuth, useSettings } from "@/app/context";
+import { TranslatableString, translate } from "@/app/translate";
+import { playBgm } from "@/game/base";
 import Link from "next/link";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export default function SignupPage() {
     const { signup } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const nameRef = useRef<HTMLInputElement | null>(null);
     const passwordRef = useRef<HTMLInputElement | null>(null);
+    const {
+        settings: { lang },
+    } = useSettings();
+    const t = (str: TranslatableString) => translate(str, lang);
+
+    useEffect(() => {
+        playBgm("/menu.mp3");
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const name = nameRef.current?.value;
         const password = passwordRef.current?.value;
         if (!name || !password) {
-            window.alert("ユーザー名とパスワードは必須です。");
+            window.alert(t("ユーザー名とパスワードは必須です。"));
         } else {
             setIsLoading(true);
-            signup(name, password);
+            await signup(name, password);
             setIsLoading(false);
         }
     };
@@ -40,12 +50,12 @@ export default function SignupPage() {
                         maxWidth: "500px",
                     }}>
                     <h1 className="font-bold text-center" style={{ fontSize: "8dvmin", marginBottom: "3dvmin" }}>
-                        新規登録
+                        {t("新規登録")}
                     </h1>
                     <form className="flex flex-col items-center space-y-[2dvmin]" onSubmit={handleSubmit} style={{ fontSize: "2.5dvmin" }}>
                         <div className="w-full">
                             <label htmlFor="name" className="block" style={{ marginBottom: "1dvmin", fontSize: "4dvmin" }}>
-                                ユーザー名
+                                {t("ユーザー名")}
                             </label>
                             <input
                                 ref={nameRef}
@@ -59,7 +69,7 @@ export default function SignupPage() {
                         </div>
                         <div className="w-full">
                             <label htmlFor="password" className="block" style={{ marginBottom: "1dvmin", fontSize: "4dvmin" }}>
-                                パスワード
+                                {t("パスワード")}
                             </label>
                             <input
                                 ref={passwordRef}
@@ -72,7 +82,7 @@ export default function SignupPage() {
                             />
                         </div>
                         <button type="submit" className="miniBtn w-5/6 font-bold text-white bg-gray-600 hover:bg-gray-700" style={{ padding: "1.5dvmin", fontSize: "8dvmin", marginTop: "4dvmin" }}>
-                            登録
+                            {t("登録")}
                         </button>
                     </form>
                 </div>

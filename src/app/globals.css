@@ -32,6 +32,9 @@
     }
     html,
     body {
+        font-family: sans-serif;
+    }
+    .makinas-font {
         font-family: "Makinas", sans-serif;
     }
     body {
@@ -371,6 +374,18 @@
         color: white;
         border: white solid 2px;
         border-bottom: none;
+    }
+
+    .home-btn div {
+        position: static !important;
+        font-size: inherit !important;
+        inset: auto !important;
+        color: inherit;
+    }
+
+    .home-btn svg {
+        width: 100% !important;
+        height: 100% !important;
     }
 
     @media screen and (min-aspect-ratio: 1/1) {

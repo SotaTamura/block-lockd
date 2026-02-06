@@ -1,17 +1,25 @@
 "use client";
 
 import { RightSvg, LeftSvg, Loading } from "@/app/components";
-import { useStage } from "@/app/context";
+import { useSettings, useStage } from "@/app/context";
+import { TranslatableString, translate } from "@/app/translate";
 import { StageType } from "@/constants";
+import { playBgm } from "@/game/base";
 import Link from "next/link";
+import React from "react";
 import { use, useEffect, useState } from "react";
 
 export default function Overview({ params }: { params: Promise<{ id: number }> }) {
     const id = Number(use(params).id);
     const [stage, setStage] = useState<StageType | null>(null);
     const { getStageById } = useStage();
+    const {
+        settings: { lang },
+    } = useSettings();
+    const t = (str: TranslatableString) => translate(str, lang);
 
     useEffect(() => {
+        playBgm("/menu.mp3");
         const stageFromContext = getStageById(id);
         if (stageFromContext) setStage(stageFromContext);
     }, [id, getStageById]);
@@ -31,8 +39,14 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
                 <span className="text-[#ddd] m-[2dvmin] text-[length:5dvmin]">by: {stage?.creatorName}</span>
             </h2>
             <div className="text-[length:5dvmin]">
-                <p className="text-[#ccc] mb-[1dvmin]">作成：{stage?.createdAt ? new Date(stage.createdAt).toLocaleDateString() : ""}</p>
-                <p className="text-[#ccc] mb-[1dvmin]">更新：{stage?.updatedAt ? new Date(stage.updatedAt).toLocaleDateString() : ""}</p>
+                <p className="text-[#ccc] mb-[1dvmin]">
+                    {t("作成：")}
+                    {stage?.createdAt ? new Date(stage.createdAt).toLocaleDateString() : ""}
+                </p>
+                <p className="text-[#ccc] mb-[1dvmin]">
+                    {t("更新：")}
+                    {stage?.updatedAt ? new Date(stage.updatedAt).toLocaleDateString() : ""}
+                </p>
                 <p>{stage?.description}</p>
             </div>
             <div className="flex justify-center mt-[10dvmin]">

@@ -5,10 +5,11 @@ import { use, useEffect, useRef, useState } from "react";
 import { RESOLUTION, STEP } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
-import { useAuth } from "@/app/context";
+import { useAuth, useSettings } from "@/app/context";
 import { ArrowButton, Loading, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
 import { STAGES } from "@/game/stages";
-import { glitch } from "@/game/base";
+import { BgmPath, glitch, playBgm, playSfx } from "@/game/base";
+import { TranslatableString, translate } from "@/app/translate";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
@@ -19,8 +20,15 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const [isComplete, setIsComplete] = useState(false);
     const [isHintShowed, setIsHintShowed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const {
+        settings: { lang },
+    } = useSettings();
+    const t = (str: TranslatableString) => translate(str, lang);
     let loopId: number;
 
+    useEffect(() => {
+        playBgm(`/bgm${Math.floor(Math.random() * 7)}.mp3` as BgmPath);
+    }, [id]);
     useEffect(() => {
         setIsComplete(false);
         setIsHintShowed(false);
@@ -78,6 +86,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 onClick={(e) => {
                     e.preventDefault();
                     if (!appRef.current) return;
+                    playSfx("/restart.mp3", null, 3);
                     glitch(appRef.current, 300);
                     setTimeout(() => setRestarter(restarter + 1), 300);
                 }}>
@@ -93,7 +102,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                         setIsHintShowed(true);
                         e.preventDefault();
                     }}>
-                    ヒント
+                    {t("ヒント")}
                 </div>
             </div>
             {isHintShowed && (
@@ -103,7 +112,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                         setIsHintShowed(false);
                     }}>
                     <div className="popupTitle">hint</div>
-                    <div className="hintText">{STAGES[id].hint}</div>
+                    <div className="hintText">{t(STAGES[id].hint as TranslatableString)}</div>
                 </div>
             )}
             {isMobile.any && (

@@ -1,15 +1,54 @@
 "use client";
 
-import { useAuth } from "@/app/context";
+import { useAuth, useSettings } from "@/app/context";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowButton, BucketSvg, Checkbox, CheckSvg, EraserSvg, LeftSvg, MoveSvg, PencilSvg, ResizeSvg, RestartSvg, RestartSvgWhite, RotateRightSvg, Toggle, TrashSvg } from "@/app/components";
-import { Angle, MAP_BLOCK_LEN, TextureName, RESOLUTION, STEP, UNIT, textureMap, colorMap, nameStateMap, π, StageType, convertBase, parseBase, PROPS_LEN, EditorTool, toolMap } from "@/constants";
+import { Angle, MAP_BLOCK_LEN, RESOLUTION, STEP, UNIT, colorMap, π, StageType, convertBase, parseBase, PROPS_LEN } from "@/constants";
 import { loadStage, update } from "@/game/main";
 import { Application, Container, Graphics, isMobile, Sprite, Texture, Rectangle, FederatedPointerEvent, BitmapText, Cursor } from "pixi.js";
-import { getRotatedTexture, glitch } from "@/game/base";
+import { getRotatedTexture, glitch, playSfx, stopBgm } from "@/game/base";
 import { gunzipSync, gzipSync } from "zlib";
+import { TranslatableString, translate } from "../translate";
 
+type TextureName = "player0" | "block" | "block_deactivated" | "ladder" | "key" | "oneway" | "portal_front" | "lever_off" | "pushblock" | "button_off" | "moveblock_off" | "moveblock_on";
+type EditorTool = "pencil" | "eraser" | "move" | "resize" | "color" | "rotate";
+const textureMap: Record<number, TextureName> = {
+    1: "player0",
+    2: "block",
+    3: "block_deactivated",
+    4: "ladder",
+    5: "key",
+    6: "oneway",
+    7: "portal_front",
+    8: "lever_off",
+    9: "pushblock",
+    10: "button_off",
+    11: "moveblock_off",
+    12: "moveblock_on",
+};
+export const nameStateMap: Record<number, { name: string; state: string }> = {
+    1: { name: "player", state: "static" },
+    2: { name: "block", state: "default" },
+    3: { name: "block", state: "deactivated" },
+    4: { name: "ladder", state: "default" },
+    5: { name: "key", state: "default" },
+    6: { name: "oneway", state: "default" },
+    7: { name: "portal", state: "front" },
+    8: { name: "lever", state: "off" },
+    9: { name: "pushBlock", state: "default" },
+    10: { name: "button", state: "off" },
+    11: { name: "moveBlock", state: "off" },
+    12: { name: "moveBlock", state: "on" },
+};
+const toolMap: Record<string, EditorTool> = {
+    t: "pencil",
+    x: "eraser",
+    m: "move",
+    s: "resize",
+    c: "color",
+    r: "rotate",
+};
 export class EditorObj {
     gid: number;
     x: number;
@@ -137,6 +176,10 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     const editorObjsRef = useRef<EditorObj[]>([]);
     const [access, setAccess] = useState(2); //0: public, 1: private, 2: unverified
     const accessRef = useRef(access);
+    const {
+        settings: { lang },
+    } = useSettings();
+    const t = (str: TranslatableString) => translate(str, lang);
 
     const addObj = (app: Application, x: number, y: number) => {
         if (selectedObjRef.current === "portal_front") {
@@ -338,6 +381,8 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
 
     // Init App
     useEffect(() => {
+        stopBgm();
+
         if (initData) {
             setAccess(initData.access);
             editorObjsRef.current = gunzipSync(Buffer.from(initData.code, "base64"))
@@ -411,13 +456,12 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         if (!isAppReady || tab === "overview") return;
         const app = appRef.current;
         if (!app) return;
-        // Stop any running game loop
-        if (gameLoopId.current) {
-            cancelAnimationFrame(gameLoopId.current);
-            gameLoopId.current = null;
-        }
+
         // Clear the stage
         app.stage.removeChildren();
+
+        let isMounted = true;
+
         if (tab === "stage") {
             app.stage.eventMode = "static";
             app.stage.hitArea = app.screen;
@@ -446,6 +490,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             setIsComplete(false);
             setIsLoading(true);
             loadStage(editorObjsRef.current, app).then(() => {
+                if (!isMounted) return;
                 setIsLoading(false);
                 let prevTime: number | undefined;
                 let accumulator = 0;
@@ -468,6 +513,14 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 gameLoopId.current = requestAnimationFrame(gameLoop);
             });
         }
+
+        return () => {
+            isMounted = false;
+            if (gameLoopId.current) {
+                cancelAnimationFrame(gameLoopId.current);
+                gameLoopId.current = null;
+            }
+        };
     }, [tab, isAppReady, restarter]);
 
     useLayoutEffect(() => {
@@ -514,15 +567,15 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                     .join(";"),
             ).toString("base64");
             if (!code) {
-                window.alert("ステージに何も設置されていません。");
+                window.alert(t("ステージに何も設置されていません。"));
             } else {
                 const newData = {
-                    title: title || "無題",
+                    title: title || t("無題"),
                     description: description || "",
                     code: code,
                     access: accessRef.current,
                 };
-                if ((checkChange && (initData?.title !== title || initData.description !== description || initData.code !== code) && window.confirm("変更を保存しますか？")) || !checkChange) {
+                if ((checkChange && (initData?.title !== title || initData.description !== description || initData.code !== code) && window.confirm(t("変更を保存しますか？"))) || !checkChange) {
                     setIsLoading(true);
                     if (initData) {
                         // project://src/app/api/stage/[id]/route.ts
@@ -549,7 +602,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
 
     const handleDelete = async (e: React.MouseEvent) => {
         e.preventDefault();
-        if (user && window.confirm("本当にこのステージを削除しますか？")) {
+        if (user && window.confirm(t("本当にこのステージを削除しますか？"))) {
             setIsLoading(true);
             // project://src/app/api/stage/[id]/route.ts
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/${initData?.id}`, {
@@ -557,7 +610,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 headers: { "Content-Type": "application/json" },
             });
             if (res.ok) {
-                window.alert("ステージを削除しました。");
+                window.alert(t("ステージを削除しました。"));
                 router.push("/editor");
                 router.refresh();
             } else {
@@ -571,6 +624,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     const handleRestartTest = () => {
         if (!appRef.current) return;
         glitch(appRef.current, 300);
+        playSfx("/restart.mp3", null);
         setTimeout(() => setRestarter(restarter + 1), 300);
     };
 
@@ -589,10 +643,10 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                     <LeftSvg />
                 </div>
                 <span className={`${tab !== "overview" ? "unselected-tab" : ""} w-[25%] h-15 leading-15 text-xl cursor-pointer`} onClick={() => setTab("overview")}>
-                    概要
+                    {t("概要")}
                 </span>
                 <span className={`${tab !== "stage" ? "unselected-tab" : ""} w-[25%] h-15 leading-15 text-xl cursor-pointer`} onClick={() => setTab("stage")}>
-                    ステージ
+                    {t("ステージ")}
                 </span>
                 <span
                     className={`${tab !== "test" ? "unselected-tab" : ""} w-[25%] h-15 flex justify-center items-center text-xl cursor-pointer`}
@@ -603,13 +657,13 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                             setTab("test");
                         }
                     }}>
-                    {tab !== "test" ? "テスト" : <RestartSvgWhite />}
+                    {tab !== "test" ? t("テスト") : <RestartSvgWhite />}
                 </span>
             </div>
             {/* 概要 */}
             <div className={tab === "overview" ? "" : "hidden"}>
                 <div className="flex justify-center items-center">
-                    <h1 className="text-[length:10svmin] mt-[15svmin]">{initData ? "ステージ編集" : "新規作成"}</h1>
+                    <h1 className="text-[length:10svmin] mt-[15svmin]">{t(initData ? "ステージ編集" : "新規作成")}</h1>
                 </div>
                 <form
                     onSubmit={(e) => {
@@ -619,14 +673,14 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                     <input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="タイトルを入力"
+                        placeholder={t("タイトルを入力")}
                         type="text"
                         className="px-4 w-[80svw] max-w-md py-2 my-2 bg-white text-black placeholder-gray-400 border-2 border-gray-600 focus:outline-none focus:border-gray-500 text-[16px]"
                     />
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        placeholder="説明を入力"
+                        placeholder={t("説明を入力")}
                         className="px-4 py-2 w-[80svw] max-w-md my-2 h-[20svh] bg-white text-black placeholder-gray-400 border-2 border-gray-600 focus:outline-none focus:border-gray-500 text-[16px]"></textarea>
                     <div className="m-2">
                         <Toggle
@@ -636,10 +690,10 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                             onChange={() => {
                                 setAccess(1 - access);
                             }}
-                            children={<span>公開</span>}
+                            children={<span>{t("公開")}</span>}
                         />
                     </div>
-                    {access === 2 && <div>ステージを公開するには、ステージをクリアしてください。</div>}
+                    {access === 2 && <div>{t("ステージを公開するには、ステージをクリアしてください。")}</div>}
                     <div className="flex flex-row gap-1">
                         <button className="btn completedBtn font-semibold px-4 py-2 shadow-xl bg-slate-200 m-auto hover:bg-slate-100 text-gray-800 w-[10svh] max-w-md">
                             <CheckSvg />
@@ -664,7 +718,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                                 Object.values(colorMap).map((color, i) => <div key={i} className={`objImg ${i === selectedColor ? "selected" : ""} cursor-pointer`} style={{ backgroundColor: color || "#ffffff" }} onClick={() => setSelectedColor(i)}></div>)}
                             {(selectedTool === "resize" || selectedTool === "move") && (
                                 <>
-                                    <div>スナップ：</div>
+                                    <div>{t("スナップ：")}</div>
                                     {[1, 0.5].map((n, i) => (
                                         <div key={i}>
                                             <Checkbox

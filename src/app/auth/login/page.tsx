@@ -2,24 +2,34 @@
 
 import { LeftSvg, Loading } from "@/app/components";
 import Link from "next/link";
-import React, { useRef, useState } from "react";
-import { useAuth } from "@/app/context";
+import React, { useEffect, useRef, useState } from "react";
+import { useAuth, useSettings } from "@/app/context";
+import { playBgm } from "@/game/base";
+import { TranslatableString, translate } from "@/app/translate";
 
 export default function LoginPage() {
     const { login } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const nameRef = useRef<HTMLInputElement | null>(null);
     const passwordRef = useRef<HTMLInputElement | null>(null);
+    const {
+        settings: { lang },
+    } = useSettings();
+    const t = (str: TranslatableString) => translate(str, lang);
+
+    useEffect(() => {
+        playBgm("/menu.mp3");
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const name = nameRef.current?.value;
         const password = passwordRef.current?.value;
         if (!name || !password) {
-            window.alert("ユーザー名とパスワードは必須です。");
+            window.alert(t("ユーザー名とパスワードは必須です。"));
         } else {
             setIsLoading(true);
-            login(name, password);
+            await login(name, password);
             setIsLoading(false);
         }
     };
@@ -39,12 +49,12 @@ export default function LoginPage() {
                         maxWidth: "500px",
                     }}>
                     <h1 className="font-bold text-center" style={{ fontSize: "8dvmin", marginBottom: "3dvmin" }}>
-                        ログイン
+                        {t("ログイン")}
                     </h1>
                     <form className="flex flex-col items-center space-y-[2dvmin]" onSubmit={handleSubmit} style={{ fontSize: "2.5dvmin" }}>
                         <div className="w-full">
                             <label htmlFor="username" className="block" style={{ marginBottom: "1dvmin", fontSize: "4dvmin" }}>
-                                ユーザー名
+                                {t("ユーザー名")}
                             </label>
                             <input
                                 ref={nameRef}
@@ -59,7 +69,7 @@ export default function LoginPage() {
                         </div>
                         <div className="w-full">
                             <label htmlFor="password" className="block" style={{ marginBottom: "1dvmin", fontSize: "4dvmin" }}>
-                                パスワード
+                                {t("パスワード")}
                             </label>
                             <input
                                 ref={passwordRef}
@@ -73,11 +83,11 @@ export default function LoginPage() {
                             />
                         </div>
                         <button type="submit" className="miniBtn w-5/6 font-bold text-white bg-gray-600 hover:bg-gray-700" style={{ padding: "1.5dvmin", fontSize: "8dvmin", marginTop: "4dvmin" }}>
-                            ログイン
+                            {t("ログイン")}
                         </button>
                         <Link href="/auth/signup" className="block w-5/6">
                             <button type="button" className="miniBtn w-full font-bold text-white bg-gray-500 hover:bg-gray-600" style={{ padding: "1.5dvmin", fontSize: "4dvmin", marginTop: "2dvmin" }}>
-                                新規アカウントを作成
+                                {t("新規アカウントを作成")}
                             </button>
                         </Link>
                     </form>

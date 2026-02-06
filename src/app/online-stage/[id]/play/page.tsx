@@ -7,7 +7,7 @@ import Link from "next/link";
 import { loadStage, update } from "@/game/main";
 import { useAuth, useStage } from "@/app/context";
 import { ArrowButton, LeftSvg, Loading, RestartSvg } from "@/app/components";
-import { glitch } from "@/game/base";
+import { BgmPath, glitch, playBgm, playSfx } from "@/game/base";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
@@ -21,6 +21,9 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const stageRef = useRef<StageType | null>(null);
     let loopId: number;
 
+    useEffect(() => {
+        playBgm(`/bgm${Math.floor(Math.random() * 7)}.mp3` as BgmPath);
+    }, [id]);
     useEffect(() => {
         setIsComplete(false);
         setIsLoading(true);
@@ -79,6 +82,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 onClick={(e) => {
                     e.preventDefault();
                     if (!appRef.current) return;
+                    playSfx("/restart.mp3", null);
                     glitch(appRef.current, 300);
                     setTimeout(() => setRestarter(restarter + 1), 300);
                 }}>

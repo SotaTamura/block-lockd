@@ -90,7 +90,7 @@ export const STAGES: Record<
         hint: "操作には慣れてきたかな?",
     },
     22: {
-        code: "H4sIAAAAAAAAA0VQO67DMAy7EBFEshUn9tQiY8eeIWPHd/5Hyv3ACylRpKxXd6x8VsaL0GAGH39ZtbIECJYY1yxU7B8Y35HAzrJGHE1qGlzJNk58NCu2rFr6DL96o4M6jtvwBykt4UlbrzPMWo4UDvtJiafoPgkVla37sLPbCl+0CcWaCrbMUYWLFnnjEF6nc3Bd1m3iXdi/Gm4/7Nk3KD8Y87Y1NObUuSKC3zvYPKAbEbEXONjVV3ghWvCiJsc8ZgZkxdaZICJpXq5IcGatcKPy05u+y1UfYrsIj8d/KMlQ/wFhUc+ZyAEAAA==",
+        code: "H4sIAAAAAAAAA0VQO67DMAy7kBBEkn+xpxYZO/YMGTu+8z9SalBkIWmKYvSZJjs+9fUBVFEVW3+hqm9VALa6rhSKjBtWUcuRKgMyR0w63Qi4gjVM3J5dWqgaOcuu2ZHAF5fHshcoIkEMtM+Sy7THiGPYTlg8TM8kcBQoz6Xn1F1sYxOYOVXxhPhC7CzCXiVfmhy0JskWiQex3aYYaUvfswlLGHZ9s1V6xEVPqd+f9/h5HvIAPoRnO9ADwThhn4zAnRGIIys3xH1jYSi65z4SWjOPhjM0R0P/+ZUXQPUX2SBxhIzYpFL+AW7djN7bAQAA",
         hint: "ブロックをポータル間に跨らせた状態で静止させてみよう",
     },
 };

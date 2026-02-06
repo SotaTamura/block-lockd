@@ -1,21 +1,22 @@
 "use client";
 
-import { UserType } from "@/constants";
+import { Language, SettingsType, UserType } from "@/constants";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useState, ReactNode, useCallback, useRef, useEffect } from "react";
 import { StageType } from "@/constants";
 import { createClient } from "../../lib/supabase/client";
+import { bgmBuffers, BgmPath, loadAllBgm, loadAllSfx, playBgm, sfxBuffers, stopBgm } from "@/game/base";
 
 const supabase = createClient();
 
 // 認証
 interface AuthContextType {
     user: UserType | null;
-    signup: (name: string, password: string) => void;
-    login: (name: string, password: string) => void;
-    loginBySession: (id: string) => void;
-    logout: () => void;
-    changeData: (newData: Partial<Omit<UserType, "id" | "name">>) => void;
+    signup: (name: string, password: string) => Promise<void>;
+    login: (name: string, password: string) => Promise<void>;
+    loginBySession: (id: string) => Promise<void>;
+    logout: () => Promise<void>;
+    changeData: (newData: Partial<Omit<UserType, "id" | "name">>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -174,6 +175,57 @@ export const useStage = () => {
     const context = useContext(StageContext);
     if (context === undefined) {
         throw new Error("useStage must be used within a StageProvider");
+    }
+    return context;
+};
+
+// 設定
+interface SettingsContextType {
+    settings: SettingsType;
+    setLang: (lang: Language) => void;
+    setBgm: (bgm: boolean, firstBgm?: BgmPath) => Promise<void>;
+    setSfx: (sfx: boolean) => Promise<void>;
+    setFont: (font: boolean) => void;
+}
+const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+
+export const SettingsProvider = ({ children }: { children: ReactNode }) => {
+    const [settings, setSettings] = useState<SettingsType>({ lang: "ja", bgm: true, sfx: true, font: true });
+
+    const setLang = (lang: Language) => {
+        setSettings((prev) => ({ ...prev, lang }));
+        localStorage.setItem("la", lang);
+    };
+    const setBgm = async (bgm: boolean, firstBgm?: BgmPath) => {
+        setSettings((prev) => ({ ...prev, bgm }));
+        if (bgm && !bgmBuffers.size) {
+            await loadAllBgm();
+            if (firstBgm) playBgm(firstBgm);
+        }
+        if (!bgm) {
+            stopBgm();
+            bgmBuffers.clear();
+        }
+    };
+    const setSfx = async (sfx: boolean) => {
+        setSettings((prev) => ({ ...prev, sfx }));
+        if (sfx && !sfxBuffers.size) await loadAllSfx();
+        if (!sfx) {
+            sfxBuffers.clear();
+        }
+    };
+    const setFont = (font: boolean) => {
+        setSettings((prev) => ({ ...prev, font }));
+        localStorage.setItem("font", String(Number(font)));
+    };
+
+    return <SettingsContext.Provider value={{ settings, setLang, setBgm, setSfx, setFont }}>{children}</SettingsContext.Provider>;
+};
+
+export const useSettings = () => {
+    const context = useContext(SettingsContext);
+    if (context === undefined) {
+        throw new Error("useSettings must be used within a SettingsProvider");
     }
     return context;
 };

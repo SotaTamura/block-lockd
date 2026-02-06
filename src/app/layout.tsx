@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     },
 };
 
-import { AuthProvider, StageProvider } from "@/app/context";
+import { AuthProvider, SettingsProvider, StageProvider } from "@/app/context";
 import App from "@/app/app";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -17,9 +17,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <html lang="ja">
             <body>
                 <AuthProvider>
-                    <StageProvider>
-                        <App>{children}</App>
-                    </StageProvider>
+                    <SettingsProvider>
+                        <StageProvider>
+                            <App>{children}</App>
+                        </StageProvider>
+                    </SettingsProvider>
                 </AuthProvider>
             </body>
         </html>
