@@ -1,11 +1,16 @@
 // 定数
 export const π = Math.PI;
+export const ε = 1e-6;
+export const MAX_ITER = 64;
 export const STEP = 1000 / 60;
+export const POS_PRECISION = 1e-2;
+export const POS_SNAP = 0.25;
 export const PROPS_LEN = 8;
 export const RESOLUTION = 1024;
 export const MAP_BLOCK_LEN = 16;
 export const UNIT = RESOLUTION / MAP_BLOCK_LEN;
 export const PX_PER_UNIT = 16;
+export const SFX_MIN_INTERVAL = 50;
 export const PLAYER_STRENGTH = 10000;
 export const BLOCK_STRENGTH = 20000;
 export const PUSH_BLOCK_STRENGTH = 5000;
@@ -14,9 +19,8 @@ export const GRAVITY = 0.01;
 export const JUMP_SPEED = -0.2;
 export const PLAYER_SPEED = 0.08;
 export const MOVE_BLOCK_SPEED = 0.04;
-export const CORNER_LEN = 0.05;
-export const MOVE_OBJ_CORNER_LEN = 0.2;
-export const SFX_MIN_INTERVAL = 50;
+export const CORNER_CORRECT = 0.05;
+export const MOVE_OBJ_CORNER_CORRECT = 0.2;
 // 型
 export type StageType = {
     id: number;
@@ -42,10 +46,22 @@ export type SettingsType = {
     font: boolean;
 };
 export type Angle = 0 | 90 | 180 | -90;
-export type Side = "t" | "b" | "l" | "r";
+export type Axis = "x" | "y";
 export type Direction = "u" | "d" | "l" | "r";
 export type Language = "ja" | "us" | "gb" | "cn" | "tw";
 // 変換
+export const opposite: Record<Direction, Direction> = {
+    u: "d",
+    d: "u",
+    l: "r",
+    r: "l",
+};
+export const angFrom: Record<Direction, Angle> = {
+    u: 0,
+    r: 90,
+    d: 180,
+    l: -90,
+};
 export const colorMap: Record<number, string | undefined> = {
     0: undefined, //white
     1: "#ff0000", //red
@@ -59,6 +75,9 @@ export const colorMap: Record<number, string | undefined> = {
 };
 
 // 関数
+export const roundDecimal = (x: number, digit: number) => {
+    return Math.round(x / digit) * digit;
+};
 export const convertBase = (m: number, chars: string) => {
     if (!Number.isInteger(m) || m < 0) throw new Error("m must be a non-negative integer");
     const n = chars.length;

@@ -4,7 +4,7 @@ import { useAuth, useSettings } from "@/app/context";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowButton, BucketSvg, Checkbox, CheckSvg, EraserSvg, LeftSvg, MoveSvg, PencilSvg, ResizeSvg, RestartSvg, RestartSvgWhite, RotateRightSvg, Toggle, TrashSvg } from "@/app/components";
-import { Angle, MAP_BLOCK_LEN, RESOLUTION, STEP, UNIT, colorMap, π, StageType, convertBase, parseBase, PROPS_LEN } from "@/constants";
+import { Direction, MAP_BLOCK_LEN, RESOLUTION, STEP, UNIT, colorMap, π, StageType, convertBase, parseBase, PROPS_LEN } from "@/constants";
 import { loadStage, update } from "@/game/main";
 import { Application, Container, Graphics, isMobile, Sprite, Texture, Rectangle, FederatedPointerEvent, BitmapText, Cursor } from "pixi.js";
 import { getRotatedTexture, glitch, playSfx, stopBgm } from "@/game/base";
@@ -55,7 +55,7 @@ export class EditorObj {
     y: number;
     w: number;
     h: number;
-    ang: Angle;
+    ang: Direction;
     color: number;
     tag: string;
     sprite: Sprite;
@@ -68,7 +68,7 @@ export class EditorObj {
         y: number,
         w: number,
         h: number,
-        ang: Angle,
+        ang: Direction,
         color: number,
         tag: string,
         onContainerClick: (e: FederatedPointerEvent, obj: EditorObj) => void,
@@ -185,8 +185,8 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 n++;
             }
             const tag = convertBase(n, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-            const portal1 = new EditorObj(7, x, y, 1, 1, 0 as Angle, 0, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
-            const portal2 = new EditorObj(7, x, y + 1, 1, 1, 180 as Angle, 0, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
+            const portal1 = new EditorObj(7, x, y, 1, 1, "u", 0, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
+            const portal2 = new EditorObj(7, x, y + 1, 1, 1, "d", 0, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
             portal1.counterpart = portal2;
             portal2.counterpart = portal1;
             const newObjs = [portal1, portal2];
@@ -198,7 +198,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 return next;
             });
         } else {
-            const newObj = new EditorObj(Number(Object.keys(textureMap).find((k) => textureMap[Number(k)] === selectedObj)), x, y, 1, 1, 0 as Angle, 0, "", handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
+            const newObj = new EditorObj(Number(Object.keys(textureMap).find((k) => textureMap[Number(k)] === selectedObj)), x, y, 1, 1, "u", 0, "", handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
             setEditorObjs((prev) => {
                 const next = [...prev];
                 let i = next.length;
@@ -293,10 +293,10 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             if (["oneway", "portal_front", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[obj.gid])) {
                 const rotateObj = (obj: EditorObj) => {
                     obj.sprite.texture = getRotatedTexture(nameStateMap[obj.gid].name, nameStateMap[obj.gid].state, (obj.container.children[0] as Sprite).texture.rotate, 90) as Texture;
-                    if (obj.ang === 0) obj.ang = 90;
-                    else if (obj.ang === 90) obj.ang = 180;
-                    else if (obj.ang === 180) obj.ang = -90;
-                    else if (obj.ang === -90) obj.ang = 0;
+                    if (obj.ang === "u") obj.ang = "r";
+                    else if (obj.ang === "r") obj.ang = "d";
+                    else if (obj.ang === "d") obj.ang = "l";
+                    else if (obj.ang === "l") obj.ang = "u";
                 };
                 rotateObj(obj);
                 if (obj.counterpart) rotateObj(obj.counterpart);
@@ -345,7 +345,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                         Number(propStrs[2] || 1),
                         Number(propStrs[3] || 1),
                         Number(propStrs[4] || 1),
-                        [0, 90, 180, -90][Number(propStrs[5] || 0)] as Angle,
+                        (["u", "r", "d", "l"] as Direction[])[Number(propStrs[5] || 0)],
                         Number(propStrs[6] || 0),
                         propStrs[7] || "",
                     ];
@@ -526,7 +526,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             const code = gzipSync(
                 editorObjs
                     .map((o) => {
-                        const props = [o.gid, o.x, o.y, o.w === 1 ? null : o.w, o.h === 1 ? null : o.h, o.ang === 0 ? null : [0, 90, 180, -90].indexOf(o.ang), o.color === 0 ? null : o.color, o.tag === "" ? null : o.tag];
+                        const props = [o.gid, o.x, o.y, o.w === 1 ? null : o.w, o.h === 1 ? null : o.h, o.ang === "u" ? null : ["u", "r", "d", "l"].indexOf(o.ang), o.color === 0 ? null : o.color, o.tag === "" ? null : o.tag];
                         let mask = 0;
                         const maskedProps: (string | number)[] = [];
                         for (let i = 0; i < props.length; i++) {

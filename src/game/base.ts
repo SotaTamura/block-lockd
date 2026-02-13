@@ -1,17 +1,17 @@
-import { Angle, Direction, SFX_MIN_INTERVAL, UNIT, π } from "@/constants";
-import { Block, Box, GameObj, isColorable, Portal, SpriteBox } from "./class";
+import { angFrom, Angle, colorMap, Direction, SFX_MIN_INTERVAL, UNIT, π } from "@/constants";
+import { Block, Box, GameObj, Portal, SpriteBox } from "./class";
 import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application } from "pixi.js";
 import { gameObjs } from "./main";
 import { GlitchFilter } from "pixi-filters";
 
 // キーイベント
-export let pressingEvent: Record<Direction, boolean> = {
+export const pressingEvent: Record<Direction, boolean> = {
     u: false,
     d: false,
     l: false,
     r: false,
 }; // 押し中
-export let pressingTimeForKeyboard: Record<Direction, number> = {
+export const pressingTimeForKeyboard: Record<Direction, number> = {
     u: 0,
     d: 0,
     l: 0,
@@ -39,32 +39,30 @@ export const clearPressStart = () => {
     pressStartEvent = { u: false, d: false, l: false, r: false };
 };
 // 箱の回転
-export const rotate = (box: Box, ang: Angle, originW: number, originH: number) => {
-    if (ang === 0) return;
-    const convertedRelX = (box.relX * originH) / originW;
-    const convertedRelY = (box.relY * originW) / originH;
-    const convertedW = (box.w * originH) / originW;
-    const convertedH = (box.h * originW) / originH;
-    if (ang === 90) {
-        box.relX = originW - (convertedRelY + convertedH);
-        box.relY = convertedRelX;
-        box.w = convertedH;
-        box.h = convertedW;
-    } else if (ang === 180) {
-        box.relX = originW - (box.relX + box.w);
-        box.relY = originH - (box.relY + box.h);
-        box.w = box.w;
-        box.h = box.h;
-    } else if (ang === -90) {
-        box.relX = convertedRelY;
-        box.relY = originH - (convertedRelX + convertedW);
-        box.w = convertedH;
-        box.h = convertedW;
+export const rotate = (box: Box, ang: Direction, originW: number, originH: number) => {
+    if (ang === "u") return;
+    const convertedRelX = (box.rel.x * originH) / originW;
+    const convertedRelY = (box.rel.y * originW) / originH;
+    const convertedW = (box.sz.x * originH) / originW;
+    const convertedH = (box.sz.y * originW) / originH;
+    if (ang === "r") {
+        box.rel.x = originW - (convertedRelY + convertedH);
+        box.rel.y = convertedRelX;
+        box.sz.x = convertedH;
+        box.sz.y = convertedW;
+    } else if (ang === "d") {
+        box.rel.x = originW - (box.rel.x + box.sz.x);
+        box.rel.y = originH - (box.rel.y + box.sz.y);
+    } else if (ang === "l") {
+        box.rel.x = convertedRelY;
+        box.rel.y = originH - (convertedRelX + convertedW);
+        box.sz.x = convertedH;
+        box.sz.y = convertedW;
     }
     if (box instanceof SpriteBox) rotate(box.origin, ang, originW, originH);
 };
 // 画像
-export let generatedTextures: Map<string, Texture | Texture[]> = new Map();
+export const generatedTextures: Map<string, Texture | Texture[]> = new Map();
 // sprite加工
 export const getTexture = (name: string, state: string, newRotId: number) => {
     const key = `${name}_${state}_${newRotId}`;
@@ -112,8 +110,11 @@ export const editTexture = (obj: GameObj, newTexture: Texture | Texture[]) => {
         });
     }
 };
-export const getRotatedTexture = (name: string, state: string, rotId: number, ang: Angle) => getTexture(name, state, groupD8.add((8 - ang / 45) % 8, rotId));
-export const rotateTexture = (obj: GameObj, ang: Angle) => {
+export const getRotatedTexture = (name: string, state: string, rotId: number, ang: Direction | Angle) => {
+    const angle = typeof ang === "string" ? angFrom[ang] : ang;
+    return getTexture(name, state, groupD8.add((8 - angle / 45) % 8, rotId));
+};
+export const rotateTexture = (obj: GameObj, ang: Direction | Angle) => {
     editTexture(obj, getRotatedTexture(obj.name, obj.state, (obj.container.children[0] as Sprite).texture.rotate, ang));
 };
 export const getXFlippedTexture = (name: string, state: string, rotId: number) => getTexture(name, state, groupD8.add(groupD8.MIRROR_HORIZONTAL, rotId));
@@ -129,7 +130,7 @@ export const stateChangeTexture = (obj: GameObj, newState: string) => {
 // spriteを描画する
 export const drawSprite = (obj: GameObj, app: Application) => {
     const container = obj.container;
-    let rotId = (obj.container.children[0] as Sprite | undefined)?.texture.rotate ?? 0;
+    const rotId = (obj.container.children[0] as Sprite | undefined)?.texture.rotate ?? 0;
     const removed = container.removeChildren();
     for (const child of removed) {
         child.destroy({ children: true });
@@ -145,33 +146,33 @@ export const drawSprite = (obj: GameObj, app: Application) => {
             sprite = new Sprite(generatedTextures.get(`${obj.name}_${obj.state}_0`) as Texture);
         }
         sprite.anchor.set(0);
-        sprite.x = spriteBox.origin.relX * UNIT;
-        sprite.y = spriteBox.origin.relY * UNIT;
-        sprite.width = spriteBox.origin.w * UNIT;
-        sprite.height = spriteBox.origin.h * UNIT;
+        sprite.x = spriteBox.origin.rel.x * UNIT;
+        sprite.y = spriteBox.origin.rel.y * UNIT;
+        sprite.width = spriteBox.origin.sz.x * UNIT;
+        sprite.height = spriteBox.origin.sz.y * UNIT;
         container.addChild(sprite);
-        if (!(spriteBox.relX === spriteBox.origin.relX && spriteBox.relY === spriteBox.origin.relY && spriteBox.w === spriteBox.origin.w && spriteBox.h === spriteBox.origin.h)) {
-            const mask = new Graphics().rect(spriteBox.relX * UNIT, spriteBox.relY * UNIT, spriteBox.w * UNIT, spriteBox.h * UNIT).fill();
+        if (!(spriteBox.rel.x === spriteBox.origin.rel.x && spriteBox.rel.y === spriteBox.origin.rel.y && spriteBox.sz.x === spriteBox.origin.sz.x && spriteBox.sz.y === spriteBox.origin.sz.y)) {
+            const mask = new Graphics().rect(spriteBox.rel.x * UNIT, spriteBox.rel.y * UNIT, spriteBox.sz.x * UNIT, spriteBox.sz.y * UNIT).fill();
             container.addChild(mask);
             sprite.mask = mask;
         }
     });
     editTexture(obj, getTexture(obj.name, obj.state, rotId));
     if (obj instanceof Portal) {
-        const sprite = new Sprite(getRotatedTexture("portal", "back", 0, obj.ang) as Texture);
-        const [l, r, t, b, w, h] = [obj.spriteBoxes[0].l, obj.spriteBoxes[0].r, obj.spriteBoxes[0].t, obj.spriteBoxes[0].b, obj.spriteBoxes[0].w, obj.spriteBoxes[0].h];
-        if (obj.ang === 0) {
+        const sprite = new Sprite(getRotatedTexture("portal", "back", 0, obj.dir) as Texture);
+        const [l, r, u, d, w, h] = [obj.spriteBoxes[0].l, obj.spriteBoxes[0].r, obj.spriteBoxes[0].u, obj.spriteBoxes[0].d, obj.spriteBoxes[0].sz.x, obj.spriteBoxes[0].sz.y];
+        if (obj.dir === "u") {
             sprite.x = l * UNIT;
-            sprite.y = (t - h) * UNIT;
-        } else if (obj.ang === 90) {
+            sprite.y = (u - h) * UNIT;
+        } else if (obj.dir === "r") {
             sprite.x = r * UNIT;
-            sprite.y = t * UNIT;
-        } else if (obj.ang === 180) {
+            sprite.y = u * UNIT;
+        } else if (obj.dir === "d") {
             sprite.x = l * UNIT;
-            sprite.y = b * UNIT;
-        } else if (obj.ang === -90) {
+            sprite.y = d * UNIT;
+        } else if (obj.dir === "l") {
             sprite.x = (l - w) * UNIT;
-            sprite.y = t * UNIT;
+            sprite.y = u * UNIT;
         }
         sprite.width = w * UNIT;
         sprite.height = h * UNIT;
@@ -187,15 +188,15 @@ export const setSprite = (obj: GameObj, app: Application) => {
     container.width = UNIT;
     container.height = UNIT;
     drawSprite(obj, app);
-    if (isColorable(obj) && obj.color) container.tint = obj.color;
-    rotateTexture(obj, obj.ang);
+    if (obj.color) container.tint = colorMap[obj.color]!;
+    rotateTexture(obj, obj.dir);
     app.stage.addChild(container);
 };
 // 点線囲い
 export const blockDashLine = (obj: Block) => {
     const lineTexture = generatedTextures.get("block_deactivatedLine_0") as Texture;
-    const w = obj.spriteBoxes[0].w * UNIT;
-    const h = obj.spriteBoxes[0].h * UNIT;
+    const w = obj.spriteBoxes[0].sz.x * UNIT;
+    const h = obj.spriteBoxes[0].sz.y * UNIT;
     const borderThickness = 0.125 * UNIT;
     const scale = borderThickness / lineTexture.height;
     // 上辺
@@ -241,7 +242,6 @@ export const blockDashLine = (obj: Block) => {
     rEdge.y = 0;
     rEdge.tileScale = { x: scale * 2, y: scale };
     obj.container.addChild(rEdge);
-    if (obj.color) obj.container.tint = obj.color;
 };
 // 描画更新
 export const updateSprites = () => {
