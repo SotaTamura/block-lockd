@@ -16,7 +16,7 @@ export default function EditStage({ params }: { params: Promise<{ id: number }> 
 
     useEffect(() => {
         if (!user) {
-            router.push("/auth/login");
+            router.push("/");
             router.refresh();
             return;
         }

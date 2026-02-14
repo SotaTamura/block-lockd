@@ -40,12 +40,10 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
             </h2>
             <div className="text-[length:5dvmin]">
                 <p className="text-[#ccc] mb-[1dvmin]">
-                    {t("作成：")}
-                    {stage?.createdAt ? new Date(stage.createdAt).toLocaleDateString() : ""}
+                    {t("作成")}: {stage?.createdAt ? new Date(stage.createdAt).toLocaleDateString() : ""}
                 </p>
                 <p className="text-[#ccc] mb-[1dvmin]">
-                    {t("更新：")}
-                    {stage?.updatedAt ? new Date(stage.updatedAt).toLocaleDateString() : ""}
+                    {t("更新")}: {stage?.updatedAt ? new Date(stage.updatedAt).toLocaleDateString() : ""}
                 </p>
                 <p>{stage?.description}</p>
             </div>
