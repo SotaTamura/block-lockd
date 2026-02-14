@@ -3,13 +3,14 @@
 import { useAuth, useSettings } from "@/app/context";
 import Link from "next/link";
 import { WrenchSvg, RightSvg, WorldSvg, GearSvg } from "./components";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { TranslatableString, translate } from "./translate";
 
 export default function Home({ id }: { id: string | undefined }) {
     const { user, loginBySession, signinBySession } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
     const [name, setName] = useState("");
+    const isLoginProcessing = useRef(false);
     const {
         settings: { lang },
     } = useSettings();
@@ -17,6 +18,7 @@ export default function Home({ id }: { id: string | undefined }) {
 
     useEffect(() => {
         (async () => {
+            if (isLoginProcessing.current) return;
             if (id && (!user || user.id !== id)) {
                 await loginBySession(id);
             }
@@ -27,8 +29,11 @@ export default function Home({ id }: { id: string | undefined }) {
     const handleStart = async () => {
         if (!name) alert(t("ニックネームを入力してください"));
         else {
+            isLoginProcessing.current = true;
             setIsLoading(true);
             await signinBySession(name);
+            isLoginProcessing.current = false;
+            setIsLoading(false);
         }
     };
 
