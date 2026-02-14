@@ -6,17 +6,17 @@ import { createContext, useContext, useState, ReactNode, useCallback, useRef, us
 import { StageType } from "@/constants";
 import { createClient } from "../../lib/supabase/client";
 import { bgmBuffers, BgmPath, loadAllBgm, loadAllSfx, playBgm, sfxBuffers, stopBgm } from "@/game/base";
+import { signInAnonymously } from "./auth/actions";
 
 const supabase = createClient();
 
 // 認証
 interface AuthContextType {
     user: UserType | null;
-    signup: (name: string, password: string) => Promise<void>;
-    login: (name: string, password: string) => Promise<void>;
-    loginBySession: (id: string) => Promise<void>;
+    signinBySession: (name?: string) => Promise<void>;
+    loginBySession: (id: string, initialName?: string) => Promise<void>;
     logout: () => Promise<void>;
-    changeData: (newData: Partial<Omit<UserType, "id" | "name">>) => Promise<void>;
+    changeData: (newData: Partial<Omit<UserType, "id">>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,76 +25,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const router = useRouter();
     const [user, setUser] = useState<UserType | null>(null);
     const userRef = useRef<UserType | null>(null);
+    const isLoggingIn = useRef(false);
 
     useEffect(() => {
         userRef.current = user;
     }, [user]);
 
-    const signup = async (name: string, password: string) => {
-        const { data, error } = await supabase.auth.signUp({
-            email: `${name}@example.com`,
-            password: password,
-        });
-        if (error) {
-            alert(error.message);
-        } else {
-            try {
-                // project://src/app/api/user/route.ts
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: data.user?.id, name }),
-                });
-                const dbData = await res.json();
-                if (res.ok) {
-                    setUser(dbData.user);
-                    router.push("/");
-                    router.refresh();
-                } else {
-                    alert(dbData.message);
-                }
-                const { error } = await supabase.auth.signInWithPassword({
-                    email: `${name}@example.com`,
-                    password: password,
-                });
-                if (error) {
-                    alert(error.message);
-                }
-            } catch (error) {
-                alert(error);
-            }
-        }
-    };
-
-    const login = async (name: string, password: string) => {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: `${name}@example.com`,
-            password: password,
-        });
-        if (error) {
-            alert(error.message);
-        } else if (data.user) {
-            try {
-                // project://src/app/api/user/[id]/route.ts
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${data.user.id}`, {
-                    cache: "no-store",
-                });
-                const dbData = await res.json();
-                if (res.ok) {
-                    setUser(dbData.user);
-                    router.push("/");
-                    router.refresh();
-                } else {
-                    alert(dbData.message);
-                }
-            } catch (error) {
-                alert(error);
-            }
-        }
-    };
-
     const loginBySession = useCallback(
-        async (id: string) => {
+        async (id: string, initialName?: string) => {
+            if (isLoggingIn.current) return;
+            isLoggingIn.current = true;
             try {
                 // project://src/app/api/user/[id]/route.ts
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${id}`, {
@@ -103,28 +43,70 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const dbData = await res.json();
                 if (res.ok) {
                     setUser(dbData.user);
-                } else if (res.status !== 404) {
+                } else if (res.status === 404) {
+                    // Create user if not found
+                    const name = initialName || `Player-${id.slice(0, 5)}`;
+                    const createRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id, name }),
+                    });
+                    const createData = await createRes.json();
+                    if (createRes.ok) {
+                        setUser(createData.user);
+                    } else {
+                        alert(createData.message);
+                    }
+                } else {
                     alert(dbData.message);
                 }
             } catch (error) {
                 alert(error);
+            } finally {
+                isLoggingIn.current = false;
             }
         },
         [router],
     );
 
-    const logout = async () => {
+    const signinBySession = useCallback(
+        async (name?: string) => {
+            const { data, error } = await signInAnonymously();
+            if (error) {
+                alert(error);
+            } else {
+                if (data?.user?.id && name) {
+                    await loginBySession(data.user.id, name);
+                }
+                router.refresh();
+            }
+        },
+        [router, loginBySession],
+    );
+
+    const logout = useCallback(async () => {
+        const currentUser = userRef.current;
+        if (currentUser) {
+            try {
+                // project://src/app/api/user/[id]/route.ts
+                await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${currentUser.id}`, {
+                    method: "DELETE",
+                });
+            } catch (error) {
+                alert(error);
+            }
+        }
+
         const { error } = await supabase.auth.signOut();
         if (error) {
             alert(error.message);
         } else {
             setUser(null);
-            router.push("/auth/login");
             router.refresh();
         }
-    };
+    }, [router]);
 
-    const changeData = useCallback(async (newData: Partial<Omit<UserType, "id" | "name">>) => {
+    const changeData = useCallback(async (newData: Partial<Omit<UserType, "id">>) => {
         const currentUser = userRef.current;
         if (!currentUser) return;
         try {
@@ -143,7 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             alert(error);
         }
     }, []);
-    return <AuthContext.Provider value={{ user, signup, login, loginBySession, logout, changeData }}>{children}</AuthContext.Provider>;
+    return <AuthContext.Provider value={{ user, signinBySession, loginBySession, logout, changeData }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

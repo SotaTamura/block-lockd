@@ -50,3 +50,14 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
         return NextResponse.json({ message: "error", error }, { status: 500 });
     }
 };
+
+// project://src/app/context.tsx
+export const DELETE = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    try {
+        const id = (await params).id;
+        await prisma.user.delete({ where: { id } });
+        return NextResponse.json({ message: "success" }, { status: 200 });
+    } catch (error) {
+        return NextResponse.json({ message: "error", error }, { status: 500 });
+    }
+};

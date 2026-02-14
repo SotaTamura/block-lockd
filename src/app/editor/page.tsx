@@ -22,7 +22,7 @@ export default function MyLobby() {
     useEffect(() => {
         playBgm("/menu.mp3");
         if (!user) {
-            router.push("/auth/login");
+            router.push("/");
             router.refresh();
         } else {
             (async () => {

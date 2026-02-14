@@ -367,7 +367,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
 
     useEffect(() => {
         if (!user) {
-            router.push("/auth/login");
+            router.push("/");
             router.refresh();
         }
     }, [user, router]);
@@ -545,7 +545,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     const handleSubmit = async (e: React.FormEvent, checkChange: boolean) => {
         e.preventDefault();
         if (!user) {
-            router.push("/auth/login");
+            router.push("/");
             router.refresh();
         } else {
             const code = gzipSync(

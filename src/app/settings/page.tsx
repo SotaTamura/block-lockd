@@ -7,6 +7,7 @@ import { TranslatableString, translate } from "../translate";
 import { Language } from "@/constants";
 import { ReactNode, useEffect, useState } from "react";
 import { BGM_PATHS, bgmBuffers, BgmPath, loadAudio, playBgm, playSfx, sfxBuffers, SfxPath } from "@/game/base";
+import { useRouter } from "next/navigation";
 
 function AudioPlayer({ path, disabled }: { path: BgmPath | SfxPath; disabled: boolean }) {
     return (
@@ -44,14 +45,24 @@ function SettingsSection({ title, children }: { title: ReactNode; children: Reac
 }
 
 export default function Settings() {
-    const { user, logout } = useAuth();
+    const { user, logout, changeData } = useAuth();
     const { settings, setLang, setBgm, setSfx, setFont } = useSettings();
     const { lang, bgm, sfx, font } = settings;
     const t = (str: TranslatableString) => translate(str, lang);
+    const [name, setName] = useState(user?.name);
+    const router = useRouter();
 
     useEffect(() => {
         playBgm("/menu.mp3");
     }, []);
+
+    const handleDeleteData = () => {
+        if (window.confirm(t("本当にデータを削除しますか？"))) {
+            logout();
+            router.push("/");
+            router.refresh();
+        }
+    };
 
     return (
         <div>
@@ -71,9 +82,37 @@ export default function Settings() {
                         {t("設定")}
                     </h1>
                     {user && (
-                        <button className="miniBtn w-full font-bold text-white bg-gray-600 hover:bg-gray-700 transition-colors" style={{ padding: "1.5dvmin", fontSize: "7dvmin" }} onClick={logout}>
-                            {t("ログアウト")}
-                        </button>
+                        <SettingsSection title={t("ユーザー情報")}>
+                            <div className="flex flex-col gap-6 py-4 w-full">
+                                <div className="flex flex-col gap-2 w-full">
+                                    <label className="text-left font-bold opacity-70" style={{ fontSize: "4dvmin" }}>
+                                        {t("ニックネームを入力してください")}
+                                    </label>
+                                    <div className="flex gap-2 w-full">
+                                        <input
+                                            type="text"
+                                            className="grow min-w-0 px-4 py-2 text-black rounded border-2 border-[#333] bg-white"
+                                            style={{ fontSize: "5dvmin" }}
+                                            placeholder={t("ニックネームを入力してください")}
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                if (!name) alert(t("ニックネームを入力してください"));
+                                                else changeData({ name });
+                                            }}
+                                            className="miniBtn px-4 py-2 font-bold shrink-0"
+                                            style={{ fontSize: "4dvmin" }}>
+                                            {t("更新する")}
+                                        </button>
+                                    </div>
+                                </div>
+                                <button className="miniBtn w-full font-bold text-white bg-red-600 hover:bg-red-700 transition-colors border-red-800" style={{ padding: "2dvmin", fontSize: "5dvmin", marginTop: "2dvmin" }} onClick={handleDeleteData}>
+                                    {t("データ削除")}
+                                </button>
+                            </div>
+                        </SettingsSection>
                     )}
                     <SettingsSection title={t("オーディオ")}>
                         <button onClick={() => setBgm(!bgm, "/menu.mp3")} className="flex items-center cursor-pointer hover:bg-black/10 p-2 rounded -mx-2 w-full text-left gap-2">
