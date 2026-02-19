@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from "react";
 import { TranslatableString, translate } from "./translate";
 
 export default function Home({ id }: { id: string | undefined }) {
-    const { user, loginBySession, signinBySession } = useAuth();
+    const { user, loginBySession, signinBySession, setGuest } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
     const [name, setName] = useState("");
     const isLoginProcessing = useRef(false);
@@ -61,6 +61,9 @@ export default function Home({ id }: { id: string | undefined }) {
                     <div onClick={handleStart} className="btn home-btn py-3 text-2xl text-black font-bold cursor-pointer">
                         {t("スタート")}
                     </div>
+                    <div onClick={setGuest} className="btn home-btn py-3 text-2xl text-black font-bold cursor-pointer">
+                        {t("スキップ")}
+                    </div>
                 </div>
             </div>
         );
@@ -69,7 +72,7 @@ export default function Home({ id }: { id: string | undefined }) {
     return (
         <div>
             <div className="loginBtn">
-                <p>{user.name}</p>
+                <p>{user?.name || t("ゲスト")}</p>
             </div>
             <img src={"/logo.png"} className="mt-[20dvh] h-[24dvmin] m-auto" />
             <div className="grid grid-cols-2 gap-2 w-[50dvmin] h-[50dvmin] m-auto mt-[8dvh]">
@@ -93,16 +96,29 @@ export default function Home({ id }: { id: string | undefined }) {
                         {t("設定")}
                     </div>
                 </Link>
-                <Link href={"/editor"} className="btn home-btn flex flex-col items-center w-full h-full py-2">
-                    <div className="grow flex items-center justify-center w-full">
-                        <div className="w-[70%] h-[70%] flex justify-center items-center">
-                            <WrenchSvg />
+                {user.id === "guest" ? (
+                    <div className="btn home-btn flex flex-col items-center w-full h-full py-2 opacity-50 cursor-not-allowed">
+                        <div className="grow flex items-center justify-center w-full">
+                            <div className="w-[70%] h-[70%] flex justify-center items-center">
+                                <WrenchSvg />
+                            </div>
+                        </div>
+                        <div className="whitespace-nowrap mb-1 text-black" style={{ fontSize: "3.5dvmin" }}>
+                            {t("作成する")}
                         </div>
                     </div>
-                    <div className="whitespace-nowrap mb-1 text-black" style={{ fontSize: "3.5dvmin" }}>
-                        {t("作成する")}
-                    </div>
-                </Link>
+                ) : (
+                    <Link href={"/editor"} className="btn home-btn flex flex-col items-center w-full h-full py-2">
+                        <div className="grow flex items-center justify-center w-full">
+                            <div className="w-[70%] h-[70%] flex justify-center items-center">
+                                <WrenchSvg />
+                            </div>
+                        </div>
+                        <div className="whitespace-nowrap mb-1 text-black" style={{ fontSize: "3.5dvmin" }}>
+                            {t("作成する")}
+                        </div>
+                    </Link>
+                )}
                 <Link href={"/select-online-stage"} className="btn home-btn flex flex-col items-center w-full h-full py-2">
                     <div className="grow flex items-center justify-center w-full">
                         <div className="w-[70%] h-[70%] flex justify-center items-center">

@@ -8,6 +8,8 @@ const TRANSLATOR_MAP_ENTRIES = [
     ["ニックネームを入力してください", { us: "Enter your nickname", gb: "Enter your nickname", cn: "输入昵称", tw: "輸入暱稱" }],
     ["ユーザー情報", { us: "User info", gb: "User info", cn: "用户信息", tw: "使用者資訊" }],
     ["スタート", { us: "Start", gb: "Start", cn: "开始", tw: "開始" }],
+    ["スキップ", { us: "Skip", gb: "Skip", cn: "跳过", tw: "跳過" }],
+    ["ゲスト", { us: "Guest", gb: "Guest", cn: "游客", tw: "訪客" }],
     ["言語", { us: "Language", gb: "Language", cn: "语言", tw: "語言" }],
     ["表示", { us: "Display", gb: "Display", cn: "显示", tw: "顯示" }],
     ["フォント", { us: "Font", gb: "Font", cn: "字体", tw: "字體" }],

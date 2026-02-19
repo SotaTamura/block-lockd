@@ -6,14 +6,24 @@ const prisma = new PrismaClient();
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
         const id = Number((await params).id);
-        const stage = await prisma.stage.findFirst({ where: { id } });
-        if (!stage) {
-            return NextResponse.json({ message: "ステージが見つかりません" }, { status: 404 });
-        }
-        const creator = await prisma.user.findFirst({
-            where: { id: stage.creatorId },
+        const stage = await prisma.stage.findUnique({
+            where: { id },
+            include: { creator: true },
         });
-        return NextResponse.json({ message: "success", stage: { ...stage, creatorName: creator?.name || "不明" } }, { status: 200 });
+        if (!stage) {
+            return NextResponse.json({ message: "Stage not found" }, { status: 404 });
+        }
+        return NextResponse.json(
+            {
+                message: "success",
+                stage: {
+                    ...stage,
+                    creatorId: stage.creatorId || "",
+                    creatorName: stage.creator?.name || "Unknown",
+                },
+            },
+            { status: 200 },
+        );
     } catch (error) {
         return NextResponse.json({ message: "error", error }, { status: 500 });
     }

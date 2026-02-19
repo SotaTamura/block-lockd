@@ -4,24 +4,39 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
- model Stage {
-  id Int @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  title String
-  creatorId String
+
+model Stage {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  title       String
+  creatorId   String?  @db.Uuid
   description String
-  code String
-  access Int
- }
+  code        String
+  access      Int
+
+  creator                User?                   @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  onlineStageCompletions OnlineStageCompletion[]
+}
 
 model User {
-  id String @id
-  name String @unique
-  completedStageIds Int[] @default([])
-  completedOnlineStageIds Int[] @default([])
+  id                String @id @db.Uuid
+  name              String
+  completedStageIds Int[]  @default([])
+
+  stages                 Stage[]
+  onlineStageCompletions OnlineStageCompletion[]
+}
+
+model OnlineStageCompletion {
+  userId  String @db.Uuid
+  stageId Int
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stage   Stage  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@id([userId, stageId])
 }

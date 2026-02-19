@@ -66,7 +66,7 @@ export const STAGES: Record<
         hint: "押しブロック\n左右に押せる\nジャンプで上に押し上げることもできる\n複数まとめて押せる\nポータルでテレポートする",
     },
     16: {
-        code: "H4sIAAAAAAAAAz1POQ7DMAz7kFBY8qHYmgrkLRkz9v0lFbdwBlI8pNzLpODNuIAUSFtCgC464ua4Jw3z5dD5vcNOkCn66mKgeq4jNZMqFvrUYVTAPkmGNGAKLghldaGhh/qqvOLnxRiW+hBFrsHE5MAz2gfMfdtx6L9aGfbw3VKxZbICd9GADRnzpVyR6sGq1PIP2ha1fQFmQJIIHQEAAA==",
+        code: "H4sIAAAAAAAAAz1Pyw7DMAj7ITTVJCRrOE3qt+zY475/Nu0mcsD4ATmX28ba880O7NCrZROGkafGUTB9rkle75V+EOyGR5gT4ljP4tyaeeKK42gj+hQY1tmLmEZTRW8SRGKupit+Wo4paRcAfZ0iOQfLJR8Uxy3nof9oyDzyoEApzcA9u0J4mSTcUca5oCXF6iNRXP0vbhL9C71u8gYfAQAA",
         hint: "階段を作ろう",
     },
     17: {

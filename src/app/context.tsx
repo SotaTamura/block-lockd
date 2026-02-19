@@ -17,6 +17,7 @@ interface AuthContextType {
     loginBySession: (id: string, initialName?: string) => Promise<void>;
     logout: () => Promise<void>;
     changeData: (newData: Partial<Omit<UserType, "id">>) => Promise<void>;
+    setGuest: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +31,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         userRef.current = user;
     }, [user]);
+
+    const setGuest = useCallback(() => {
+        setUser({
+            id: "guest",
+            name: "",
+            completedStageIds: [],
+            completedOnlineStageIds: [],
+        });
+    }, []);
 
     const loginBySession = useCallback(
         async (id: string, initialName?: string) => {
@@ -46,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 } else if (res.status === 404) {
                     // Create user if not found
                     const name = initialName || `Player-${id.slice(0, 5)}`;
+                    // project://src/app/api/user/route.ts
                     const createRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -86,7 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const logout = useCallback(async () => {
         const currentUser = userRef.current;
-        if (currentUser) {
+        if (currentUser && currentUser.id !== "guest") {
             try {
                 // project://src/app/api/user/[id]/route.ts
                 await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${currentUser.id}`, {
@@ -95,6 +106,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } catch (error) {
                 alert(error);
             }
+        }
+
+        if (currentUser && currentUser.id === "guest") {
+            setUser(null);
+            router.refresh();
+            return;
         }
 
         const { error } = await supabase.auth.signOut();
@@ -108,7 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const changeData = useCallback(async (newData: Partial<Omit<UserType, "id">>) => {
         const currentUser = userRef.current;
-        if (!currentUser) return;
+        if (!currentUser || currentUser.id === "guest") return;
         try {
             // project://src/app/api/user/[id]/route.ts
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${currentUser.id}`, {
@@ -118,6 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
             if (res.ok) {
                 setUser({ ...currentUser, ...newData });
+                if ("name" in newData) alert("Your name has been updated.");
             } else {
                 alert((await res.json()).message);
             }
@@ -125,7 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             alert(error);
         }
     }, []);
-    return <AuthContext.Provider value={{ user, signinBySession, loginBySession, logout, changeData }}>{children}</AuthContext.Provider>;
+    return <AuthContext.Provider value={{ user, signinBySession, loginBySession, logout, changeData, setGuest }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

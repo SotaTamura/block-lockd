@@ -81,7 +81,7 @@ export default function Settings() {
                     <h1 className="font-bold text-center border-b border-gray-600 mb-4 pb-1" style={{ fontSize: "9dvmin", marginBottom: "1dvmin" }}>
                         {t("設定")}
                     </h1>
-                    {user && (
+                    {user && user.id !== "guest" && (
                         <SettingsSection title={t("ユーザー情報")}>
                             <div className="flex flex-col gap-6 py-4 w-full">
                                 <div className="flex flex-col gap-2 w-full">

@@ -5,26 +5,20 @@ const prisma = new PrismaClient();
 
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
+        const creatorId = (await params).id;
         const stages = await prisma.stage.findMany({
             where: {
-                creatorId: (await params).id,
+                creatorId,
             },
+            include: { creator: true },
         });
-        const creatorIds = stages.map((stage) => stage.creatorId);
-        const creators = await prisma.user.findMany({
-            where: {
-                id: {
-                    in: creatorIds,
-                },
-            },
-        });
-        const creatorMap = new Map(creators.map((creator) => [creator.id, creator.name]));
         return NextResponse.json(
             {
                 message: "success",
                 stages: stages.map((stage) => ({
                     ...stage,
-                    creatorName: creatorMap.get(stage.creatorId) || "Unknown",
+                    creatorId: stage.creatorId || "",
+                    creatorName: stage.creator?.name || "Unknown",
                 })),
             },
             { status: 200 },
