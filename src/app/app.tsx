@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { onLoad, playBgm } from "@/game/base";
-import { Loading, MuteSvg, VolumeSvg } from "./components";
+import { Loading, MuteSvg, Popup, VolumeSvg } from "./components";
 import { Language } from "@/constants";
-import { useSettings } from "./context";
+import { usePopup, useSettings } from "./context";
 
 export default function App({ children }: { children: React.ReactNode }) {
     const { settings, setLang, setBgm, setSfx, setFont } = useSettings();
+    const { popupData } = usePopup();
     const [isInitLoading, setIsInitLoading] = useState(true);
     const [isAudioLoading, setIsAudioLoading] = useState(true);
     const [isAudioSelected, setIsAudioSelected] = useState(false);
@@ -89,6 +90,11 @@ export default function App({ children }: { children: React.ReactNode }) {
                         <MuteSvg />
                     </button>
                 </div>
+            )}
+            {popupData && (
+                <Popup onOk={popupData.onOk} onCancel={popupData.onCancel}>
+                    {popupData.children}
+                </Popup>
             )}
             {children}
         </div>

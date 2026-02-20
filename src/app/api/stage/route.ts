@@ -7,7 +7,15 @@ export const GET = async () => {
     try {
         const stages = await prisma.stage.findMany({
             where: { access: 0 },
-            include: { creator: true },
+            select: {
+                id: true,
+                title: true,
+                creatorId: true,
+                createdAt: true,
+                updatedAt: true,
+                access: true,
+                creator: true,
+            },
         });
         return NextResponse.json(
             {

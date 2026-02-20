@@ -14,9 +14,7 @@
 
 ## 開発
 
-`.env`に環境変数`DATABASE_URL`, `DIRECT_URL`を設定
-
-`.env.local`にローカルの環境変数`NEXT_PUBLIC_API_BASE_URL=http://localhost:3000`を設定
+`.env`に環境変数`DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_BASE_URL=http://localhost:3000`を設定
 
 `npm run dev`で起動
 
@@ -31,6 +29,8 @@ Next.js
 Tailwind CSS
 
 Prisma
+
+Supabase
 
 Pixi.js
 

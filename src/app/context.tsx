@@ -2,7 +2,7 @@
 
 import { Language, SettingsType, UserType } from "@/constants";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useState, ReactNode, useCallback, useRef, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback, useRef, useEffect, Dispatch, SetStateAction } from "react";
 import { StageType } from "@/constants";
 import { createClient } from "../../lib/supabase/client";
 import { bgmBuffers, BgmPath, loadAllBgm, loadAllSfx, playBgm, sfxBuffers, stopBgm } from "@/game/base";
@@ -22,11 +22,78 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// UI (Popup)
+interface PopupData {
+    children: ReactNode;
+    onOk?: () => void;
+    onCancel?: () => void;
+}
+
+interface PopupContextType {
+    showAlert: (message: ReactNode) => void;
+    showConfirm: (message: ReactNode, onOk: () => void, onCancel?: () => void) => void;
+    showPopup: (data: PopupData) => void;
+    hidePopup: () => void;
+    popupData: PopupData | null;
+}
+
+const PopupContext = createContext<PopupContextType | undefined>(undefined);
+
+export const PopupProvider = ({ children }: { children: ReactNode }) => {
+    const [popupData, setPopupData] = useState<PopupData | null>(null);
+
+    const showPopup = useCallback((data: PopupData) => {
+        setPopupData(data);
+    }, []);
+
+    const hidePopup = useCallback(() => {
+        setPopupData(null);
+    }, []);
+
+    const showAlert = useCallback(
+        (message: ReactNode) => {
+            showPopup({
+                children: typeof message === "string" ? <p>{message}</p> : message,
+                onOk: hidePopup,
+            });
+        },
+        [showPopup, hidePopup],
+    );
+
+    const showConfirm = useCallback(
+        (message: ReactNode, onOk: () => void, onCancel?: () => void) => {
+            showPopup({
+                children: typeof message === "string" ? <p>{message}</p> : message,
+                onOk: () => {
+                    onOk();
+                    hidePopup();
+                },
+                onCancel: () => {
+                    if (onCancel) onCancel();
+                    hidePopup();
+                },
+            });
+        },
+        [showPopup, hidePopup],
+    );
+
+    return <PopupContext.Provider value={{ showAlert, showConfirm, showPopup, hidePopup, popupData }}>{children}</PopupContext.Provider>;
+};
+
+export const usePopup = () => {
+    const context = useContext(PopupContext);
+    if (context === undefined) {
+        throw new Error("usePopup must be used within a PopupProvider");
+    }
+    return context;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const router = useRouter();
     const [user, setUser] = useState<UserType | null>(null);
     const userRef = useRef<UserType | null>(null);
     const isLoggingIn = useRef(false);
+    const { showAlert } = usePopup();
 
     useEffect(() => {
         userRef.current = user;
@@ -54,37 +121,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (res.ok) {
                     setUser(dbData.user);
                 } else if (res.status === 404) {
-                    // Create user if not found
-                    const name = initialName || `Player-${id.slice(0, 5)}`;
-                    // project://src/app/api/user/route.ts
-                    const createRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ id, name }),
-                    });
-                    const createData = await createRes.json();
-                    if (createRes.ok) {
-                        setUser(createData.user);
+                    // Create user ONLY IF initialName is provided
+                    if (initialName) {
+                        const name = initialName;
+                        // project://src/app/api/user/route.ts
+                        const createRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id, name }),
+                        });
+                        const createData = await createRes.json();
+                        if (createRes.ok) {
+                            setUser(createData.user);
+                        } else {
+                            showAlert(createData.message);
+                        }
                     } else {
-                        alert(createData.message);
+                        // User not found and no name provided, keep user as null
+                        setUser(null);
                     }
                 } else {
-                    alert(dbData.message);
+                    showAlert(dbData.message);
                 }
             } catch (error) {
-                alert(error);
+                showAlert(String(error));
             } finally {
                 isLoggingIn.current = false;
             }
         },
-        [router],
+        [showAlert],
     );
 
     const signinBySession = useCallback(
         async (name?: string) => {
             const { data, error } = await signInAnonymously();
             if (error) {
-                alert(error);
+                showAlert(String(error));
             } else {
                 if (data?.user?.id && name) {
                     await loginBySession(data.user.id, name);
@@ -92,19 +164,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 router.refresh();
             }
         },
-        [router, loginBySession],
+        [router, loginBySession, showAlert],
     );
 
     const logout = useCallback(async () => {
         const currentUser = userRef.current;
         if (currentUser && currentUser.id !== "guest") {
             try {
+                // Delete non-public stages
+                // project://src/app/api/stage/user/[id]/route.ts
+                await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/user/${currentUser.id}`, {
+                    method: "DELETE",
+                });
+
                 // project://src/app/api/user/[id]/route.ts
                 await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${currentUser.id}`, {
                     method: "DELETE",
                 });
             } catch (error) {
-                alert(error);
+                showAlert(String(error));
             }
         }
 
@@ -116,33 +194,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         const { error } = await supabase.auth.signOut();
         if (error) {
-            alert(error.message);
+            showAlert(error.message);
         } else {
             setUser(null);
             router.refresh();
         }
-    }, [router]);
+    }, [router, showAlert]);
 
-    const changeData = useCallback(async (newData: Partial<Omit<UserType, "id">>) => {
-        const currentUser = userRef.current;
-        if (!currentUser || currentUser.id === "guest") return;
-        try {
-            // project://src/app/api/user/[id]/route.ts
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${currentUser.id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newData),
-            });
-            if (res.ok) {
-                setUser({ ...currentUser, ...newData });
-                if ("name" in newData) alert("Your name has been updated.");
-            } else {
-                alert((await res.json()).message);
+    const changeData = useCallback(
+        async (newData: Partial<Omit<UserType, "id">>) => {
+            const currentUser = userRef.current;
+            if (!currentUser || currentUser.id === "guest") return;
+            try {
+                // project://src/app/api/user/[id]/route.ts
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/${currentUser.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newData),
+                });
+                if (res.ok) {
+                    setUser({ ...currentUser, ...newData });
+                    if ("name" in newData) showAlert("Your name has been updated.");
+                } else {
+                    showAlert((await res.json()).message);
+                }
+            } catch (error) {
+                showAlert(String(error));
             }
-        } catch (error) {
-            alert(error);
-        }
-    }, []);
+        },
+        [showAlert],
+    );
     return <AuthContext.Provider value={{ user, signinBySession, loginBySession, logout, changeData, setGuest }}>{children}</AuthContext.Provider>;
 };
 
@@ -157,7 +238,7 @@ export const useAuth = () => {
 // ステージデータ
 interface StageContextType {
     stages: StageType[];
-    setStages: (stages: StageType[]) => void;
+    setStages: Dispatch<SetStateAction<StageType[]>>;
     getStageById: (id: number) => StageType | undefined;
 }
 

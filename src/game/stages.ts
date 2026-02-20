@@ -18,7 +18,7 @@ export const STAGES: Record<
         hint: "既に消えているブロックは、その色の鍵を取ると復活する",
     },
     4: {
-        code: "H4sIAAAAAAAAA12QSw4DIQxDL2RVGCZQ4D5ddtnzNyF8pl1Ewi92ArA0QX1oQTpNiIqilV1SO2kdM+IxXVqcnQtUpb5Pi2DChYigRJzUEXAUpwlxo5FLkB2jA/7Hks0u99mWWiA7qHj+TrZlB+WFyBszpHuDg+6XPo4+37UNL9UB1Ij0t/XEZB7nMJ7GuG1m7KXR/ql+Ae2hFwtyAQAA",
+        code: "H4sIAAAAAAAAA12QQRbDIAhELzQvT1A06n267LLnLxONsd3J5w+oUpqhHgYRWBdW5lVFHoWwEe9zgT6Og8kTlM6nKSQieU8RaAzmwxbSqUEXupLRxz1BGUj+g5Hzz306c+eS8kAVEn7Hc+PG8mJpY0S+e93svv0mxT4fuVkvJwHiSetvdo1lvs4BtKdCqZfGrf6rh30BR9Jm7XwBAAA=",
         hint: "鍵は全て取るとは限らない",
     },
     5: {
@@ -27,7 +27,7 @@ export const STAGES: Record<
     },
     6: {
         code: "H4sIAAAAAAAAA0WQsRXDMAhEF6IwFhKW1HqEzKAyZebPAcJ+NP/g4AGso1IlPkgmG3diOgMLsAWyxeR7NGIoQQ2mD6TVTsg2TWmoqWaUhAK4AwR9u1gTNF0aLqErXYV6upgzBeIFvGKgPIpdrdjKz7iDbUG2S9Dvu26sL+qL/UW2D6xAu+I3TjgLGnV+wT65e9oo1jULdlxRf/ok7/eC/7HGEP9v2fkj04dhwzx/vvwBbi2jL6oBAAA=",
-        hint: "一方通行ブロック\n矢印の逆の向きに進むことはできない\n色がついているものは、その色の鍵を取ると向きが180°切り替わる",
+        hint: "一方通行ブロック\n\n矢印の逆の向きに進むことはできない\n色がついているものは、その色の鍵を取ると向きが180°切り替わる",
     },
     7: {
         code: "H4sIAAAAAAAAA1WSSZLDIAxFL6SFPwgw5gpZ5gxe9v2XjdBQSsVVeU+yBmyPhwmVeA2FpnB55LJIt0A3L/HPC+NpBJbLpBMKdeUhTYwBugnKdWNZ+D5d5mJ7lduO764kMSxP1z2phiHbzDJCWIvggiQzuKWKmcfcuWKmITNV3LqnFwRzijc92/rY7mVX73O/6SjFk/dPbuRU1ZR3EZOn/dG9Sd/Ee4yDRtAM2hMDq2FThLG0627zyGvPyu9nH95iuO4WqlbFjPthPd1pi6UcK8FXKoLyUa0/4Xb0xK/9Qz/hS96PfJYyFPwP2R+3EMsCAAA=",
@@ -39,7 +39,7 @@ export const STAGES: Record<
     },
     9: {
         code: "H4sIAAAAAAAAA02QSxqDIAyEL5QFCQpKV616g57BpfdfdiZBy8fmnzyGgbOZJBwtr8tRRWdHnQfOwSdZIKxjvbHKLGFhssoUW+oYk7QzL0+y9IHVSa+WUVSDMVSFWrhrLz3BBWNGUVuRcOyoaWAd2AbOD9uwa+Oyjds2rtuzb8yUGePy1yIeG9/GeB69W8wcTJHX2W5Gdb1nlOcp+1t3WBX+Axq2twpL/ts7BEOh8lcF6hMKHlyDqq5W2frY5Dm3aGRetfdO8h+mrF0mOe57vXVEvOyha2Pi8gNAtM4wLgIAAA==",
-        hint: "ポータル\n同じアルファベットが書かれたポータル同士を行き来できる",
+        hint: "ポータル\n\n同じアルファベットが書かれたポータル同士を行き来できる",
     },
     10: {
         code: "H4sIAAAAAAAAAz1RMXIEIQz7kOcGmwV2oUpylypl3rDllXl/JBuY2UICYUvadzdJolLG7Qi4jjegFpxqHKuzY9jdm6jyy/Ix7Ae0ComBautF6qMItEPvnnFXcZfXjCyaQqXk2fckaXItuSbO8vMLikA0co4WKIUUwiP2+DjFWxv2pL0Y/jnZQQNg8Qq7cDCs4coAn1PFBozsjkSM9Ip8jGsIxYwvuDg4E10sZBtNM80bsKGRgu/yTIR6qPGcnBn5uEH0UWYWzmr067ITj9pekTbKU53JqrfDFMcugUO/gl1RA9hvZwGnsKHvRRk9g/7FX0o0Jin8ZKy/wjV/VfVVbgxxF0obWQzheq+MqVpn7Wr/y/Vs2GoCAAA=",
@@ -47,7 +47,7 @@ export const STAGES: Record<
     },
     11: {
         code: "H4sIAAAAAAAAA01QQQ6DMAz7UIRIaFrWnAYcOe4NHDnu/XMS0FCLZMdx6nB2oRGHqx2A7LDY6VAdj4PaNwR2hR5cBiWNQjphYL2toeIzTlGp0GQNGCbjMwCjKDepIBwdeOlqAfJyvabkGMkA4zOBHL1Rc5FWkx0kAkvyzXnxO9H7onFAGshML1r+bTAtxnuveJx5iDcpNplQ0Qz0gewZfC9fonX1gOJaYMFYTex+Nt767C2MfvyLpJJUsHhEKj/EkEVfkQEAAA==",
-        hint: "レバー\nその色のブロックの状態を何度でも切り替えることができる",
+        hint: "レバー\n\nその色のブロックの状態を何度でも切り替えることができる",
     },
     12: {
         code: "H4sIAAAAAAAAA1VRWw4CIRC7EDE7vIaFLxOP4Bn89NPz2xZUDCTbzpbSGZ49hgPL6ngAGuAHWcEeT+JCRVH9lILVCs2seYghDReyVSkhC1UsX8iOcI7XhBYyzhh/NBihNowO0KRlEmWraoZoqY0SfGSUJsnDlBNUNdLEOxIXLRJ/ti+mX1x43v3o8oJq9pLRgR2UlKADdWKfuQmjBmC3Xqll3A+JO0k7yTspO6k7aTvxnZw7UfM/9pfB/kLYTBG9O5vBvo546+yGKa7UNdzkGq1IW++KXvlCuHjc4XWirBGTVJGEMXi34BfkewN+T0swUgIAAA==",
@@ -63,7 +63,7 @@ export const STAGES: Record<
     },
     15: {
         code: "H4sIAAAAAAAAA0VQSQ6DQAz7kFWRTIYBckLqW3rk2PfXDoMqDl4mi8N1OBZ+tuaH1ET7pNZhll/xBnM0RA6pv+9wBPanwbDlVXRDKybe6tnR4WkyOY1dLU3Tgn67/T59jR6s6uh511NxdWjHRJ/4+DGxFzqD3LhPtCXtfazQZMea4szBc9M+B0+rjasytbrXbrHBQqLSdrXS93EMHc8/caa/KQLLS68n1zEkBnHXgigSzHcVeiVXicUPiY77LH0BAAA=",
-        hint: "押しブロック\n左右に押せる\nジャンプで上に押し上げることもできる\n複数まとめて押せる\nポータルでテレポートする",
+        hint: "押しブロック\n\n左右に押せる\nジャンプで上に押し上げることもできる\n複数まとめて押せる\nポータルでテレポートする",
     },
     16: {
         code: "H4sIAAAAAAAAAz1Pyw7DMAj7ITTVJCRrOE3qt+zY475/Nu0mcsD4ATmX28ba880O7NCrZROGkafGUTB9rkle75V+EOyGR5gT4ljP4tyaeeKK42gj+hQY1tmLmEZTRW8SRGKupit+Wo4paRcAfZ0iOQfLJR8Uxy3nof9oyDzyoEApzcA9u0J4mSTcUca5oCXF6iNRXP0vbhL9C71u8gYfAQAA",
@@ -71,7 +71,7 @@ export const STAGES: Record<
     },
     17: {
         code: "H4sIAAAAAAAAA11SOQ7DMAz7kFBYvo+pQMeOfUPGjn1/SSkO0CJAQIoUHck5ZpSAR+t6A2oRxWsdViYrVg8CLVhZVZIkdyfJ4uYoHYpVowzxtExHNL04bN6laenbs5TJ5h7AZX1YlgoWbsVdmQIi1bqNexD9eswENfOhA+EBvDvO5nfMY1FvE8WMCU6QNygb1A3aBlfX2ADL2EgvFC90pSsOf80qzebntM77Hx9/HENchWP31xXbbBwky33FBzB9sN2XPmZH6pBzXgoBbZ0KUMdS0HgywzzLGNer1J48WXjBEQs6afyl6ZfmTdssjOH6Pn457VYg2TX69+y927C2Ld2/BT+hfAF+OuJNjQIAAA==",
-        hint: "ボタン\n押し始めた瞬間と、離した瞬間に、その色のブロックの状態を切り替える\nプレイヤーまたは押しブロックで押せる",
+        hint: "ボタン\n\n押し始めた瞬間と、離した瞬間に、その色のブロックの状態を切り替える\nプレイヤーまたは押しブロックで押せる",
     },
     18: {
         code: "H4sIAAAAAAAAA1VQSRLDIAz7kCcTg00Wrn1C35Bjjn1/JRvS6XCwhIVkc59FVhxt/QJUQu83oYNp6dvANgTE3j+Ji5iUaBTZqNaQE6dJhaAGPHA9kS8wWXw4VqlLOjahUe1KYjgrhLgOIR9BsIzxNJwzz9DQBx94oNfJ6MYY0g0UrU24kIk/tY5qUXX9AZ+g9dfZcmakTOyZyPmgKYk1dhg4Y5QPcJ+LTGZ/rAZ7J+GHaLaMJpqGCNnnmrvk0mNl5z9zIfxsjI050cyq9gWU967V5AEAAA==",
@@ -82,8 +82,8 @@ export const STAGES: Record<
         hint: "スピードが大事",
     },
     20: {
-        code: "H4sIAAAAAAAAA2VQMQ4DIQz7EDpdAlwOmCrd2LF7t4439v21E64dqkjIdoJjOLumFSUyXoBCWMdJWMEmhqipzAk2vhiHXnj96S2Zo4aqoelCw3WpQ61b2lODcBt6gEhmIym4WOyTlIccfadxRmcLloNpsBpsD2bBSrAWrA55dI9Gz0ID7gilYcm7M6S4qQEbzXFFELHMWHUq259CLfMc8iRvPpNRl4IUheaQkPNOyTjg3+Hv8FX8teLJ/ArjIg4XSPkA7cZfG6UBAAA=",
-        hint: "駆動ブロック\n動力を与えられると矢印部分が光り、その方向に動き始める\nプレイヤーや押しブロックは押される\n壁に当たると止まる\nもう一度動力を与えられると元に戻り、止まる",
+        code: "H4sIAAAAAAAAA01QQQ7DIAz7UFQ1AUqB06Qed9x9tx173PtnJ3SbIiHbIbHh7CYrSnW8AJWwjJOwgE0M0STPG2x8MQ678PrTm1RHDTU1W7hwXcqw2qvs0iDchh0gmtgQA9cafipp6NF3Lk7obMFSMAtWgu3BarAcrAUrQx/do3Fn5gJ6hNJogrbKhlZEKFPZ/5R350PUjStwZQC/xcnEc+iTvPmmhLoUpMgchIScd0qVF/w7/B1uxl/LnsxHGBdWNND8AXleoxulAQAA",
+        hint: "駆動ブロック\n\n動力を与えられると矢印部分が光り、その方向に動き始める\nプレイヤーや押しブロックは押される\n壁に当たると止まる\nもう一度動力を与えられると元に戻り、止まる",
     },
     21: {
         code: "H4sIAAAAAAAAA02ROxqEIAyEL5SCABKFale02nN4/yPsJBL0o2CGP+QBV40UKFJsFxTnKQMWlyYm89jdr2Pn4CK6uEN5eas4VXC1uigu8iirYaXFXkVNIqbP7RQkSm4BGfD7QAb8OtzA9sk2oN0RTqhPJEDdEbLQMdECdDjSTs6JtJGzca9FHw19YYZhk52olar5TP6qtWdx0xdUGL6rxz15YcF642xDuZN74Cc3e3Kplso+wMrnP3sLNVPmAQAA",

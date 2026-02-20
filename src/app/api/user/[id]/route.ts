@@ -1,6 +1,5 @@
-import { PrismaClient } from "@/generated/prisma";
+import { PrismaClient, Prisma } from "@/generated/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { UserType } from "@/constants";
 
 const prisma = new PrismaClient();
 
@@ -30,7 +29,7 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
     try {
         const id = (await params).id;
         const { name, completedStageIds, completedOnlineStageIds } = await req.json();
-        const data: any = {};
+        const data: Prisma.UserUpdateInput = {};
         if (name) {
             data.name = name;
         }
@@ -57,7 +56,6 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
         return NextResponse.json({ message: "error", error }, { status: 500 });
     }
 };
-
 
 // project://src/app/context.tsx
 export const DELETE = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {

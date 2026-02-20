@@ -9,20 +9,22 @@ export const metadata: Metadata = {
     },
 };
 
-import { AuthProvider, SettingsProvider, StageProvider } from "@/app/context";
+import { AuthProvider, PopupProvider, SettingsProvider, StageProvider } from "@/app/context";
 import App from "@/app/app";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html lang="ja">
             <body>
-                <AuthProvider>
-                    <SettingsProvider>
-                        <StageProvider>
-                            <App>{children}</App>
-                        </StageProvider>
-                    </SettingsProvider>
-                </AuthProvider>
+                <PopupProvider>
+                    <AuthProvider>
+                        <SettingsProvider>
+                            <StageProvider>
+                                <App>{children}</App>
+                            </StageProvider>
+                        </SettingsProvider>
+                    </AuthProvider>
+                </PopupProvider>
             </body>
         </html>
     );

@@ -1,38 +1,35 @@
+import type { Stage, User } from "@/generated/prisma";
+
 // 定数
 export const π = Math.PI;
+export const ε = 1e-4;
+export const MAX_ITER = 64;
 export const STEP = 1000 / 60;
+export const SCALE = 100;
 export const PROPS_LEN = 8;
 export const RESOLUTION = 1024;
 export const MAP_BLOCK_LEN = 16;
 export const UNIT = RESOLUTION / MAP_BLOCK_LEN;
 export const PX_PER_UNIT = 16;
+export const SFX_MIN_INTERVAL = 50;
 export const PLAYER_STRENGTH = 10000;
 export const BLOCK_STRENGTH = 20000;
 export const PUSH_BLOCK_STRENGTH = 5000;
 export const MOVE_BLOCK_STRENGTH = 15000;
-export const GRAVITY = 0.01;
-export const JUMP_SPEED = -0.2;
-export const PLAYER_SPEED = 0.08;
-export const MOVE_BLOCK_SPEED = 0.04;
-export const CORNER_LEN = 0.05;
-export const MOVE_OBJ_CORNER_LEN = 0.2;
-export const SFX_MIN_INTERVAL = 50;
+export const GRAVITY = 1;
+export const JUMP_SPEED = -21;
+export const PLAYER_SPEED = 8;
+export const MOVE_BLOCK_SPEED = 4;
+export const TERMINAL_V = 45;
+export const CORNER_CORRECT = 12;
+export const MOVE_OBJ_CORNER_CORRECT = 20;
+
 // 型
-export type StageType = {
-    id: number;
-    createdAt: Date;
-    updatedAt: Date;
-    title: string;
+export type StageType = Stage & {
     creatorId: string;
     creatorName: string;
-    description: string;
-    code: string;
-    access: number;
 };
-export type UserType = {
-    id: string;
-    name: string;
-    completedStageIds: number[];
+export type UserType = User & {
     completedOnlineStageIds: number[];
 };
 export type SettingsType = {
@@ -42,10 +39,22 @@ export type SettingsType = {
     font: boolean;
 };
 export type Angle = 0 | 90 | 180 | -90;
-export type Side = "t" | "b" | "l" | "r";
+export type Axis = "x" | "y";
 export type Direction = "u" | "d" | "l" | "r";
 export type Language = "ja" | "us" | "gb" | "cn" | "tw";
 // 変換
+export const opposite: Record<Direction, Direction> = {
+    u: "d",
+    d: "u",
+    l: "r",
+    r: "l",
+};
+export const angFrom: Record<Direction, Angle> = {
+    u: 0,
+    r: 90,
+    d: 180,
+    l: -90,
+};
 export const colorMap: Record<number, string | undefined> = {
     0: undefined, //white
     1: "#ff0000", //red
@@ -58,7 +67,6 @@ export const colorMap: Record<number, string | undefined> = {
     8: "#fd8208", //orange
 };
 
-// 関数
 export const convertBase = (m: number, chars: string) => {
     if (!Number.isInteger(m) || m < 0) throw new Error("m must be a non-negative integer");
     const n = chars.length;

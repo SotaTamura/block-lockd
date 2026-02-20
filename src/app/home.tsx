@@ -1,13 +1,15 @@
 "use client";
 
-import { useAuth, useSettings } from "@/app/context";
+import { useAuth, usePopup, useSettings } from "@/app/context";
 import Link from "next/link";
 import { WrenchSvg, RightSvg, WorldSvg, GearSvg } from "./components";
 import { useEffect, useState, useRef } from "react";
 import { TranslatableString, translate } from "./translate";
+import Image from "next/image";
 
 export default function Home({ id }: { id: string | undefined }) {
     const { user, loginBySession, signinBySession, setGuest } = useAuth();
+    const { showAlert } = usePopup();
     const [isLoading, setIsLoading] = useState(true);
     const [name, setName] = useState("");
     const isLoginProcessing = useRef(false);
@@ -24,10 +26,10 @@ export default function Home({ id }: { id: string | undefined }) {
             }
             setIsLoading(false);
         })();
-    }, [id, loginBySession]);
+    }, [id, loginBySession, user]);
 
     const handleStart = async () => {
-        if (!name) alert(t("ニックネームを入力してください"));
+        if (!name) showAlert(t("ニックネームを入力してください"));
         else {
             isLoginProcessing.current = true;
             setIsLoading(true);
@@ -43,7 +45,7 @@ export default function Home({ id }: { id: string | undefined }) {
 
     if (!user) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-dvh gap-8">
+            <div className="flex flex-col items-center justify-center h-svh overflow-y-auto gap-8 relative">
                 <div
                     className="bg-[#aaa] bg-opacity-75 border-[#333] flex flex-col gap-6 p-8"
                     style={{
@@ -65,16 +67,19 @@ export default function Home({ id }: { id: string | undefined }) {
                         {t("スキップ")}
                     </div>
                 </div>
+                <Link href="/terms" className="absolute bottom-4 text-gray-600 underline text-sm hover:text-gray-800 transition-colors">
+                    {t("利用規約")}
+                </Link>
             </div>
         );
     }
 
     return (
-        <div>
+        <div className="h-svh overflow-y-auto pb-10 relative">
             <div className="loginBtn">
                 <p>{user?.name || t("ゲスト")}</p>
             </div>
-            <img src={"/logo.png"} className="mt-[20dvh] h-[24dvmin] m-auto" />
+            <Image src={"/logo.png"} className="mt-[20dvh] h-[24dvmin] m-auto" alt="logo" width={500} height={500} style={{ width: "auto", imageRendering: "pixelated" }} unoptimized />
             <div className="grid grid-cols-2 gap-2 w-[50dvmin] h-[50dvmin] m-auto mt-[8dvh]">
                 <Link className="btn home-btn flex flex-col items-center w-full h-full py-2" href={"/select-stage"}>
                     <div className="grow flex items-center justify-center w-full">
@@ -128,6 +133,14 @@ export default function Home({ id }: { id: string | undefined }) {
                     <div className="whitespace-nowrap mb-1 text-black" style={{ fontSize: "3.5dvmin" }}>
                         {t("オンライン")}
                     </div>
+                </Link>
+            </div>
+            <div className="flex justify-center w-full mt-20 gap-7">
+                <Link href="/terms" className="text-gray-300 underline">
+                    {t("利用規約")}
+                </Link>
+                <Link href="/credits" className="text-gray-300 underline">
+                    {t("クレジット")}
                 </Link>
             </div>
         </div>

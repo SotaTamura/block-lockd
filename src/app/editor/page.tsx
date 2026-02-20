@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, useSettings, useStage } from "@/app/context";
+import { useAuth, usePopup, useSettings, useStage } from "@/app/context";
 import { StageType } from "@/constants";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -12,6 +12,7 @@ import { TranslatableString, translate } from "../translate";
 export default function MyLobby() {
     const router = useRouter();
     const { user } = useAuth();
+    const { showAlert } = usePopup();
     const { stages, setStages } = useStage();
     const [isLoading, setIsLoading] = useState(false);
     const {
@@ -23,7 +24,6 @@ export default function MyLobby() {
         playBgm("/menu.mp3");
         if (!user) {
             router.push("/");
-            router.refresh();
         } else {
             (async () => {
                 setIsLoading(true);
@@ -35,18 +35,18 @@ export default function MyLobby() {
                     if (!res.ok) setStages([]);
                     setStages(((await res.json()).stages || []).reverse());
                 } catch (error) {
-                    alert(error);
+                    showAlert(String(error));
                     setStages([]);
                 }
                 setIsLoading(false);
             })();
         }
-    }, [user, router, setStages]);
+    }, [user, router, setStages, showAlert]);
 
     return (
         <main className="editor-layout text-center">
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
-                <Link href={"/"} className="btn back w-[18dvmin] h-full">
+                <Link className="btn back w-[18dvmin] h-full" href={"/"}>
                     <LeftSvg />
                 </Link>
             </div>

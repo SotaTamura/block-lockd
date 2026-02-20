@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { pressingEvent, pressStartEvent } from "../game/base";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function Loading() {
     return (
@@ -10,6 +10,48 @@ export function Loading() {
                 Loading...
             </motion.span>
         </motion.div>
+    );
+}
+
+export function Popup({ onOk, onCancel, children }: { onOk?: () => void; onCancel?: () => void; children: ReactNode }) {
+    return (
+        <AnimatePresence>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
+                <motion.div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+                <motion.div
+                    className="relative z-10 w-full max-w-sm bg-gray-800 border-8 border-double border-[#eee] shadow-2xl flex flex-col items-center justify-center origin-center overflow-hidden"
+                    initial={{ scaleX: 0, scaleY: 0, backgroundColor: "#eee" }}
+                    animate={{
+                        scaleX: [0, 1, 1],
+                        scaleY: [0, 0.005, 1],
+                        backgroundColor: ["#eee", "#eee", "#1e2939"],
+                    }}
+                    transition={{
+                        duration: 0.3,
+                        times: [0, 0.5, 1],
+                        ease: "linear",
+                    }}>
+                    <motion.div className="w-full p-8 flex flex-col items-center gap-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.2 }} exit={{ opacity: 0, transition: { duration: 0.1 } }}>
+                        <div className="flex flex-col items-center gap-4 w-full text-[#eee] makinas-font whitespace-pre-wrap overflow-y-auto max-h-[50svh] text-2xl">{children}</div>
+
+                        {(onOk || onCancel) && (
+                            <div className="flex gap-4 mt-2">
+                                {onCancel && (
+                                    <div onClick={onCancel} className="btn dangerBtn cursor-pointer min-w-32 h-12">
+                                        Cancel
+                                    </div>
+                                )}
+                                {onOk && (
+                                    <div onClick={onOk} className="btn cursor-pointer text-black min-w-32 h-12">
+                                        OK
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </motion.div>
+                </motion.div>
+            </div>
+        </AnimatePresence>
     );
 }
 

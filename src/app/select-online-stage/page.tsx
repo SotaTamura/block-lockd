@@ -1,14 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Checkbox, LeftSvg, PlayButton } from "../components";
-import { useAuth, useSettings, useStage } from "../context";
+import { useAuth, usePopup, useSettings, useStage } from "../context";
 import { playBgm } from "@/game/base";
 import { TranslatableString, translate } from "../translate";
+import { useRouter } from "next/navigation";
 
 export default function Lobby() {
+    const router = useRouter();
     const { user } = useAuth();
+    const { showAlert } = usePopup();
     const { stages, setStages } = useStage();
     const [isLoading, setIsLoading] = useState(false);
     const [isShowOnlyCompleted, setIsShowOnlyCompleted] = useState(false);
@@ -19,36 +21,37 @@ export default function Lobby() {
 
     useEffect(() => {
         playBgm(`/menu.mp3`);
+        if (stages.length > 0) return;
         (async () => {
             setIsLoading(true);
             try {
                 // project://src/app/api/stage/route.ts
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
-                    cache: "no-store",
-                });
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`);
                 if (!res.ok) setStages([]);
                 setStages(((await res.json()).stages || []).reverse());
             } catch (error) {
-                alert(error);
+                showAlert(String(error));
                 setStages([]);
             }
             setIsLoading(false);
         })();
-    }, [setStages]);
+    }, [setStages, stages.length]);
 
     return (
         <main className="editor-layout text-center">
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
-                <Link href={"/"} className="btn back w-[18dvmin] h-[12dvmin]">
+                <div className="btn back w-[18dvmin] h-[12dvmin]" onClick={router.back}>
                     <LeftSvg />
-                </Link>
+                </div>
             </div>
             <div className="[grid-area:title] flex justify-center items-center">
                 <h1 className="text-[length:10dvmin]">{t("オンラインステージ")}</h1>
             </div>
             {user && (
                 <div className="w-svw text-right">
-                    <Checkbox id="showCompleted" checked={isShowOnlyCompleted} onChange={() => setIsShowOnlyCompleted(!isShowOnlyCompleted)} children={<span>{t("クリア済ステージのみ表示")}</span>} />
+                    <Checkbox id="showCompleted" checked={isShowOnlyCompleted} onChange={() => setIsShowOnlyCompleted(!isShowOnlyCompleted)}>
+                        <span>{t("クリア済ステージのみ表示")}</span>
+                    </Checkbox>
                 </div>
             )}
             <div className="[grid-area:list] bg-[#333] overflow-y-auto py-[2dvmin]">
