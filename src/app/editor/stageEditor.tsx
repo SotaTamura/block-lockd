@@ -163,74 +163,62 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     const [description, setDescription] = useState(initData?.description || "");
     const [tab, setTab] = useState<"overview" | "stage" | "test">("overview");
     const [selectedObj, setSelectedObj] = useState<TextureName>("player0");
-    const selectedObjRef = useRef(selectedObj);
     const [selectedTool, setSelectedTool] = useState<EditorTool>("pencil");
-    const selectedToolRef = useRef(selectedTool);
     const [selectedColor, setSelectedColor] = useState(0);
-    const selectedColorRef = useRef(selectedColor);
     const [selectedSnap, setSelectedSnap] = useState<1 | 0.5>(1);
-    const selectedSnapRef = useRef(selectedSnap);
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isAppReady, setIsAppReady] = useState(false);
-    const editorObjsRef = useRef<EditorObj[]>([]);
+    const [editorObjs, setEditorObjs] = useState<EditorObj[]>([]);
     const [access, setAccess] = useState(2); //0: public, 1: private, 2: unverified
-    const accessRef = useRef(access);
     const {
         settings: { lang },
     } = useSettings();
     const t = (str: TranslatableString) => translate(str, lang);
 
     const addObj = (app: Application, x: number, y: number) => {
-        if (selectedObjRef.current === "portal_front") {
+        if (selectedObj === "portal_front") {
             let n = 0;
-            const portalNums = editorObjsRef.current.filter((o) => o.tag).map((p) => parseBase(p.tag, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
+            const portalNums = editorObjs.filter((o) => o.tag).map((p) => parseBase(p.tag, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
             while (true) {
                 if (!portalNums.includes(n)) break;
                 n++;
             }
             const tag = convertBase(n, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-            const portal1 = new EditorObj(7, x, y, 1, 1, 0 as Angle, 0, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedToolRef.current);
-            const portal2 = new EditorObj(7, x, y + 1, 1, 1, 180 as Angle, 0, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedToolRef.current);
+            const portal1 = new EditorObj(7, x, y, 1, 1, 0 as Angle, 0, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
+            const portal2 = new EditorObj(7, x, y + 1, 1, 1, 180 as Angle, 0, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
             portal1.counterpart = portal2;
             portal2.counterpart = portal1;
             const newObjs = [portal1, portal2];
-            app.stage.addChild(...newObjs.map((o) => o.container));
-            let i = editorObjsRef.current.length;
-            while (i > 0 && ["player0", "pushblock", "moveblock_off", "moveblock_on"].includes(textureMap[editorObjsRef.current[i - 1].gid])) i--;
-            editorObjsRef.current.splice(i, 0, ...newObjs);
+            setEditorObjs((prev) => {
+                const next = [...prev];
+                let i = next.length;
+                while (i > 0 && ["player0", "pushblock", "moveblock_off", "moveblock_on"].includes(textureMap[next[i - 1].gid])) i--;
+                next.splice(i, 0, ...newObjs);
+                return next;
+            });
         } else {
-            const newObj = new EditorObj(
-                Number(Object.keys(textureMap).find((k) => textureMap[Number(k)] === selectedObjRef.current)),
-                x,
-                y,
-                1,
-                1,
-                0 as Angle,
-                0,
-                "",
-                handleContainerClick,
-                handleContainerHover,
-                handleResizeDotClick,
-                selectedToolRef.current,
-            );
-            app.stage.addChild(newObj.container);
-            let i = editorObjsRef.current.length;
-            while (i > 0 && ["player0", "pushblock", "moveblock_off", "moveblock_on"].includes(textureMap[editorObjsRef.current[i - 1].gid])) i--;
-            editorObjsRef.current.splice(i, 0, newObj);
+            const newObj = new EditorObj(Number(Object.keys(textureMap).find((k) => textureMap[Number(k)] === selectedObj)), x, y, 1, 1, 0 as Angle, 0, "", handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
+            setEditorObjs((prev) => {
+                const next = [...prev];
+                let i = next.length;
+                while (i > 0 && ["player0", "pushblock", "moveblock_off", "moveblock_on"].includes(textureMap[next[i - 1].gid])) i--;
+                next.splice(i, 0, newObj);
+                return next;
+            });
         }
         setAccess(2);
     };
 
     const clearResizeDot = () => {
-        editorObjsRef.current.forEach((o) => (o.resizeDot.visible = false));
+        editorObjs.forEach((o) => (o.resizeDot.visible = false));
     };
 
     const handleResizeDotClick = (obj: EditorObj) => {
         const stage = appRef.current?.stage;
         if (!stage) return;
         const onDrag = (e: FederatedPointerEvent) => {
-            const snapRatio = selectedSnapRef.current;
+            const snapRatio = selectedSnap;
             const snapUnit = UNIT * snapRatio;
             const cursorPxPos = e.getLocalPosition(stage);
             const newW = Math.max(snapRatio, Math.round(cursorPxPos.x / snapUnit) * snapRatio - obj.x);
@@ -268,20 +256,15 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
 
     const handleContainerClick = (e: FederatedPointerEvent, obj: EditorObj) => {
         if (!appRef.current) return;
-        if (selectedToolRef.current === "pencil") {
+        if (selectedTool === "pencil") {
             const pos = e.getLocalPosition(appRef.current.stage);
             addObj(appRef.current, Math.floor(pos.x / UNIT), Math.floor(pos.y / UNIT));
-        } else if (selectedToolRef.current === "eraser") {
-            const eraseObj = (obj: EditorObj) => {
-                obj.container.destroy();
-                editorObjsRef.current = editorObjsRef.current.filter((o) => o !== obj);
-            };
-            eraseObj(obj);
-            if (obj.counterpart) eraseObj(obj.counterpart);
-        } else if (selectedToolRef.current === "move") {
+        } else if (selectedTool === "eraser") {
+            setEditorObjs((prev) => prev.filter((o) => o !== obj && o !== obj.counterpart));
+        } else if (selectedTool === "move") {
             const stage = appRef.current.stage;
             const onDrag = (e: FederatedPointerEvent) => {
-                const snapUnit = UNIT * selectedSnapRef.current;
+                const snapUnit = UNIT * selectedSnap;
                 const newPoint = e.getLocalPosition(stage);
                 const newX = Math.round((newPoint.x - (obj.w * UNIT) / 2) / snapUnit) * snapUnit;
                 const newY = Math.round((newPoint.y - (obj.h * UNIT) / 2) / snapUnit) * snapUnit;
@@ -298,15 +281,15 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             stage.on("pointermove", onDrag);
             stage.on("pointerup", onDragEnd);
             stage.on("pointerupoutside", onDragEnd);
-        } else if (selectedToolRef.current === "resize") {
+        } else if (selectedTool === "resize") {
             clearResizeDot();
             obj.resizeDot.visible = true;
-        } else if (selectedToolRef.current === "color") {
+        } else if (selectedTool === "color") {
             if (["block", "block_deactivated", "key", "oneway", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[obj.gid])) {
-                obj.sprite.tint = colorMap[selectedColorRef.current] || "#ffffff";
-                obj.color = selectedColorRef.current;
+                obj.sprite.tint = colorMap[selectedColor] || "#ffffff";
+                obj.color = selectedColor;
             }
-        } else if (selectedToolRef.current === "rotate") {
+        } else if (selectedTool === "rotate") {
             if (["oneway", "portal_front", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[obj.gid])) {
                 const rotateObj = (obj: EditorObj) => {
                     obj.sprite.texture = getRotatedTexture(nameStateMap[obj.gid].name, nameStateMap[obj.gid].state, (obj.container.children[0] as Sprite).texture.rotate, 90) as Texture;
@@ -322,59 +305,15 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         setAccess(2);
     };
     const handleContainerHover = (obj: EditorObj) => {
-        if (selectedToolRef.current === "resize") {
+        if (selectedTool === "resize") {
             clearResizeDot();
             obj.resizeDot.visible = true;
         }
     };
 
-    useEffect(() => {
-        selectedObjRef.current = selectedObj;
-    }, [selectedObj]);
-    useEffect(() => {
-        selectedToolRef.current = selectedTool;
-        editorObjsRef.current.forEach((obj) => {
-            if (selectedTool === "move") {
-                obj.container.cursor = "move";
-            } else if (selectedTool === "pencil") {
-                obj.container.cursor = "crosshair";
-            } else if (selectedTool === "color") {
-                if (["block", "block_deactivated", "key", "oneway", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[obj.gid])) {
-                    obj.container.cursor = "pointer";
-                } else {
-                    obj.container.cursor = "not-allowed";
-                }
-            } else if (selectedTool === "rotate") {
-                if (["oneway", "portal_front", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[obj.gid])) {
-                    obj.container.cursor = "pointer";
-                } else {
-                    obj.container.cursor = "not-allowed";
-                }
-            } else {
-                obj.container.cursor = "pointer"; // Default cursor for other tools
-            }
-        });
-    }, [selectedTool]);
-    useEffect(() => {
-        selectedColorRef.current = selectedColor;
-    }, [selectedColor]);
-    useEffect(() => {
-        selectedSnapRef.current = selectedSnap;
-    }, [selectedSnap]);
-    useEffect(() => {
-        accessRef.current = access;
-    }, [access]);
-
-    useEffect(() => {
-        if (!user) {
-            router.push("/");
-            router.refresh();
-        }
-    }, [user, router]);
-
     const handleTileClick = (x: number, y: number) => {
         if (!appRef.current) return;
-        if (selectedToolRef.current === "pencil") {
+        if (selectedTool === "pencil") {
             addObj(appRef.current, x, y);
         }
     };
@@ -385,7 +324,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
 
         if (initData) {
             setAccess(initData.access);
-            editorObjsRef.current = gunzipSync(Buffer.from(initData.code, "base64"))
+            const loadedObjs = gunzipSync(Buffer.from(initData.code, "base64"))
                 .toString("utf-8")
                 .split(";")
                 .map((o) => {
@@ -410,10 +349,11 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                         Number(propStrs[6] || 0),
                         propStrs[7] || "",
                     ];
-                    return new EditorObj(gid, x, y, w, h, ang, color, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedToolRef.current);
+                    return new EditorObj(gid, x, y, w, h, ang, color, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
                 });
-            const portals = editorObjsRef.current.filter((o) => o.tag);
-            portals.forEach((p) => (p.counterpart = editorObjsRef.current.find((p2) => p2.tag === p.tag && p2 !== p)));
+            const portals = loadedObjs.filter((o) => o.tag);
+            portals.forEach((p) => (p.counterpart = loadedObjs.find((p2) => p2.tag === p.tag && p2 !== p)));
+            setEditorObjs(loadedObjs);
         }
 
         const switchToolByKey = (e: KeyboardEvent) => {
@@ -482,36 +422,71 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                     app.stage.addChild(tile);
                 }
             }
-            editorObjsRef.current.forEach((o) => app.stage.addChild(o.container));
+            editorObjs.forEach((o) => {
+                // Update cursors based on tool
+                if (selectedTool === "move") {
+                    o.container.cursor = "move";
+                } else if (selectedTool === "pencil") {
+                    o.container.cursor = "crosshair";
+                } else if (selectedTool === "color") {
+                    if (["block", "block_deactivated", "key", "oneway", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[o.gid])) {
+                        o.container.cursor = "pointer";
+                    } else {
+                        o.container.cursor = "not-allowed";
+                    }
+                } else if (selectedTool === "rotate") {
+                    if (["oneway", "portal_front", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[o.gid])) {
+                        o.container.cursor = "pointer";
+                    } else {
+                        o.container.cursor = "not-allowed";
+                    }
+                } else {
+                    o.container.cursor = "pointer";
+                }
+
+                // Refresh handlers
+                o.container.onpointerdown = (e) => handleContainerClick(e, o);
+                o.container.onpointerover = () => handleContainerHover(o);
+                o.resizeDot.onpointerdown = () => handleResizeDotClick(o);
+
+                app.stage.addChild(o.container);
+            });
+            app.renderer.render(app.stage);
         } else if (tab === "test") {
             app.stage.eventMode = "auto";
             app.stage.hitArea = null;
             // Build test scene
             setIsComplete(false);
             setIsLoading(true);
-            loadStage(editorObjsRef.current, app).then(() => {
-                if (!isMounted) return;
-                setIsLoading(false);
-                let prevTime: number | undefined;
-                let accumulator = 0;
-                let dt: number;
-                const gameLoop = (timestamp: DOMHighResTimeStamp) => {
-                    if (prevTime !== undefined) {
-                        dt = Math.min(timestamp - prevTime, 100);
-                    }
-                    accumulator += dt ? dt : 0;
-                    while (accumulator >= STEP) {
-                        update(async () => {
-                            setIsComplete(true);
-                            if (accessRef.current === 2) setAccess(1);
-                        }, app);
-                        accumulator -= STEP;
-                    }
-                    prevTime = timestamp;
+            loadStage(editorObjs, app)
+                .then(() => {
+                    if (!isMounted) return;
+                    setIsLoading(false);
+                    app.renderer.render(app.stage);
+                    let prevTime: number | undefined;
+                    let accumulator = 0;
+                    let dt: number;
+                    const gameLoop = (timestamp: DOMHighResTimeStamp) => {
+                        if (prevTime !== undefined) {
+                            dt = Math.min(timestamp - prevTime, 100);
+                        }
+                        accumulator += dt ? dt : 0;
+                        while (accumulator >= STEP) {
+                            update(async () => {
+                                setIsComplete(true);
+                                if (access === 2) setAccess(1);
+                            }, app);
+                            accumulator -= STEP;
+                        }
+                        prevTime = timestamp;
+                        gameLoopId.current = requestAnimationFrame(gameLoop);
+                    };
                     gameLoopId.current = requestAnimationFrame(gameLoop);
-                };
-                gameLoopId.current = requestAnimationFrame(gameLoop);
-            });
+                })
+                .catch((err) => {
+                    console.error("Failed to load stage:", err);
+                    setIsLoading(false);
+                });
         }
 
         return () => {
@@ -521,7 +496,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 gameLoopId.current = null;
             }
         };
-    }, [tab, isAppReady, restarter]);
+    }, [tab, isAppReady, restarter, editorObjs, selectedTool, selectedColor, selectedSnap, selectedObj]);
 
     useLayoutEffect(() => {
         if (!cnvWrapperRef.current) return;
@@ -534,7 +509,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         return () => {
             observer.disconnect();
         };
-    });
+    }, []);
     useEffect(() => {
         if (isAppReady && appRef.current?.canvas) {
             appRef.current.canvas.style.width = `${cnvSize}px`;
@@ -549,7 +524,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             router.refresh();
         } else {
             const code = gzipSync(
-                editorObjsRef.current
+                editorObjs
                     .map((o) => {
                         const props = [o.gid, o.x, o.y, o.w === 1 ? null : o.w, o.h === 1 ? null : o.h, o.ang === 0 ? null : [0, 90, 180, -90].indexOf(o.ang), o.color === 0 ? null : o.color, o.tag === "" ? null : o.tag];
                         let mask = 0;
@@ -573,7 +548,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                     title: title || t("無題"),
                     description: description || "",
                     code: code,
-                    access: accessRef.current,
+                    access: access,
                 };
                 if ((checkChange && (initData?.title !== title || initData.description !== description || initData.code !== code) && window.confirm(t("変更を保存しますか？"))) || !checkChange) {
                     setIsLoading(true);
@@ -629,8 +604,8 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     };
 
     return (
-        <main id="stage-editor-main" className="text-center">
-            <div className="[grid-area:header] flex justify-between items-center px-[2svmin] fixed w-full">
+        <main id="stage-editor-main" className="text-center relative h-full">
+            <div className="[grid-area:header] flex justify-between items-center px-[2svmin] fixed w-full z-30">
                 <div
                     className="btn back w-[25%] h-15"
                     onClick={(e) => {
@@ -661,7 +636,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 </span>
             </div>
             {/* 概要 */}
-            <div className={tab === "overview" ? "" : "hidden"}>
+            <div className={`absolute inset-0 overflow-y-auto ${tab === "overview" ? "opacity-100 z-20" : "opacity-0 pointer-events-none z-0"}`}>
                 <div className="flex justify-center items-center">
                     <h1 className="text-[length:10svmin] mt-[15svmin]">{t(initData ? "ステージ編集" : "新規作成")}</h1>
                 </div>
@@ -707,7 +682,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 </form>
             </div>
             {/* Canvas Area */}
-            <div className={tab === "overview" ? "hidden" : tab === "stage" ? "editorScreen" : "testScreen"}>
+            <div className={`${tab === "test" ? "testScreen" : "editorScreen"} ${tab !== "overview" ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}>
                 <div id="cnvWrapper" ref={cnvWrapperRef}></div>
                 {/* ステージ */}
                 {tab === "stage" && (
