@@ -1,4 +1,4 @@
-import { BLOCK_STRENGTH, CORNER_CORRECT, Direction, MOVE_BLOCK_STRENGTH, MOVE_OBJ_CORNER_CORRECT, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH, PLAYER_SPEED, MAP_BLOCK_LEN, Axis } from "@/constants";
+import { BLOCK_STRENGTH, CORNER_CORRECT, Direction, MOVE_BLOCK_STRENGTH, MOVE_OBJ_CORNER_CORRECT, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH, PLAYER_SPEED, MAP_BLOCK_LEN, Axis, roundDecimal, POS_PRECISION, ε } from "@/constants";
 import { Sprite, Container } from "pixi.js";
 import { stateChangeTexture, xFlipTexture, pressingEvent, rotate, playSfx, stopSfx, stopBgm, SfxPath } from "./base";
 import { isOverLapping } from "./collision";
@@ -130,7 +130,7 @@ export abstract class GameObj {
     }
     alignHitbox(hitboxId: number, dir: Direction, coordinate: number) {
         const axis = ["u", "d"].includes(dir) ? "y" : "x";
-        this[axis] += coordinate - this.hitboxes[hitboxId][dir];
+        this[axis] = roundDecimal(this[axis] + coordinate - this.hitboxes[hitboxId][dir], POS_PRECISION);
     }
     handleGoal() {
         const allBoxes = [...this.hitboxes, ...this.spriteBoxes];
@@ -660,13 +660,16 @@ export class Player extends GameObj {
     //     }
     // }
     handleLadder(ladders: Ladder[]) {
-        // ハシゴ
+        const wasInLadders = this.inLadders;
         this.inLadders = ladders.filter((l) => isOverLapping(this, l));
+        if (wasInLadders.length && !this.inLadders.length) this.v.y = 0; //ハシゴから出たときy方向の速度を0にする
         if (this.inLadders.length) {
             if (pressingEvent.u && pressingEvent.d) this.v.y = 0;
             else if (pressingEvent.u) {
-                if (this.hitboxes[0].d - PLAYER_SPEED <= Math.min(...this.inLadders.map((l) => l.hitboxes[0].u)))
-                    this.v.y = 0; // ハシゴの頂上でピッタリ止める
+                const ladderTop = Math.min(...this.inLadders.map((l) => l.hitboxes[0].u));
+                const distToTop = roundDecimal(this.hitboxes[0].d - ladderTop, POS_PRECISION);
+                if (distToTop <= PLAYER_SPEED)
+                    this.v.y = -distToTop; // ハシゴの頂上でピッタリ止める
                 else this.v.y = -PLAYER_SPEED; // ハシゴを登る
             } else if (pressingEvent.d)
                 this.v.y = PLAYER_SPEED; // ハシゴを下る

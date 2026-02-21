@@ -1,4 +1,4 @@
-import { Axis, MAX_ITER, opposite, POS_PRECISION, POS_SNAP, roundDecimal, Direction, ε } from "@/constants";
+import { Axis, MAX_ITER, opposite, POS_PRECISION, roundDecimal, Direction, ε, CORNER_CORRECT } from "@/constants";
 import { GameObj, Hitbox, Ladder, Oneway, Player } from "./class";
 import { pressingEvent } from "./base";
 
@@ -45,10 +45,10 @@ const isIgnoreCollision = (aHitbox: Hitbox, bHitbox: Hitbox, axis: Axis) => {
     const b = bHitbox.owner;
     if (a instanceof Ladder || b instanceof Ladder) {
         if (axis === "x") return true; // ハシゴの側面とは衝突しない
-        let ladder;
-        let ladderHitbox;
-        let other;
-        let otherHitbox;
+        let ladder: Ladder;
+        let ladderHitbox: Hitbox;
+        let other: GameObj;
+        let otherHitbox: Hitbox;
         if (a instanceof Ladder && !(b instanceof Ladder)) {
             ladder = a;
             ladderHitbox = aHitbox;
@@ -82,6 +82,45 @@ const isIgnoreCollision = (aHitbox: Hitbox, bHitbox: Hitbox, axis: Axis) => {
         } else return false;
         if (oneway.dir === relDir1D(otherHitbox, onewayHitbox, axis)) return false; // 一方通行ブロックに逆らう方向の衝突は考える
         return true; // それ以外の方向は無視
+    }
+    return false;
+};
+
+/** 角補正 */
+const cornerCorrect = (hit: { a: GameObj; b: GameObj; relV: number }, axis: Axis, gameObjs: GameObj[]) => {
+    const { a, b } = hit;
+    const crossAxis = axis === "x" ? "y" : "x";
+    const positiveDir = crossAxis === "x" ? "r" : "d";
+    const negativeDir = opposite[positiveDir];
+    const aCollisionDir = vDir1D(hit.relV, axis);
+    if (!aCollisionDir) return false;
+    const bCollisionDir = opposite[aCollisionDir];
+    // strengthが小さい方の座標を補正する
+    let weaker: GameObj;
+    let stronger: GameObj;
+    if (a.strength[aCollisionDir] < b.strength[bCollisionDir]) {
+        weaker = a;
+        stronger = b;
+    } else if (a.strength[aCollisionDir] > b.strength[bCollisionDir]) {
+        weaker = b;
+        stronger = a;
+    } else return false;
+    for (let i = 0; i < weaker.hitboxes.length; i++) {
+        for (let j = 0; j < stronger.hitboxes.length; j++) {
+            const weakerHitBox = weaker.hitboxes[i];
+            const strongerHitBox = stronger.hitboxes[j];
+            const overlap = Math.min(weakerHitBox[positiveDir], strongerHitBox[positiveDir]) - Math.max(weakerHitBox[negativeDir], strongerHitBox[negativeDir]);
+            if (overlap <= 0 || overlap > CORNER_CORRECT) continue;
+            const oldPos = weaker[crossAxis];
+            // 端を揃える
+            if (weakerHitBox[negativeDir] < strongerHitBox[negativeDir]) weaker.alignHitbox(i, positiveDir, strongerHitBox[negativeDir]);
+            else weaker.alignHitbox(i, negativeDir, strongerHitBox[positiveDir]);
+            if (gameObjs.some((o) => isOverLapping(weaker, o))) {
+                weaker[crossAxis] = oldPos;
+                return false;
+            }
+            return true;
+        }
     }
     return false;
 };
@@ -159,16 +198,6 @@ const resolveCollision1D = (hit: { a: GameObj; b: GameObj; relV: number }, axis:
     b.v[axis] = bv;
 };
 
-/** 静止オブジェクトの座標をスナップ */
-export const snapPos = (gameObjs: GameObj[]) => {
-    for (const obj of gameObjs) {
-        if (obj.v.x === 0 && obj.v.y === 0) {
-            obj.x = roundDecimal(obj.x, POS_SNAP);
-            obj.y = roundDecimal(obj.y, POS_SNAP);
-        }
-    }
-};
-
 /** フレーム内で全てのオブジェクトの1次元の衝突解決をする */
 const resolveCollisions1D = (gameObjs: GameObj[], axis: Axis) => {
     let tRemain = 1;
@@ -186,6 +215,7 @@ const resolveCollisions1D = (gameObjs: GameObj[], axis: Axis) => {
         if (hits.length === 0) break;
         // 衝突したオブジェクトの速度変更
         for (const hit of hits) {
+            if (cornerCorrect(hit, axis, gameObjs)) continue;
             resolveCollision1D(hit, axis);
         }
         tRemain -= t;

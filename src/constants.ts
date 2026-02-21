@@ -4,7 +4,6 @@ export const ε = 1e-6;
 export const MAX_ITER = 64;
 export const STEP = 1000 / 60;
 export const POS_PRECISION = 1e-2;
-export const POS_SNAP = 0.25;
 export const PROPS_LEN = 8;
 export const RESOLUTION = 1024;
 export const MAP_BLOCK_LEN = 16;

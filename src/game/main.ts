@@ -1,10 +1,10 @@
 import { Application, BitmapText } from "pixi.js";
 import { Block, Button, GameObj, Key, Ladder, Lever, MoveBlock, Oneway, Player, Portal, PushBlock } from "./class";
 import { blockDashLine, stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites, playSfx } from "./base";
-import { Direction, GRAVITY, JUMP_SPEED, UNIT, parseBase, PROPS_LEN, opposite } from "@/constants";
+import { Direction, GRAVITY, JUMP_SPEED, UNIT, parseBase, PROPS_LEN, opposite, roundDecimal, POS_PRECISION } from "@/constants";
 import { EditorObj } from "@/app/editor/stageEditor";
 import { gunzipSync } from "zlib";
-import { isOverLapping, resolveCollisions, snapPos, updateNextBlocks } from "./collision";
+import { isOverLapping, resolveCollisions, updateNextBlocks } from "./collision";
 
 export let gameObjs: GameObj[];
 export let players: Player[];
@@ -207,7 +207,7 @@ export const update = (handleComplete: () => void, app: Application) => {
             player.v.y = JUMP_SPEED;
             playSfx("/jump.mp3", player);
         }
-        if (!player.nextBlocks.d.length) player.v.y += GRAVITY;
+        if (!player.nextBlocks.d.length) player.v.y = roundDecimal(player.v.y + GRAVITY, POS_PRECISION);
         player.handleLadder(ladders);
         //     player.handlePortal(portals, app);
         player.handleHorizontalMove();
@@ -222,7 +222,7 @@ export const update = (handleComplete: () => void, app: Application) => {
             r: pushBlock.initStrength,
         };
         pushBlock.v.x = 0;
-        pushBlock.v.y += GRAVITY; // 重力加速度
+        pushBlock.v.y = roundDecimal(pushBlock.v.y + GRAVITY, POS_PRECISION); // 重力加速度
         //     pushBlock.handleLadder(ladders); //ハシゴ
         //     pushBlock.handlePortal(portals, app); //ポータル
         pushBlock.handleGoal();
@@ -282,7 +282,6 @@ export const update = (handleComplete: () => void, app: Application) => {
     // }
     const solidObjs = gameObjs.filter((o) => o.isSolid);
     resolveCollisions(solidObjs);
-    snapPos(solidObjs);
     updateNextBlocks(solidObjs);
     clearPressStart();
     updateSprites();
