@@ -1,4 +1,4 @@
-import { BLOCK_STRENGTH, CORNER_CORRECT, Direction, MOVE_BLOCK_STRENGTH, MOVE_OBJ_CORNER_CORRECT, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH, PLAYER_SPEED, MAP_BLOCK_LEN, Axis, roundDecimal, POS_PRECISION, ε } from "@/constants";
+import { BLOCK_STRENGTH, CORNER_CORRECT, Direction, MOVE_BLOCK_STRENGTH, MOVE_OBJ_CORNER_CORRECT, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH, PLAYER_SPEED, MAP_BLOCK_LEN, Axis, INTERNAL_SCALE } from "@/constants";
 import { Sprite, Container } from "pixi.js";
 import { stateChangeTexture, xFlipTexture, pressingEvent, rotate, playSfx, stopSfx, stopBgm, SfxPath } from "./base";
 import { isOverLapping } from "./collision";
@@ -110,14 +110,16 @@ export abstract class GameObj {
         strength: number,
         cornerCorrect: number = CORNER_CORRECT,
     ) {
-        this.x = x;
-        this.y = y;
+        this.x = x * INTERNAL_SCALE;
+        this.y = y * INTERNAL_SCALE;
         this.dir = ang;
         this.color = color;
         this.v = { x: 0, y: 0 };
-        this.hitboxes = hitboxes.map((b) => new Hitbox(this, b.relX, b.relY, b.w, b.h, cornerCorrect));
+        this.hitboxes = hitboxes.map((b) => new Hitbox(this, b.relX * INTERNAL_SCALE, b.relY * INTERNAL_SCALE, b.w * INTERNAL_SCALE, b.h * INTERNAL_SCALE, cornerCorrect));
         this.hiddenHitboxes = [];
-        this.spriteBoxes = spriteBoxes.map((b) => new SpriteBox(this, b.relX, b.relY, b.w, b.h, new Box(this, b.relX, b.relY, b.w, b.h)));
+        this.spriteBoxes = spriteBoxes.map(
+            (b) => new SpriteBox(this, b.relX * INTERNAL_SCALE, b.relY * INTERNAL_SCALE, b.w * INTERNAL_SCALE, b.h * INTERNAL_SCALE, new Box(this, b.relX * INTERNAL_SCALE, b.relY * INTERNAL_SCALE, b.w * INTERNAL_SCALE, b.h * INTERNAL_SCALE)),
+        );
         this.name = name;
         this.state = textureState;
         this.isSolid = isSolid;
@@ -130,7 +132,7 @@ export abstract class GameObj {
     }
     alignHitbox(hitboxId: number, dir: Direction, coordinate: number) {
         const axis = ["u", "d"].includes(dir) ? "y" : "x";
-        this[axis] = roundDecimal(this[axis] + coordinate - this.hitboxes[hitboxId][dir], POS_PRECISION);
+        this[axis] += coordinate - this.hitboxes[hitboxId][dir];
     }
     handleGoal() {
         const allBoxes = [...this.hitboxes, ...this.spriteBoxes];
@@ -138,217 +140,8 @@ export abstract class GameObj {
         const maxR = Math.max(...allBoxes.map((b) => b.r));
         const minU = Math.min(...allBoxes.map((b) => b.u));
         const maxD = Math.max(...allBoxes.map((b) => b.d));
-        if (maxR < 0 || minL > MAP_BLOCK_LEN || maxD < 0 || minU > MAP_BLOCK_LEN) remove(this);
+        if (maxR < 0 || minL > MAP_BLOCK_LEN * INTERNAL_SCALE || maxD < 0 || minU > MAP_BLOCK_LEN * INTERNAL_SCALE) remove(this);
     }
-    // // 重なり判定
-    // isColliding(box: Box): boolean {
-    //     return this.hitboxes.some((thisBox) => thisBox.l < box.r && thisBox.r > box.l && thisBox.t < box.b && thisBox.b > box.t);
-    // }
-    // // --- [難解ゾーン] 衝突処理いろいろ ここから ---
-    // //着地
-    // collideBottom(objs: GameObj[]) {
-    //     // 最も良い衝突解決策を保持するオブジェクト。yは最も高い位置（最小値）を見つけるためにInfinityで初期化。
-    //     let resolvedCollision = {
-    //         y: Infinity,
-    //         vy: this.vy,
-    //         bBlock: null as GameObj | null,
-    //         strengthT: this.strength.t,
-    //     };
-    //     let hasCollision = false; // 衝突があったかどうかを示すフラグ
-    //     // 衝突する可能性のあるすべてのオブジェクトをループ
-    //     for (const obj of objs) {
-    //         // 特定の条件下では衝突を無視する
-    //         // 1. 相手が上方向以外の一方通行ブロックの場合
-    //         // 2. 自分の下方向への強さが相手の上方向への強さより大きい場合（通り抜ける）
-    //         if ((obj instanceof Oneway && obj.ang !== "u") || this.strength.b > obj.strength.t) continue;
-    //         // 自分の各ヒットボックスと相手の各ヒットボックスをチェック
-    //         for (const thisBox of [...this.hitboxes, ...this.hiddenHitboxes]) {
-    //             for (const objBox of obj.hitboxes) {
-    //                 if (this.hiddenHitboxes.includes(thisBox) && !(obj instanceof Portal)) continue;
-    //                 // 衝突条件のチェック
-    //                 // 1. 現在、自分の底が相手の上より上にある
-    //                 // 2. 次のフレームで、自分の底が相手の上に達する、またはそれを越える
-    //                 // 3. 水平方向で重なっている（現在または次のフレームで）
-    //                 if (
-    //                     thisBox.innerB <= objBox.t &&
-    //                     thisBox.b + this.vy >= objBox.t + obj.vy &&
-    //                     !((thisBox.innerR <= objBox.l || thisBox.innerL >= objBox.r) && (thisBox.innerR + this.vx <= objBox.l + obj.vx || thisBox.innerL + this.vx >= objBox.r + obj.vx))
-    //                 ) {
-    //                     // 衝突した場合、新しいY座標を計算（相手の真上に着地）
-    //                     const newY = objBox.t - thisBox.relB;
-    //                     // 新しい垂直速度を計算。moveBlockの強さのオブジェクト同士なら速度を0に、そうでなければ相手の速度に合わせる（動く床など）
-    //                     const newVy = this.strength.b === obj.strength.t && this.strength.b === MOVE_BLOCK_STRENGTH ? 0 : obj.vy;
-    //                     // より高い位置への着地が見つかった場合、解決策を更新
-    //                     if (newY < resolvedCollision.y) {
-    //                         resolvedCollision = {
-    //                             y: newY,
-    //                             vy: newVy,
-    //                             bBlock: obj,
-    //                             strengthT: obj.strength.t,
-    //                         };
-    //                     } else if (newY === resolvedCollision.y) {
-    //                         // 同じ高さの場合は、下向き速度が遅い（上向き速度が速い）方を優先
-    //                         if (newVy < resolvedCollision.vy) {
-    //                             resolvedCollision.vy = newVy;
-    //                             resolvedCollision.bBlock = obj;
-    //                             resolvedCollision.strengthT = obj.strength.t;
-    //                         }
-    //                     }
-    //                     hasCollision = true;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     // 衝突が検出され、かつ自分が下に移動していた場合にのみ、位置と速度を更新
-    //     if (hasCollision && this.vy - resolvedCollision.vy >= 0) {
-    //         this.y = resolvedCollision.y;
-    //         this.vy = resolvedCollision.vy;
-    //         this.nextBlock.b = resolvedCollision.bBlock; // どのブロックに乗っているかを記録
-    //         this.strength.t = resolvedCollision.strengthT; // 強さを更新
-    //     }
-    // }
-    // // 天井衝突
-    // collideTop(objs: GameObj[]) {
-    //     let resolvedCollision = {
-    //         y: -Infinity,
-    //         vy: this.vy,
-    //         tBlock: null as GameObj | null,
-    //         strengthB: this.strength.b,
-    //     };
-    //     let hasCollision = false;
-    //     for (const obj of objs) {
-    //         if ((obj instanceof Oneway && obj.ang !== "d") || this.strength.t > obj.strength.b) continue;
-    //         for (const thisBox of [...this.hitboxes, ...this.hiddenHitboxes]) {
-    //             for (const objBox of obj.hitboxes) {
-    //                 if (this.hiddenHitboxes.includes(thisBox) && !(obj instanceof Portal)) continue;
-    //                 if (
-    //                     thisBox.innerT >= objBox.b &&
-    //                     thisBox.t + this.vy <= objBox.b + obj.vy &&
-    //                     !((thisBox.innerR <= objBox.l || thisBox.innerL >= objBox.r) && (thisBox.innerR + this.vx <= objBox.l + obj.vx || thisBox.innerL + this.vx >= objBox.r + obj.vx))
-    //                 ) {
-    //                     const newY = objBox.b - thisBox.relT;
-    //                     const newVy = this.strength.t === obj.strength.b && this.strength.t === MOVE_BLOCK_STRENGTH ? 0 : obj.vy;
-    //                     if (newY > resolvedCollision.y) {
-    //                         resolvedCollision = {
-    //                             y: newY,
-    //                             vy: newVy,
-    //                             tBlock: obj,
-    //                             strengthB: obj.strength.b,
-    //                         };
-    //                     } else if (newY === resolvedCollision.y) {
-    //                         if (newVy > resolvedCollision.vy) {
-    //                             resolvedCollision.vy = newVy;
-    //                             resolvedCollision.tBlock = obj;
-    //                             resolvedCollision.strengthB = obj.strength.b;
-    //                         }
-    //                     }
-    //                     hasCollision = true;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     if (hasCollision && this.vy - resolvedCollision.vy <= 0) {
-    //         this.y = resolvedCollision.y;
-    //         this.vy = resolvedCollision.vy;
-    //         this.nextBlock.t = resolvedCollision.tBlock;
-    //         this.strength.b = resolvedCollision.strengthB;
-    //     }
-    // }
-    // // 左側衝突
-    // collideLeft(objs: GameObj[]) {
-    //     let resolvedCollision = {
-    //         x: -Infinity,
-    //         vx: this.vx,
-    //         lBlock: null as GameObj | null,
-    //         strengthR: this.strength.r,
-    //     };
-    //     let hasCollision = false;
-    //     for (const obj of objs) {
-    //         if ((obj instanceof Oneway && obj.ang !== 90) || this.strength.l > obj.strength.r) continue;
-    //         for (const thisBox of [...this.hitboxes, ...this.hiddenHitboxes]) {
-    //             for (const objBox of obj.hitboxes) {
-    //                 if (this.hiddenHitboxes.includes(thisBox) && !(obj instanceof Portal)) continue;
-    //                 if (
-    //                     thisBox.innerL >= objBox.r &&
-    //                     thisBox.l + this.vx <= objBox.r + obj.vx &&
-    //                     !((thisBox.innerB <= objBox.t || thisBox.innerT >= objBox.b) && (thisBox.innerB + this.vy <= objBox.t + obj.vy || thisBox.innerT + this.vy >= objBox.b + obj.vy))
-    //                 ) {
-    //                     const newX = objBox.r - thisBox.relL;
-    //                     const newVx = this.strength.l === obj.strength.r && this.strength.l === MOVE_BLOCK_STRENGTH ? 0 : obj.vx;
-    //                     if (newX > resolvedCollision.x) {
-    //                         resolvedCollision = {
-    //                             x: newX,
-    //                             vx: newVx,
-    //                             lBlock: obj,
-    //                             strengthR: obj.strength.r,
-    //                         };
-    //                     } else if (newX === resolvedCollision.x) {
-    //                         if (newVx > resolvedCollision.vx) {
-    //                             resolvedCollision.vx = newVx;
-    //                             resolvedCollision.lBlock = obj;
-    //                             resolvedCollision.strengthR = obj.strength.r;
-    //                         }
-    //                     }
-    //                     hasCollision = true;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     if (hasCollision && this.vx - resolvedCollision.vx <= 0) {
-    //         this.x = resolvedCollision.x;
-    //         this.vx = resolvedCollision.vx;
-    //         this.nextBlock.l = resolvedCollision.lBlock;
-    //         this.strength.r = resolvedCollision.strengthR;
-    //     }
-    // }
-    // // 右側衝突
-    // collideRight(objs: GameObj[]) {
-    //     let resolvedCollision = {
-    //         x: Infinity,
-    //         vx: this.vx,
-    //         rBlock: null as GameObj | null,
-    //         strengthL: this.strength.l,
-    //     };
-    //     let hasCollision = false;
-    //     for (const obj of objs) {
-    //         if ((obj instanceof Oneway && obj.ang !== -90) || this.strength.r > obj.strength.l) continue;
-    //         for (const thisBox of [...this.hitboxes, ...this.hiddenHitboxes]) {
-    //             for (const objBox of obj.hitboxes) {
-    //                 if (this.hiddenHitboxes.includes(thisBox) && !(obj instanceof Portal)) continue;
-    //                 if (
-    //                     thisBox.innerR <= objBox.l &&
-    //                     thisBox.r + this.vx >= objBox.l + obj.vx &&
-    //                     !((thisBox.innerB <= objBox.t || thisBox.innerT >= objBox.b) && (thisBox.innerB + this.vy <= objBox.t + obj.vy || thisBox.innerT + this.vy >= objBox.b + obj.vy))
-    //                 ) {
-    //                     const newX = objBox.l - thisBox.relR;
-    //                     const newVx = this.strength.r === obj.strength.l && this.strength.r === MOVE_BLOCK_STRENGTH ? 0 : obj.vx;
-    //                     if (newX < resolvedCollision.x) {
-    //                         resolvedCollision = {
-    //                             x: newX,
-    //                             vx: newVx,
-    //                             rBlock: obj,
-    //                             strengthL: obj.strength.l,
-    //                         };
-    //                     } else if (newX === resolvedCollision.x) {
-    //                         if (newVx < resolvedCollision.vx) {
-    //                             resolvedCollision.vx = newVx;
-    //                             resolvedCollision.rBlock = obj;
-    //                             resolvedCollision.strengthL = obj.strength.l;
-    //                         }
-    //                     }
-    //                     hasCollision = true;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     if (hasCollision && this.vx - resolvedCollision.vx >= 0) {
-    //         this.x = resolvedCollision.x;
-    //         this.vx = resolvedCollision.vx;
-    //         this.nextBlock.r = resolvedCollision.rBlock;
-    //         this.strength.l = resolvedCollision.strengthL;
-    //     }
-    // }
-    // // --- 衝突処理いろいろ ここまで ---
     // // ポータル
     // handlePortal(portals: Portal[], app: Application) {
     //     for (const p of portals) {
@@ -603,62 +396,6 @@ export class Player extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Direction) {
         super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "player", "idle", true, PLAYER_STRENGTH, MOVE_OBJ_CORNER_CORRECT);
     }
-    // override collideBottom(objs: GameObj[]) {
-    //     let resolvedCollision = {
-    //         y: Infinity,
-    //         vy: this.vy,
-    //         bBlock: null as GameObj | null,
-    //         strengthT: this.strength.t,
-    //     };
-    //     let hasCollision = false;
-
-    //     for (const obj of objs) {
-    //         if ((obj instanceof Oneway && obj.ang !== "u") || this.strength.b > obj.strength.t) continue;
-    //         for (const thisBox of [...this.hitboxes, ...this.hiddenHitboxes]) {
-    //             for (const objBox of obj.hitboxes) {
-    //                 if (this.hiddenHitboxes.includes(thisBox) && !(obj instanceof Portal)) continue;
-    //                 if (
-    //                     ((obj instanceof Ladder && !pressingEvent.d && thisBox.b <= objBox.t && thisBox.b + this.vy >= objBox.t + obj.vy) || !(obj instanceof Ladder)) &&
-    //                     thisBox.innerB <= objBox.t &&
-    //                     thisBox.b + this.vy >= objBox.t + obj.vy &&
-    //                     !((thisBox.innerR <= objBox.l || thisBox.innerL >= objBox.r) && (thisBox.innerR + this.vx < objBox.l + obj.vx || thisBox.innerL + this.vx > objBox.r + obj.vx))
-    //                 ) {
-    //                     const newY = objBox.t - thisBox.relB;
-    //                     const newVy = this.strength.b === obj.strength.t && this.strength.b === MOVE_BLOCK_STRENGTH ? 0 : obj.vy;
-
-    //                     if (newY < resolvedCollision.y) {
-    //                         resolvedCollision = {
-    //                             y: newY,
-    //                             vy: newVy,
-    //                             bBlock: obj,
-    //                             strengthT: obj.strength.t,
-    //                         };
-    //                     } else if (newY === resolvedCollision.y) {
-    //                         if (newVy < resolvedCollision.vy) {
-    //                             resolvedCollision = {
-    //                                 y: newY,
-    //                                 vy: newVy,
-    //                                 bBlock: obj,
-    //                                 strengthT: obj.strength.t,
-    //                             };
-    //                         } else if (resolvedCollision.bBlock && newVy === resolvedCollision.vy && obj.initStrength > resolvedCollision.bBlock.initStrength) {
-    //                             resolvedCollision.bBlock = obj;
-    //                             resolvedCollision.strengthT = obj.strength.t;
-    //                         }
-    //                     }
-    //                     hasCollision = true;
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     if (hasCollision && this.vy - resolvedCollision.vy >= 0) {
-    //         this.y = resolvedCollision.y;
-    //         this.vy = resolvedCollision.vy;
-    //         this.nextBlock.b = resolvedCollision.bBlock;
-    //         this.strength.t = resolvedCollision.strengthT;
-    //     }
-    // }
     handleLadder(ladders: Ladder[]) {
         const wasInLadders = this.inLadders;
         this.inLadders = ladders.filter((l) => isOverLapping(this, l));
@@ -667,7 +404,7 @@ export class Player extends GameObj {
             if (pressingEvent.u && pressingEvent.d) this.v.y = 0;
             else if (pressingEvent.u) {
                 const ladderTop = Math.min(...this.inLadders.map((l) => l.hitboxes[0].u));
-                const distToTop = roundDecimal(this.hitboxes[0].d - ladderTop, POS_PRECISION);
+                const distToTop = this.hitboxes[0].d - ladderTop;
                 if (distToTop <= PLAYER_SPEED)
                     this.v.y = -distToTop; // ハシゴの頂上でピッタリ止める
                 else this.v.y = -PLAYER_SPEED; // ハシゴを登る
@@ -758,6 +495,7 @@ export class Lever extends GameObj {
 // ポータル
 export class Portal extends GameObj {
     id: string;
+    trigger: Box;
     constructor(x: number, y: number, w: number, h: number, ang: Direction, id: string) {
         super(
             x,
@@ -776,27 +514,17 @@ export class Portal extends GameObj {
             BLOCK_STRENGTH,
         );
         this.id = id;
-        this.hitboxes.forEach((t) => {
-            rotate(t, ang, w, h);
+        this.trigger = new Box(this, 0, 0, w * INTERNAL_SCALE, (h / 2) * INTERNAL_SCALE);
+        [...this.hitboxes, this.trigger].forEach((t) => {
+            rotate(t, ang, w * INTERNAL_SCALE, h * INTERNAL_SCALE);
         });
     }
 }
 // 押しブロック
 export class PushBlock extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Direction) {
-        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "pushBlock", "default", true, PUSH_BLOCK_STRENGTH, 0.2);
+        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "pushBlock", "default", true, PUSH_BLOCK_STRENGTH, MOVE_OBJ_CORNER_CORRECT);
     }
-    // handleLadder(ladders: Ladder[]) {
-    //     // ハシゴ
-    //     for (const ladder of ladders) {
-    //         // 梯子判定
-    //         if (this.isColliding(ladder.triggers[0])) {
-    //             this.inLadder = ladder;
-    //             break;
-    //         } else this.inLadder = null;
-    //     }
-    //     if (this.inLadder) this.vy = 0;
-    // }
 }
 // ボタン
 export class Button extends GameObj {
@@ -805,7 +533,7 @@ export class Button extends GameObj {
         super(x, y, ang, color, [{ relX: 0, relY: (3 / 4) * h, w, h: h / 4 }], [{ relX: 0, relY: 0, w, h }], "button", "off", true, BLOCK_STRENGTH);
         this.isPressed = false;
         this.hitboxes.forEach((b) => {
-            rotate(b, ang, w, h);
+            rotate(b, ang, w * INTERNAL_SCALE, h * INTERNAL_SCALE);
         });
     }
 }

@@ -1,9 +1,9 @@
 // 定数
 export const π = Math.PI;
-export const ε = 1e-6;
+export const ε = 1e-4;
 export const MAX_ITER = 64;
 export const STEP = 1000 / 60;
-export const POS_PRECISION = 1e-2;
+export const INTERNAL_SCALE = 100;
 export const PROPS_LEN = 8;
 export const RESOLUTION = 1024;
 export const MAP_BLOCK_LEN = 16;
@@ -14,12 +14,12 @@ export const PLAYER_STRENGTH = 10000;
 export const BLOCK_STRENGTH = 20000;
 export const PUSH_BLOCK_STRENGTH = 5000;
 export const MOVE_BLOCK_STRENGTH = 15000;
-export const GRAVITY = 0.01;
-export const JUMP_SPEED = -0.2;
-export const PLAYER_SPEED = 0.08;
-export const MOVE_BLOCK_SPEED = 0.04;
-export const CORNER_CORRECT = 0.05;
-export const MOVE_OBJ_CORNER_CORRECT = 0.2;
+export const GRAVITY = 1;
+export const JUMP_SPEED = -21;
+export const PLAYER_SPEED = 8;
+export const MOVE_BLOCK_SPEED = 4;
+export const CORNER_CORRECT = 10;
+export const MOVE_OBJ_CORNER_CORRECT = 20;
 // 型
 export type StageType = {
     id: number;
@@ -73,10 +73,6 @@ export const colorMap: Record<number, string | undefined> = {
     8: "#fd8208", //orange
 };
 
-// 関数
-export const roundDecimal = (x: number, digit: number) => {
-    return Math.round(x / digit) * digit;
-};
 export const convertBase = (m: number, chars: string) => {
     if (!Number.isInteger(m) || m < 0) throw new Error("m must be a non-negative integer");
     const n = chars.length;

@@ -1,4 +1,4 @@
-import { angFrom, Angle, colorMap, Direction, SFX_MIN_INTERVAL, UNIT, π } from "@/constants";
+import { angFrom, Angle, colorMap, Direction, SFX_MIN_INTERVAL, UNIT, π, INTERNAL_SCALE } from "@/constants";
 import { Block, Box, GameObj, Portal, SpriteBox } from "./class";
 import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application } from "pixi.js";
 import { gameObjs } from "./main";
@@ -146,13 +146,13 @@ export const drawSprite = (obj: GameObj, app: Application) => {
             sprite = new Sprite(generatedTextures.get(`${obj.name}_${obj.state}_0`) as Texture);
         }
         sprite.anchor.set(0);
-        sprite.x = spriteBox.origin.rel.x * UNIT;
-        sprite.y = spriteBox.origin.rel.y * UNIT;
-        sprite.width = spriteBox.origin.sz.x * UNIT;
-        sprite.height = spriteBox.origin.sz.y * UNIT;
+        sprite.x = (spriteBox.origin.rel.x / INTERNAL_SCALE) * UNIT;
+        sprite.y = (spriteBox.origin.rel.y / INTERNAL_SCALE) * UNIT;
+        sprite.width = (spriteBox.origin.sz.x / INTERNAL_SCALE) * UNIT;
+        sprite.height = (spriteBox.origin.sz.y / INTERNAL_SCALE) * UNIT;
         container.addChild(sprite);
         if (!(spriteBox.rel.x === spriteBox.origin.rel.x && spriteBox.rel.y === spriteBox.origin.rel.y && spriteBox.sz.x === spriteBox.origin.sz.x && spriteBox.sz.y === spriteBox.origin.sz.y)) {
-            const mask = new Graphics().rect(spriteBox.rel.x * UNIT, spriteBox.rel.y * UNIT, spriteBox.sz.x * UNIT, spriteBox.sz.y * UNIT).fill();
+            const mask = new Graphics().rect((spriteBox.rel.x / INTERNAL_SCALE) * UNIT, (spriteBox.rel.y / INTERNAL_SCALE) * UNIT, (spriteBox.sz.x / INTERNAL_SCALE) * UNIT, (spriteBox.sz.y / INTERNAL_SCALE) * UNIT).fill();
             container.addChild(mask);
             sprite.mask = mask;
         }
@@ -162,20 +162,20 @@ export const drawSprite = (obj: GameObj, app: Application) => {
         const sprite = new Sprite(getRotatedTexture("portal", "back", 0, obj.dir) as Texture);
         const [l, r, u, d, w, h] = [obj.spriteBoxes[0].l, obj.spriteBoxes[0].r, obj.spriteBoxes[0].u, obj.spriteBoxes[0].d, obj.spriteBoxes[0].sz.x, obj.spriteBoxes[0].sz.y];
         if (obj.dir === "u") {
-            sprite.x = l * UNIT;
-            sprite.y = (u - h) * UNIT;
+            sprite.x = (l / INTERNAL_SCALE) * UNIT;
+            sprite.y = ((u - h) / INTERNAL_SCALE) * UNIT;
         } else if (obj.dir === "r") {
-            sprite.x = r * UNIT;
-            sprite.y = u * UNIT;
+            sprite.x = (r / INTERNAL_SCALE) * UNIT;
+            sprite.y = (u / INTERNAL_SCALE) * UNIT;
         } else if (obj.dir === "d") {
-            sprite.x = l * UNIT;
-            sprite.y = d * UNIT;
+            sprite.x = (l / INTERNAL_SCALE) * UNIT;
+            sprite.y = (d / INTERNAL_SCALE) * UNIT;
         } else if (obj.dir === "l") {
-            sprite.x = (l - w) * UNIT;
-            sprite.y = u * UNIT;
+            sprite.x = ((l - w) / INTERNAL_SCALE) * UNIT;
+            sprite.y = (u / INTERNAL_SCALE) * UNIT;
         }
-        sprite.width = w * UNIT;
-        sprite.height = h * UNIT;
+        sprite.width = (w / INTERNAL_SCALE) * UNIT;
+        sprite.height = (h / INTERNAL_SCALE) * UNIT;
         sprite.zIndex = -1;
         app.stage.addChild(sprite);
     }
@@ -183,8 +183,8 @@ export const drawSprite = (obj: GameObj, app: Application) => {
 // sprite初期化
 export const setSprite = (obj: GameObj, app: Application) => {
     const container = obj.container;
-    container.x = obj.x * UNIT;
-    container.y = obj.y * UNIT;
+    container.x = (obj.x / INTERNAL_SCALE) * UNIT;
+    container.y = (obj.y / INTERNAL_SCALE) * UNIT;
     container.width = UNIT;
     container.height = UNIT;
     drawSprite(obj, app);
@@ -195,8 +195,8 @@ export const setSprite = (obj: GameObj, app: Application) => {
 // 点線囲い
 export const blockDashLine = (obj: Block) => {
     const lineTexture = generatedTextures.get("block_deactivatedLine_0") as Texture;
-    const w = obj.spriteBoxes[0].sz.x * UNIT;
-    const h = obj.spriteBoxes[0].sz.y * UNIT;
+    const w = (obj.spriteBoxes[0].sz.x / INTERNAL_SCALE) * UNIT;
+    const h = (obj.spriteBoxes[0].sz.y / INTERNAL_SCALE) * UNIT;
     const borderThickness = 0.125 * UNIT;
     const scale = borderThickness / lineTexture.height;
     // 上辺
@@ -247,8 +247,8 @@ export const blockDashLine = (obj: Block) => {
 export const updateSprites = () => {
     gameObjs.forEach((obj) => {
         const container = obj.container;
-        container.x = obj.x * UNIT;
-        container.y = obj.y * UNIT;
+        container.x = (obj.x / INTERNAL_SCALE) * UNIT;
+        container.y = (obj.y / INTERNAL_SCALE) * UNIT;
         // オフ状態のブロックを半透明にする
         if (obj instanceof Block) {
             obj.container.children.forEach((child) => {

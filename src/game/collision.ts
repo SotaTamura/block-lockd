@@ -1,5 +1,5 @@
-import { Axis, MAX_ITER, opposite, POS_PRECISION, roundDecimal, Direction, ε, CORNER_CORRECT } from "@/constants";
-import { GameObj, Hitbox, Ladder, Oneway, Player } from "./class";
+import { Axis, MAX_ITER, opposite, Direction, ε, CORNER_CORRECT } from "@/constants";
+import { Box, GameObj, Hitbox, Ladder, Oneway, Player } from "./class";
 import { pressingEvent } from "./base";
 
 /** 速度の方向(速度0の場合null) */
@@ -26,8 +26,12 @@ const isOverlapping1D = (ax: number, al: number, bx: number, bl: number) => {
 };
 
 /** 重なり判定(境界除く) */
+export const isOverLappingBox = (a: Box, b: Box) => {
+    return isOverlapping1D(a.x, a.sz.x, b.x, b.sz.x) && isOverlapping1D(a.y, a.sz.y, b.y, b.sz.y);
+};
+/** 重なり判定(境界除く) */
 export const isOverLapping = (a: GameObj, b: GameObj) => {
-    return a.hitboxes.some((aHitbox) => b.hitboxes.some((bHitbox) => isOverlapping1D(aHitbox.x, aHitbox.sz.x, bHitbox.x, bHitbox.sz.x) && isOverlapping1D(aHitbox.y, aHitbox.sz.y, bHitbox.y, bHitbox.sz.y)));
+    return a.hitboxes.some((aHitbox) => b.hitboxes.some((bHitbox) => isOverLappingBox(aHitbox, bHitbox)));
 };
 
 /** 座標ax, 長さal、速さavの区間と座標bx, 長さbl、速さbvの区間との衝突。衝突する時刻t及びaの相対速度を返す */
@@ -111,12 +115,19 @@ const cornerCorrect = (hit: { a: GameObj; b: GameObj; relV: number }, axis: Axis
             const strongerHitBox = stronger.hitboxes[j];
             const overlap = Math.min(weakerHitBox[positiveDir], strongerHitBox[positiveDir]) - Math.max(weakerHitBox[negativeDir], strongerHitBox[negativeDir]);
             if (overlap <= 0 || overlap > CORNER_CORRECT) continue;
-            const oldPos = weaker[crossAxis];
+            const oldCrossPos = weaker[crossAxis];
+            const oldPos = weaker[axis];
             // 端を揃える
-            if (weakerHitBox[negativeDir] < strongerHitBox[negativeDir]) weaker.alignHitbox(i, positiveDir, strongerHitBox[negativeDir]);
-            else weaker.alignHitbox(i, negativeDir, strongerHitBox[positiveDir]);
-            if (gameObjs.some((o) => isOverLapping(weaker, o))) {
-                weaker[crossAxis] = oldPos;
+            if (weakerHitBox.center[crossAxis] < strongerHitBox.center[crossAxis] && weaker.v[crossAxis] <= 0) {
+                weaker.alignHitbox(i, positiveDir, strongerHitBox[negativeDir]);
+            } else if (weakerHitBox.center[crossAxis] > strongerHitBox.center[crossAxis] && weaker.v[crossAxis] >= 0) {
+                weaker.alignHitbox(i, negativeDir, strongerHitBox[positiveDir]);
+            } else return false;
+            if (weaker.v[axis] > 0) weaker[axis] += CORNER_CORRECT + 1;
+            else if (weaker.v[axis] < 0) weaker[axis] -= CORNER_CORRECT + 1;
+            if (gameObjs.filter((o) => o !== weaker && !(o instanceof Ladder)).some((o) => isOverLapping(weaker, o))) {
+                weaker[crossAxis] = oldCrossPos;
+                weaker[axis] = oldPos;
                 return false;
             }
             return true;
@@ -175,7 +186,7 @@ const resolveCollision1D = (hit: { a: GameObj; b: GameObj; relV: number }, axis:
     // 強さが等しい場合
     if (a.strength[aCollisionDir] === b.strength[bCollisionDir]) {
         // 速度の絶対値が等しく向きが逆の場合、静止
-        if (Math.abs(av + bv) < ε) {
+        if ((av = -bv)) {
             av = 0;
             bv = 0;
         }
@@ -209,13 +220,13 @@ const resolveCollisions1D = (gameObjs: GameObj[], axis: Axis) => {
         const { t, hits } = findEarliestCollision1D(gameObjs, axis, tRemain);
         // 衝突まで進める
         for (const obj of gameObjs) {
-            obj[axis] = roundDecimal(obj[axis] + obj.v[axis] * t, POS_PRECISION);
+            obj[axis] += obj.v[axis] * t;
         }
         // 衝突が起きない場合
         if (hits.length === 0) break;
         // 衝突したオブジェクトの速度変更
         for (const hit of hits) {
-            if (cornerCorrect(hit, axis, gameObjs)) continue;
+            cornerCorrect(hit, axis, gameObjs);
             resolveCollision1D(hit, axis);
         }
         tRemain -= t;
@@ -243,7 +254,7 @@ export const updateNextBlocks = (gameObjs: GameObj[]) => {
                     for (const bHitbox of b.hitboxes) {
                         if (isIgnoreCollision(aHitbox, bHitbox, axis)) continue;
                         if (!isOverlapping1D(aHitbox[crossAxis], aHitbox.sz[crossAxis], bHitbox[crossAxis], bHitbox.sz[crossAxis])) continue;
-                        if (Math.abs(aHitbox[dir] - bHitbox[oppositeDir]) <= ε) {
+                        if (aHitbox[dir] === bHitbox[oppositeDir]) {
                             if (!a.nextBlocks[dir].includes(b)) a.nextBlocks[dir].push(b);
                             if (!b.nextBlocks[oppositeDir].includes(a)) b.nextBlocks[oppositeDir].push(a);
                         }
