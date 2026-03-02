@@ -126,6 +126,7 @@ const TRANSLATOR_MAP_ENTRIES = [
     ],
     ["操作には慣れてきたかな?", { us: "Getting used to the controls?", gb: "Getting used to the controls?", cn: "已经熟悉操作了吗？", tw: "已經熟悉操作了嗎？" }],
     ["ブロックをポータル間に跨らせた状態で静止させてみよう", { us: "Try stopping a block while it straddles a portal.", gb: "Try stopping a block while it straddles a portal.", cn: "试着让方块停在传送门之间。", tw: "試著讓方塊停在傳送門之間。" }],
+    ["当たり判定", { us: "Hitbox", gb: "Hitbox", cn: "碰撞箱", tw: "碰撞箱" }],
 ] as const;
 
 export type TranslatableString = (typeof TRANSLATOR_MAP_ENTRIES)[number][0];

@@ -1,7 +1,7 @@
 import { Application, BitmapText } from "pixi.js";
 import { Block, Button, GameObj, Key, Ladder, Lever, MoveBlock, Oneway, Player, Portal, PushBlock } from "./class";
-import { blockDashLine, stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites, playSfx } from "./base";
-import { Direction, GRAVITY, JUMP_SPEED, UNIT, parseBase, PROPS_LEN, opposite, INTERNAL_SCALE } from "@/constants";
+import { blockDashLine, stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites, playSfx, drawDebug } from "./base";
+import { Direction, GRAVITY, JUMP_SPEED, UNIT, parseBase, PROPS_LEN, opposite, SCALE } from "@/constants";
 import { EditorObj } from "@/app/editor/stageEditor";
 import { gunzipSync } from "zlib";
 import { isOverLapping, resolveCollisions, updateNextBlocks } from "./collision";
@@ -137,8 +137,8 @@ export const loadStage = async (data: string | EditorObj[], app: Application) =>
     for (const portal of portals) {
         const portalText = new BitmapText({
             text: portal.id,
-            x: ((portal.x + portal.spriteBoxes[0].sz.x / 2) / INTERNAL_SCALE) * UNIT,
-            y: ((portal.y + portal.spriteBoxes[0].sz.y / 2) / INTERNAL_SCALE) * UNIT,
+            x: ((portal.x + portal.spriteBoxes[0].sz.x / 2) / SCALE) * UNIT,
+            y: ((portal.y + portal.spriteBoxes[0].sz.y / 2) / SCALE) * UNIT,
             style: {
                 fontFamily: ["Makinas", "sans-serif"],
                 fontSize: (3 / 4) * UNIT,
@@ -153,8 +153,10 @@ export const loadStage = async (data: string | EditorObj[], app: Application) =>
     }
 };
 export let isComplete = false;
-export const update = (handleComplete: () => void, app: Application) => {
+export const update = (handleComplete: () => void, app: Application, $debug?: HTMLCanvasElement) => {
     if (!app.renderer) return;
+
+    if ($debug) drawDebug($debug, gameObjs);
 
     // 鍵
     for (const key of keys)

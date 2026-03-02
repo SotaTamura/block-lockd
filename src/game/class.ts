@@ -1,4 +1,4 @@
-import { BLOCK_STRENGTH, CORNER_CORRECT, Direction, MOVE_BLOCK_STRENGTH, MOVE_OBJ_CORNER_CORRECT, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH, PLAYER_SPEED, MAP_BLOCK_LEN, Axis, INTERNAL_SCALE } from "@/constants";
+import { BLOCK_STRENGTH, CORNER_CORRECT, Direction, MOVE_BLOCK_STRENGTH, MOVE_OBJ_CORNER_CORRECT, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH, PLAYER_SPEED, MAP_BLOCK_LEN, Axis, SCALE } from "@/constants";
 import { Sprite, Container } from "pixi.js";
 import { stateChangeTexture, xFlipTexture, pressingEvent, rotate, playSfx, stopSfx, stopBgm, SfxPath } from "./base";
 import { isOverLapping } from "./collision";
@@ -110,16 +110,14 @@ export abstract class GameObj {
         strength: number,
         cornerCorrect: number = CORNER_CORRECT,
     ) {
-        this.x = x * INTERNAL_SCALE;
-        this.y = y * INTERNAL_SCALE;
+        this.x = x * SCALE;
+        this.y = y * SCALE;
         this.dir = ang;
         this.color = color;
         this.v = { x: 0, y: 0 };
-        this.hitboxes = hitboxes.map((b) => new Hitbox(this, b.relX * INTERNAL_SCALE, b.relY * INTERNAL_SCALE, b.w * INTERNAL_SCALE, b.h * INTERNAL_SCALE, cornerCorrect));
+        this.hitboxes = hitboxes.map((b) => new Hitbox(this, b.relX * SCALE, b.relY * SCALE, b.w * SCALE, b.h * SCALE, cornerCorrect));
         this.hiddenHitboxes = [];
-        this.spriteBoxes = spriteBoxes.map(
-            (b) => new SpriteBox(this, b.relX * INTERNAL_SCALE, b.relY * INTERNAL_SCALE, b.w * INTERNAL_SCALE, b.h * INTERNAL_SCALE, new Box(this, b.relX * INTERNAL_SCALE, b.relY * INTERNAL_SCALE, b.w * INTERNAL_SCALE, b.h * INTERNAL_SCALE)),
-        );
+        this.spriteBoxes = spriteBoxes.map((b) => new SpriteBox(this, b.relX * SCALE, b.relY * SCALE, b.w * SCALE, b.h * SCALE, new Box(this, b.relX * SCALE, b.relY * SCALE, b.w * SCALE, b.h * SCALE)));
         this.name = name;
         this.state = textureState;
         this.isSolid = isSolid;
@@ -140,7 +138,7 @@ export abstract class GameObj {
         const maxR = Math.max(...allBoxes.map((b) => b.r));
         const minU = Math.min(...allBoxes.map((b) => b.u));
         const maxD = Math.max(...allBoxes.map((b) => b.d));
-        if (maxR < 0 || minL > MAP_BLOCK_LEN * INTERNAL_SCALE || maxD < 0 || minU > MAP_BLOCK_LEN * INTERNAL_SCALE) remove(this);
+        if (maxR < 0 || minL > MAP_BLOCK_LEN * SCALE || maxD < 0 || minU > MAP_BLOCK_LEN * SCALE) remove(this);
     }
     // // ポータル
     // handlePortal(portals: Portal[], app: Application) {
@@ -514,9 +512,9 @@ export class Portal extends GameObj {
             BLOCK_STRENGTH,
         );
         this.id = id;
-        this.trigger = new Box(this, 0, 0, w * INTERNAL_SCALE, (h / 2) * INTERNAL_SCALE);
+        this.trigger = new Box(this, 0, (h / 2) * SCALE, w * SCALE, h * SCALE);
         [...this.hitboxes, this.trigger].forEach((t) => {
-            rotate(t, ang, w * INTERNAL_SCALE, h * INTERNAL_SCALE);
+            rotate(t, ang, w * SCALE, h * SCALE);
         });
     }
 }
@@ -533,7 +531,7 @@ export class Button extends GameObj {
         super(x, y, ang, color, [{ relX: 0, relY: (3 / 4) * h, w, h: h / 4 }], [{ relX: 0, relY: 0, w, h }], "button", "off", true, BLOCK_STRENGTH);
         this.isPressed = false;
         this.hitboxes.forEach((b) => {
-            rotate(b, ang, w * INTERNAL_SCALE, h * INTERNAL_SCALE);
+            rotate(b, ang, w * SCALE, h * SCALE);
         });
     }
 }

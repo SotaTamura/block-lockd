@@ -125,6 +125,10 @@ const cornerCorrect = (hit: { a: GameObj; b: GameObj; relV: number }, axis: Axis
             } else return false;
             if (weaker.v[axis] > 0) weaker[axis] += CORNER_CORRECT + 1;
             else if (weaker.v[axis] < 0) weaker[axis] -= CORNER_CORRECT + 1;
+            else {
+                weaker[crossAxis] = oldCrossPos;
+                return false;
+            }
             if (gameObjs.filter((o) => o !== weaker && !(o instanceof Ladder)).some((o) => isOverLapping(weaker, o))) {
                 weaker[crossAxis] = oldCrossPos;
                 weaker[axis] = oldPos;
@@ -186,7 +190,7 @@ const resolveCollision1D = (hit: { a: GameObj; b: GameObj; relV: number }, axis:
     // 強さが等しい場合
     if (a.strength[aCollisionDir] === b.strength[bCollisionDir]) {
         // 速度の絶対値が等しく向きが逆の場合、静止
-        if ((av = -bv)) {
+        if (av === -bv) {
             av = 0;
             bv = 0;
         }
@@ -226,7 +230,7 @@ const resolveCollisions1D = (gameObjs: GameObj[], axis: Axis) => {
         if (hits.length === 0) break;
         // 衝突したオブジェクトの速度変更
         for (const hit of hits) {
-            cornerCorrect(hit, axis, gameObjs);
+            if (cornerCorrect(hit, axis, gameObjs)) continue;
             resolveCollision1D(hit, axis);
         }
         tRemain -= t;

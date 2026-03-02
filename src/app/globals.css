@@ -43,6 +43,7 @@
         width: 100svw;
         height: 100svh;
         background: radial-gradient(#aaa, #555);
+        overflow: hidden;
     }
     .loadingTxt {
         line-height: 100svh;
@@ -56,6 +57,8 @@
             "back ...."
             "txt txt"
             "stage stage";
+        width: 100vw;
+        height: 100svh;
     }
     .back {
         width: 18svmin;
@@ -167,34 +170,38 @@
     .gameScreen {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
-        grid-template-rows: 60px calc(100svh - 280px) 40px 180px;
+        grid-template-rows: 60px 1fr 40px 180px;
         grid-template-areas:
             "num menu restart"
             "main main main"
             "guide guide guide"
             "btn btn btn";
-        height: 100%;
+        width: 100vw;
+        height: 100svh;
     }
     .editorScreen {
         display: grid;
         grid-template-columns: 1fr;
-        grid-template-rows: 60px calc(100svh - 280px) 110px 110px;
+        grid-template-rows: 60px 1fr 110px 110px;
         grid-template-areas:
             "header"
             "main"
             "objs"
             "tools";
-        height: 100%;
+        width: 100vw;
+        height: 100svh;
     }
     .testScreen {
         display: grid;
         grid-template-columns: 1fr;
-        grid-template-rows: 60px calc(100svh - 280px) 220px;
+        grid-template-rows: 60px 1fr 40px 180px;
         grid-template-areas:
             "header"
             "main"
+            "guide"
             "btn";
-        height: 100%;
+        width: 100vw;
+        height: 100svh;
     }
     .objs {
         display: flex;
@@ -250,6 +257,8 @@
         font-size: 20px;
         text-align: left;
         display: flex;
+        justify-content: center;
+        align-items: center;
     }
     .guide {
         height: 35px;
@@ -261,12 +270,30 @@
         display: flex;
         justify-content: center;
         align-items: center;
-    }
-    #main {
-        aspect-ratio: 1 / 1;
+        position: relative;
         width: 100%;
         height: 100%;
+        overflow: hidden;
+    }
+    #main,
+    #debug {
+        aspect-ratio: 1 / 1;
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: 100%;
         object-fit: contain;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    #main {
+        z-index: 1;
+    }
+    #debug {
+        pointer-events: none;
+        z-index: 2;
     }
     .loadingStage {
         grid-area: main;
@@ -390,7 +417,7 @@
 
     @media screen and (min-aspect-ratio: 1/1) {
         .gameScreen {
-            grid-template-columns: 140px calc(100svw - 280px) 70px 70px;
+            grid-template-columns: 140px 1fr 70px 70px;
             grid-template-rows: 22svh 30svh 48svh;
             grid-template-areas:
                 "num  main menu restart"
@@ -407,30 +434,43 @@
             margin: auto;
         }
         .controlBtns {
+            position: absolute;
+            inset: 0;
             display: grid;
-            grid-template-columns: 70px 70px calc(100svw - 280px) 140px;
-            grid-template-rows: 24svh 24svh;
+            grid-template-columns: 70px 70px 1fr 140px;
+            grid-template-rows: 1fr 24svh 24svh;
             grid-template-areas:
+                ". . . ."
                 "l r . u"
                 "l r . d";
+            pointer-events: none;
+            z-index: 5;
+            width: 100vw;
+            height: 100svh;
+            margin: 0;
+            max-width: none;
+            aspect-ratio: auto;
+        }
+        .controlBtns > * {
+            pointer-events: auto;
         }
         .guides {
             display: block;
         }
         .editorScreen {
-            grid-template-columns: 140px calc(100svw - 280px) 140px;
-            grid-template-rows: 60px calc(100svh - 60px);
+            grid-template-columns: 140px 1fr 140px;
+            grid-template-rows: 60px 1fr;
             grid-template-areas:
                 "header header header"
-                "objs main tools";
+                "objs   main   tools";
         }
         .testScreen {
-            grid-template-columns: 140px calc(100svw - 280px) 140px;
+            grid-template-columns: 140px 1fr 70px 70px;
             grid-template-rows: 60px 1fr 1fr;
             grid-template-areas:
-                "header header header"
-                ".... main ...."
-                "btn  main ....";
+                "header header header header"
+                "....   main   guide  guide"
+                "....   main   ....   ....";
         }
         .objs {
             flex-direction: column;

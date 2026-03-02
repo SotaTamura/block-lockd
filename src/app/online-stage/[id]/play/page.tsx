@@ -5,9 +5,10 @@ import { use, useEffect, useRef, useState } from "react";
 import { RESOLUTION, StageType, STEP } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
-import { useAuth, useStage } from "@/app/context";
-import { ArrowButton, LeftSvg, Loading, RestartSvg } from "@/app/components";
+import { useAuth, useSettings, useStage } from "@/app/context";
+import { ArrowButton, Checkbox, LeftSvg, Loading, RestartSvg } from "@/app/components";
 import { BgmPath, glitch, playBgm, playSfx } from "@/game/base";
+import { TranslatableString, translate } from "@/app/translate";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
@@ -19,7 +20,24 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const stageRef = useRef<StageType | null>(null);
+    const [showHitbox, setShowHitbox] = useState(false);
+    const showHitboxRef = useRef(false);
+    const {
+        settings: { lang },
+    } = useSettings();
+    const t = (str: TranslatableString) => translate(str, lang);
     let loopId: number;
+
+    useEffect(() => {
+        showHitboxRef.current = showHitbox;
+        if (!showHitbox) {
+            const $debug = document.getElementById("debug") as HTMLCanvasElement;
+            if ($debug) {
+                const ctx = $debug.getContext("2d");
+                ctx?.clearRect(0, 0, $debug.width, $debug.height);
+            }
+        }
+    }, [showHitbox]);
 
     useEffect(() => {
         playBgm(`/bgm${Math.floor(Math.random() * 7)}.mp3` as BgmPath);
@@ -30,6 +48,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
         const app = new Application();
         appRef.current = app;
         let $cnv: HTMLCanvasElement;
+        let $debug: HTMLCanvasElement;
         (async () => {
             // pixiアプリケーション作成
             await app.init({
@@ -40,7 +59,12 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             });
             $cnv = app.canvas;
             $cnv.id = "main";
+            $debug = document.createElement("canvas");
+            $debug.id = "debug";
+            $debug.width = RESOLUTION;
+            $debug.height = RESOLUTION;
             cnvWrapperRef.current?.appendChild($cnv);
+            cnvWrapperRef.current?.appendChild($debug);
             const stageFromContext = getStageById(id);
             if (stageFromContext) stageRef.current = stageFromContext;
             if (!stageRef.current) return;
@@ -56,10 +80,14 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 }
                 accumulator += dt ? dt : 0;
                 while (accumulator >= STEP) {
-                    update(async () => {
-                        if (user && !user.completedOnlineStageIds.includes(id)) changeData({ completedOnlineStageIds: [...user.completedOnlineStageIds, id] });
-                        setIsComplete(true);
-                    }, app);
+                    update(
+                        async () => {
+                            if (user && !user.completedOnlineStageIds.includes(id)) changeData({ completedOnlineStageIds: [...user.completedOnlineStageIds, id] });
+                            setIsComplete(true);
+                        },
+                        app,
+                        showHitboxRef.current ? $debug : undefined
+                    );
                     accumulator -= STEP;
                 }
                 prevTime = timestamp;
@@ -70,6 +98,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
         return () => {
             window.cancelAnimationFrame(loopId);
             app.destroy(true, { children: true });
+            $debug?.remove();
         };
     }, [id, restarter, getStageById, changeData]);
 
@@ -82,6 +111,11 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 onClick={(e) => {
                     e.preventDefault();
                     if (!appRef.current) return;
+                    const $debug = document.getElementById("debug") as HTMLCanvasElement;
+                    if ($debug) {
+                        const ctx = $debug.getContext("2d");
+                        ctx?.clearRect(0, 0, $debug.width, $debug.height);
+                    }
                     playSfx("/restart.mp3", null);
                     glitch(appRef.current, 300);
                     setTimeout(() => setRestarter(restarter + 1), 300);
@@ -91,7 +125,11 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             <Link href={`/online-stage/${id}/overview`} className="btn menu">
                 <LeftSvg />
             </Link>
-            <div className="guides"></div>
+            <div className="guides">
+                <Checkbox id="hitbox" checked={showHitbox} onChange={() => setShowHitbox(!showHitbox)}>
+                    {t("当たり判定")}
+                </Checkbox>
+            </div>
             {isMobile.any && (
                 <div className="controlBtns">
                     <ArrowButton eventName="u" />

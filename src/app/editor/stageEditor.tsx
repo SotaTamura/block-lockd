@@ -171,10 +171,23 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     const [isAppReady, setIsAppReady] = useState(false);
     const [editorObjs, setEditorObjs] = useState<EditorObj[]>([]);
     const [access, setAccess] = useState(2); //0: public, 1: private, 2: unverified
+    const [showHitbox, setShowHitbox] = useState(false);
+    const showHitboxRef = useRef(false);
     const {
         settings: { lang },
     } = useSettings();
     const t = (str: TranslatableString) => translate(str, lang);
+
+    useEffect(() => {
+        showHitboxRef.current = showHitbox;
+        if (!showHitbox) {
+            const $debug = document.getElementById("debug") as HTMLCanvasElement;
+            if ($debug) {
+                const ctx = $debug.getContext("2d");
+                ctx?.clearRect(0, 0, $debug.width, $debug.height);
+            }
+        }
+    }, [showHitbox]);
 
     const addObj = (app: Application, x: number, y: number) => {
         if (selectedObj === "portal_front") {
@@ -367,6 +380,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         if (!$wrapper) return;
         const app = new Application();
         appRef.current = app;
+        let $debug: HTMLCanvasElement;
         (async () => {
             setIsLoading(true);
             await app.init({
@@ -377,7 +391,12 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             });
             const $cnv = app.canvas;
             $cnv.id = "main";
+            $debug = document.createElement("canvas");
+            $debug.id = "debug";
+            $debug.width = RESOLUTION;
+            $debug.height = RESOLUTION;
             $wrapper.appendChild($cnv);
+            $wrapper.appendChild($debug);
             setIsAppReady(true);
             setIsLoading(false);
         })();
@@ -388,6 +407,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 currentApp.destroy(true, { children: true, texture: false, textureSource: false });
                 appRef.current = null;
             }
+            $debug?.remove();
         };
     }, []);
 
@@ -399,6 +419,15 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
 
         // Clear the stage
         app.stage.removeChildren();
+
+        // Clear debug canvas if not in test tab
+        if (tab !== "test") {
+            const $debug = document.getElementById("debug") as HTMLCanvasElement;
+            if ($debug) {
+                const ctx = $debug.getContext("2d");
+                ctx?.clearRect(0, 0, $debug.width, $debug.height);
+            }
+        }
 
         let isMounted = true;
 
@@ -472,10 +501,15 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                         }
                         accumulator += dt ? dt : 0;
                         while (accumulator >= STEP) {
-                            update(async () => {
-                                setIsComplete(true);
-                                if (access === 2) setAccess(1);
-                            }, app);
+                            const $debug = document.getElementById("debug") as HTMLCanvasElement;
+                            update(
+                                async () => {
+                                    setIsComplete(true);
+                                    if (access === 2) setAccess(1);
+                                },
+                                app,
+                                showHitboxRef.current && $debug ? $debug : undefined
+                            );
                             accumulator -= STEP;
                         }
                         prevTime = timestamp;
@@ -498,6 +532,19 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         };
     }, [tab, isAppReady, restarter, editorObjs, selectedTool, selectedColor, selectedSnap, selectedObj]);
 
+    useEffect(() => {
+        if (isAppReady && appRef.current && cnvSize > 0) {
+            const $cnv = appRef.current.canvas;
+            $cnv.style.width = `${cnvSize}px`;
+            $cnv.style.height = `${cnvSize}px`;
+            const $debug = document.getElementById("debug");
+            if ($debug) {
+                $debug.style.width = `${cnvSize}px`;
+                $debug.style.height = `${cnvSize}px`;
+            }
+        }
+    }, [cnvSize, isAppReady]);
+
     useLayoutEffect(() => {
         if (!cnvWrapperRef.current) return;
         const observer = new ResizeObserver((entries) => {
@@ -510,12 +557,6 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             observer.disconnect();
         };
     }, []);
-    useEffect(() => {
-        if (isAppReady && appRef.current?.canvas) {
-            appRef.current.canvas.style.width = `${cnvSize}px`;
-            appRef.current.canvas.style.height = `${cnvSize}px`;
-        }
-    }, [cnvSize, isAppReady]);
 
     const handleSubmit = async (e: React.FormEvent, checkChange: boolean) => {
         e.preventDefault();
@@ -598,6 +639,11 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
 
     const handleRestartTest = () => {
         if (!appRef.current) return;
+        const $debug = document.getElementById("debug") as HTMLCanvasElement;
+        if ($debug) {
+            const ctx = $debug.getContext("2d");
+            ctx?.clearRect(0, 0, $debug.width, $debug.height);
+        }
         glitch(appRef.current, 300);
         playSfx("/restart.mp3", null);
         setTimeout(() => setRestarter(restarter + 1), 300);
@@ -674,7 +720,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                             <CheckSvg />
                         </button>
                         {initData && (
-                            <button onClick={handleDelete} className="btn dangerBtn font-semibold px-4 py-2 shadow-xl bg-slate-200 m-auto hover:bg-slate-100 text-gray-800 w-[10svh] max-w-md">
+                            <button onClick={handleDelete} className="btn dangerBtn font-semibold px-4 py-2 shadow-xl bg-slate-200 m-auto hover:bg-slate-100 text-gray-800 w-[10svh] max-md">
                                 <TrashSvg />
                             </button>
                         )}
@@ -730,6 +776,11 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 {tab === "test" && (
                     <>
                         {isLoading && <div className="loadingStage">Loading...</div>}
+                        <div className="guides">
+                            <Checkbox id="hitbox" checked={showHitbox} onChange={() => setShowHitbox(!showHitbox)}>
+                                {t("当たり判定")}
+                            </Checkbox>
+                        </div>
                         {isMobile.any && (
                             <div className="controlBtns">
                                 <ArrowButton eventName="u" />
