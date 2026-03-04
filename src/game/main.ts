@@ -1,7 +1,7 @@
 import { Application, BitmapText } from "pixi.js";
-import { Block, Button, GameObj, Key, Ladder, Lever, MoveBlock, Oneway, Player, Portal, PushBlock } from "./class";
-import { blockDashLine, stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites, playSfx, drawDebug } from "./base";
-import { Direction, GRAVITY, JUMP_SPEED, UNIT, parseBase, PROPS_LEN, opposite, SCALE } from "@/constants";
+import { Block, Button, GameObj, Key, Ladder, Lever, MoveBlock, Oneway, Player, Portal, PushBlock, Particle } from "./class";
+import { blockDashLine, stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites, playSfx, drawDebug, stopSfx } from "./base";
+import { Direction, GRAVITY, JUMP_SPEED, UNIT, parseBase, PROPS_LEN, opposite, SCALE, TERMINAL_V, MOVE_BLOCK_SPEED, BLOCK_STRENGTH, MOVE_BLOCK_STRENGTH } from "@/constants";
 import { EditorObj } from "@/app/editor/stageEditor";
 import { gunzipSync } from "zlib";
 import { isOverLapping, resolveCollisions, updateNextBlocks } from "./collision";
@@ -18,12 +18,18 @@ export let portals: Portal[];
 export let portalTexts: BitmapText[];
 export let buttons: Button[];
 export let moveBlocks: MoveBlock[];
+export let particles: Particle[] = [];
 
 // オブジェクト削除
-export const remove = (obj: GameObj) => {
+export const remove = (obj: GameObj | Particle) => {
+    if (obj instanceof Particle) {
+        particles = particles.filter((p) => p !== obj);
+        obj.container.destroy();
+        return;
+    }
     const typeArrays: GameObj[][] = [players, blocks, ladders, keys, oneways, levers, portals, pushBlocks, buttons, moveBlocks];
     for (const typeArray of typeArrays) {
-        const index = typeArray.indexOf(obj);
+        const index = typeArray.indexOf(obj as GameObj);
         if (index !== -1) {
             typeArray.splice(index, 1);
             gameObjs = gameObjs.filter((item) => item !== obj);
@@ -84,11 +90,13 @@ export const loadStage = async (data: string | EditorObj[], app: Application) =>
     pushBlocks = [];
     buttons = [];
     moveBlocks = [];
+    particles.forEach((p) => p.container.destroy());
+    particles = [];
     if (typeof data === "string") {
         const splitCode = gunzipSync(Buffer.from(data, "base64")).toString("utf-8").split(";");
         for (const obj of splitCode) {
             const [base64Mask, joinedMaskedProps] = obj.split(":");
-            let mask = parseBase(base64Mask, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_");
+            const mask = parseBase(base64Mask, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_");
             const maskedProps = joinedMaskedProps.split(",");
             let maskedPropIndex = 0;
             const propStrs: (string | null)[] = new Array(PROPS_LEN).fill(null);
@@ -133,7 +141,10 @@ export const loadStage = async (data: string | EditorObj[], app: Application) =>
     pushBlocks = gameObjs.filter((o) => o instanceof PushBlock);
     buttons = gameObjs.filter((o) => o instanceof Button);
     moveBlocks = gameObjs.filter((o) => o instanceof MoveBlock);
+    const solidObjs = gameObjs.filter((o) => o.isSolid);
+    updateNextBlocks(solidObjs);
     for (const block of blocks) blockDashLine(block);
+    app.stage.sortableChildren = true;
     for (const portal of portals) {
         const portalText = new BitmapText({
             text: portal.id,
@@ -152,7 +163,7 @@ export const loadStage = async (data: string | EditorObj[], app: Application) =>
         app.stage.addChild(portalText);
     }
 };
-export let isComplete = false;
+export const isComplete = false;
 export const update = (handleComplete: () => void, app: Application, $debug?: HTMLCanvasElement) => {
     if (!app.renderer) return;
 
@@ -161,43 +172,42 @@ export const update = (handleComplete: () => void, app: Application, $debug?: HT
     // 鍵
     for (const key of keys)
         if (players.some((p) => isOverLapping(p, key))) {
+            key.handleParticle(app);
             remove(key);
             activate(key.color);
-            playSfx("/key.mp3", key, 5);
+            playSfx("/key.mp3", key, 5, false, 0.8 + Math.random() * 0.4);
         }
-    // // レバー
-    // for (const lever of levers) {
-    //     const isColliding = players.some((player) => player.isColliding(lever.triggers[0]));
-    //     if (isColliding) {
-    //         if (!lever.isBeingContacted) {
-    //             playSfx("/lever.mp3", lever, 5);
-    //             activate(lever.color);
-    //             stateChangeTexture(lever, lever.state === "on" ? "off" : "on");
-    //             lever.isBeingContacted = true;
-    //         }
-    //     } else {
-    //         lever.isBeingContacted = false;
-    //     }
-    // }
-    // // ボタン
-    // for (const button of buttons) {
-    //     const isPressed = [...players, ...pushBlocks, ...moveBlocks].some((obj) => obj.isColliding(button.triggers[0]));
-    //     if (isPressed) {
-    //         if (!button.isPressed) {
-    //             playSfx("/button.mp3", button, 5);
-    //             activate(button.color);
-    //             stateChangeTexture(button, "on");
-    //             button.isPressed = true;
-    //         }
-    //     } else {
-    //         if (button.isPressed) {
-    //             activate(button.color);
-    //             stateChangeTexture(button, "off");
-    //             button.isPressed = false;
-    //         }
-    //     }
-    // }
-    // // 動くオブジェクト
+    // レバー
+    for (const lever of levers) {
+        if (players.some((p) => isOverLapping(p, lever))) {
+            if (!lever.isBeingContacted) {
+                playSfx("/lever.mp3", lever, 5);
+                activate(lever.color);
+                stateChangeTexture(lever, lever.state === "on" ? "off" : "on");
+                lever.isBeingContacted = true;
+            }
+        } else {
+            lever.isBeingContacted = false;
+        }
+    }
+    // ボタン
+    for (const button of buttons) {
+        if ([...players, ...pushBlocks, ...moveBlocks].some((o) => o.nextBlocks[opposite[button.dir]].includes(button))) {
+            if (!button.isPressed) {
+                playSfx("/button.mp3", button, 5, false, 0.8 + Math.random() * 0.4);
+                activate(button.color);
+                stateChangeTexture(button, "on");
+                button.isPressed = true;
+            }
+        } else {
+            if (button.isPressed) {
+                activate(button.color);
+                stateChangeTexture(button, "off");
+                button.isPressed = false;
+            }
+        }
+    }
+    // プレイヤー
     for (const player of players) {
         player.strength = {
             u: player.initStrength,
@@ -209,13 +219,14 @@ export const update = (handleComplete: () => void, app: Application, $debug?: HT
             player.v.y = JUMP_SPEED;
             playSfx("/jump.mp3", player);
         }
-        player.v.y += GRAVITY;
+        player.v.y = Math.min(player.v.y + GRAVITY, TERMINAL_V);
         player.handleLadder(ladders);
-        //     player.handlePortal(portals, app);
         player.handleHorizontalMove();
         player.handleGoal(handleComplete);
         player.handleTexture();
+        player.handleParticle(app);
     }
+    // 押しブロック
     for (const pushBlock of pushBlocks) {
         pushBlock.strength = {
             u: pushBlock.initStrength,
@@ -224,67 +235,61 @@ export const update = (handleComplete: () => void, app: Application, $debug?: HT
             r: pushBlock.initStrength,
         };
         pushBlock.v.x = 0;
-        pushBlock.v.y += GRAVITY;
-        //     pushBlock.handleLadder(ladders); //ハシゴ
-        //     pushBlock.handlePortal(portals, app); //ポータル
+        pushBlock.v.y = Math.min(pushBlock.v.y + GRAVITY, TERMINAL_V);
+        pushBlock.handleLadder(ladders); //ハシゴ
         pushBlock.handleGoal();
+        pushBlock.handleLanding();
     }
-    // for (const moveBlock of moveBlocks) {
-    //     moveBlock.strength = {
-    //         t: moveBlock.initStrength,
-    //         b: moveBlock.initStrength,
-    //         l: moveBlock.initStrength,
-    //         r: moveBlock.initStrength,
-    //     };
-    //     if (moveBlock.ang === 0) {
-    //         moveBlock.vy = moveBlock.isActivated && !moveBlock.nextBlock.t ? -MOVE_BLOCK_SPEED : 0;
-    //     }
-    //     if (moveBlock.ang === 90) {
-    //         moveBlock.vx = moveBlock.isActivated && !moveBlock.nextBlock.r ? MOVE_BLOCK_SPEED : 0;
-    //     }
-    //     if (moveBlock.ang === 180) {
-    //         moveBlock.vy = moveBlock.isActivated && !moveBlock.nextBlock.b ? MOVE_BLOCK_SPEED : 0;
-    //     }
-    //     if (moveBlock.ang === -90) {
-    //         moveBlock.vx = moveBlock.isActivated && !moveBlock.nextBlock.l ? -MOVE_BLOCK_SPEED : 0;
-    //     }
-    //     moveBlock.nextBlock = { t: null, b: null, l: null, r: null };
-    //     moveBlock.handlePortal(portals, app); //ポータル
-    // }
-    // for (let i = 0; i < [...players, ...pushBlocks, ...moveBlocks].length; i++) {
-    //     for (const obj of [...moveBlocks, ...pushBlocks, ...players]) {
-    //         const otherSolidObjs = gameObjs.filter((o) => o !== obj && o.isSolid);
-    //         obj.collideBottom([...otherSolidObjs, ...ladders]); // 着地
-    //         // ジャンプ(ジャンプ中のプレイヤーの上に乗っているプレイヤーをジャンプさせない)
-    //         if (obj instanceof Player && pressStartEvent.u && obj.nextBlock.b) {
-    //             let bottom: GameObj | null = obj.nextBlock.b;
-    //             while (bottom instanceof Player) {
-    //                 bottom = bottom.nextBlock.b;
-    //                 if (!bottom) break;
-    //             }
-    //             if (bottom) {
-    //                 obj.vy = JUMP_SPEED;
-    //                 obj.strength.t = PLAYER_STRENGTH;
-    //                 playSfx("/jump.mp3", obj);
-    //             }
-    //         }
-    //         obj.collideTop(otherSolidObjs); // 天井衝突
-    //         obj.collideLeft(otherSolidObjs); // 左壁衝突
-    //         obj.collideRight(otherSolidObjs); // 右壁衝突
-    //     }
-    // }
-    // for (const moveBlock of moveBlocks) {
-    //     moveBlock.x += moveBlock.vx;
-    //     moveBlock.y += moveBlock.vy; //移動
-    //     const moveBlockBB = moveBlock.boundingBox;
-    //     if (moveBlockBB && (moveBlockBB.r < 0 || moveBlockBB.l > MAP_BLOCK_LEN || moveBlockBB.b < 0 || moveBlockBB.t > MAP_BLOCK_LEN)) {
-    //         // ゴール
-    //         remove(moveBlock);
-    //     }
-    // }
+    // 駆動ブロック
+    for (const moveBlock of moveBlocks) {
+        if (moveBlock.dir === "u" || moveBlock.dir === "d")
+            moveBlock.strength = {
+                u: MOVE_BLOCK_STRENGTH,
+                d: MOVE_BLOCK_STRENGTH,
+                l: BLOCK_STRENGTH,
+                r: BLOCK_STRENGTH,
+            };
+        else
+            moveBlock.strength = {
+                u: BLOCK_STRENGTH,
+                d: BLOCK_STRENGTH,
+                l: MOVE_BLOCK_STRENGTH,
+                r: MOVE_BLOCK_STRENGTH,
+            };
+        if (moveBlock.dir === "u") moveBlock.v.y = moveBlock.isActivated ? -MOVE_BLOCK_SPEED : 0;
+        else if (moveBlock.dir === "r") moveBlock.v.x = moveBlock.isActivated ? MOVE_BLOCK_SPEED : 0;
+        else if (moveBlock.dir === "d") moveBlock.v.y = moveBlock.isActivated ? MOVE_BLOCK_SPEED : 0;
+        else if (moveBlock.dir === "l") moveBlock.v.x = moveBlock.isActivated ? -MOVE_BLOCK_SPEED : 0;
+
+        moveBlock.handleParticle(app);
+    }
+    // ポータル
+    for (const portal of portals) {
+        portal.handleParticle(app);
+    }
+    // パーティクル更新
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.95;
+        p.vy *= 0.95;
+        p.life--;
+        if (p.life <= 0) {
+            remove(p);
+        }
+    }
     const solidObjs = gameObjs.filter((o) => o.isSolid);
     resolveCollisions(solidObjs);
+    for (const pushBlock of pushBlocks) {
+        if (pushBlock.v.x !== 0) {
+            playSfx("/pushblock.mp3", pushBlock, 1, true);
+        } else {
+            stopSfx("/pushblock.mp3", pushBlock);
+        }
+    }
     updateNextBlocks(solidObjs);
     clearPressStart();
-    updateSprites();
+    updateSprites(app);
 };

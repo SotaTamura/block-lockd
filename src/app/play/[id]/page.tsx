@@ -30,6 +30,10 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
 
     useEffect(() => {
         showHitboxRef.current = showHitbox;
+        const $main = document.getElementById("main") as HTMLCanvasElement;
+        if ($main) {
+            $main.style.opacity = showHitbox ? "0.2" : "1";
+        }
         if (!showHitbox) {
             const $debug = document.getElementById("debug") as HTMLCanvasElement;
             if ($debug) {
@@ -66,6 +70,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             $debug.height = RESOLUTION;
             cnvWrapperRef.current?.appendChild($cnv);
             cnvWrapperRef.current?.appendChild($debug);
+            $cnv.style.opacity = showHitboxRef.current ? "0.2" : "1";
             await loadStage(STAGES[id].code, app);
             setIsLoading(false);
             // 更新
@@ -84,7 +89,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                             setIsComplete(true);
                         },
                         app,
-                        showHitboxRef.current ? $debug : undefined
+                        showHitboxRef.current ? $debug : undefined,
                     );
                     accumulator -= STEP;
                 }

@@ -180,14 +180,18 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
 
     useEffect(() => {
         showHitboxRef.current = showHitbox;
-        if (!showHitbox) {
+        const $main = document.getElementById("main") as HTMLCanvasElement;
+        if ($main) {
+            $main.style.opacity = showHitbox && tab === "test" ? "0.2" : "1";
+        }
+        if (!showHitbox || tab !== "test") {
             const $debug = document.getElementById("debug") as HTMLCanvasElement;
             if ($debug) {
                 const ctx = $debug.getContext("2d");
                 ctx?.clearRect(0, 0, $debug.width, $debug.height);
             }
         }
-    }, [showHitbox]);
+    }, [showHitbox, tab]);
 
     const addObj = (app: Application, x: number, y: number) => {
         if (selectedObj === "portal_front") {
@@ -397,6 +401,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             $debug.height = RESOLUTION;
             $wrapper.appendChild($cnv);
             $wrapper.appendChild($debug);
+            $cnv.style.opacity = showHitboxRef.current && tab === "test" ? "0.2" : "1";
             setIsAppReady(true);
             setIsLoading(false);
         })();
@@ -508,7 +513,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                                     if (access === 2) setAccess(1);
                                 },
                                 app,
-                                showHitboxRef.current && $debug ? $debug : undefined
+                                showHitboxRef.current && $debug ? $debug : undefined,
                             );
                             accumulator -= STEP;
                         }

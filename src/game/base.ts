@@ -1,7 +1,7 @@
 import { angFrom, Angle, colorMap, Direction, SFX_MIN_INTERVAL, UNIT, π, SCALE } from "@/constants";
 import { Block, Box, GameObj, Portal, SpriteBox, Oneway } from "./class";
 import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application } from "pixi.js";
-import { gameObjs } from "./main";
+import { gameObjs, particles } from "./main";
 import { GlitchFilter } from "pixi-filters";
 
 // キーイベント
@@ -95,6 +95,7 @@ export const editTexture = (obj: GameObj, newTexture: Texture | Texture[]) => {
         obj.container.children.forEach((child) => {
             if (child instanceof AnimatedSprite) {
                 const sprite = child;
+                if (sprite.textures === newTexture) return;
                 sprite.textures = newTexture;
                 if (!sprite.playing) {
                     sprite.play();
@@ -105,6 +106,7 @@ export const editTexture = (obj: GameObj, newTexture: Texture | Texture[]) => {
         obj.container.children.forEach((child) => {
             if (child instanceof Sprite) {
                 const sprite = child;
+                if (sprite.texture === newTexture) return;
                 sprite.texture = newTexture;
             }
         });
@@ -115,69 +117,130 @@ export const getRotatedTexture = (name: string, state: string, rotId: number, an
     return getTexture(name, state, groupD8.add((8 - angle / 45) % 8, rotId));
 };
 export const rotateTexture = (obj: GameObj, ang: Direction | Angle) => {
-    editTexture(obj, getRotatedTexture(obj.name, obj.state, (obj.container.children[0] as Sprite).texture.rotate, ang));
+    const firstSprite = obj.container.children.find((c) => c instanceof Sprite || c instanceof AnimatedSprite) as Sprite | AnimatedSprite | undefined;
+    if (firstSprite) {
+        editTexture(obj, getRotatedTexture(obj.name, obj.state, firstSprite.texture.rotate, ang));
+    }
 };
 export const getXFlippedTexture = (name: string, state: string, rotId: number) => getTexture(name, state, groupD8.add(groupD8.MIRROR_HORIZONTAL, rotId));
 export const xFlipTexture = (obj: GameObj) => {
-    editTexture(obj, getXFlippedTexture(obj.name, obj.state, (obj.container.children[0] as Sprite).texture.rotate));
+    const firstSprite = obj.container.children.find((c) => c instanceof Sprite || c instanceof AnimatedSprite) as Sprite | AnimatedSprite | undefined;
+    if (firstSprite) {
+        editTexture(obj, getXFlippedTexture(obj.name, obj.state, firstSprite.texture.rotate));
+    }
 };
 export const getStateTexture = (name: string, newState: string, rotId: number) => getTexture(name, newState, rotId);
 export const stateChangeTexture = (obj: GameObj, newState: string) => {
     if (obj.state === newState) return;
     obj.state = newState;
-    editTexture(obj, getStateTexture(obj.name, newState, (obj.container.children[0] as Sprite).texture.rotate));
+    const firstSprite = obj.container.children.find((c) => c instanceof Sprite || c instanceof AnimatedSprite) as Sprite | AnimatedSprite | undefined;
+    if (firstSprite) {
+        editTexture(obj, getStateTexture(obj.name, newState, firstSprite.texture.rotate));
+    }
 };
 // spriteを描画する
 export const drawSprite = (obj: GameObj, app: Application) => {
     const container = obj.container;
-    const rotId = (obj.container.children[0] as Sprite | undefined)?.texture.rotate ?? 0;
-    const removed = container.removeChildren();
-    for (const child of removed) {
-        child.destroy({ children: true });
+    const firstSprite = container.children.find((c) => c instanceof Sprite || c instanceof AnimatedSprite) as Sprite | AnimatedSprite | undefined;
+    const rotId = firstSprite?.texture.rotate ?? 0;
+
+    const existingSprites = container.children.filter((c) => c instanceof Sprite || c instanceof AnimatedSprite) as (Sprite | AnimatedSprite)[];
+
+    if (existingSprites.length !== obj.spriteBoxes.length || obj.needsRedraw) {
+        let prevFrame = 0;
+        let prevPlaying = false;
+        if (existingSprites.length > 0 && existingSprites[0] instanceof AnimatedSprite) {
+            prevFrame = existingSprites[0].currentFrame;
+            prevPlaying = existingSprites[0].playing;
+        }
+
+        const removed = container.removeChildren();
+        for (const child of removed) {
+            child.destroy({ children: true });
+        }
+
+        obj.spriteBoxes.forEach((spriteBox) => {
+            let sprite: Sprite | AnimatedSprite;
+            const texture = generatedTextures.get(`${obj.name}_${obj.state}_0`);
+            if (!texture) throw new Error(`baseTexture with key ${obj.name}_${obj.state}_0 not found`);
+            else if (Array.isArray(texture)) {
+                sprite = new AnimatedSprite(texture);
+                if (sprite instanceof AnimatedSprite) {
+                    sprite.animationSpeed = 0.125;
+                    sprite.gotoAndPlay(prevFrame % texture.length);
+                    if (!prevPlaying) sprite.stop();
+                }
+            } else {
+                sprite = new Sprite(texture as Texture);
+            }
+            sprite.anchor.set(0);
+            sprite.x = (spriteBox.origin.rel.x / SCALE) * UNIT;
+            sprite.y = (spriteBox.origin.rel.y / SCALE) * UNIT;
+            sprite.width = (spriteBox.origin.sz.x / SCALE) * UNIT;
+            sprite.height = (spriteBox.origin.sz.y / SCALE) * UNIT;
+            container.addChild(sprite);
+
+            if (!(spriteBox.rel.x === spriteBox.origin.rel.x && spriteBox.rel.y === spriteBox.origin.rel.y && spriteBox.sz.x === spriteBox.origin.sz.x && spriteBox.sz.y === spriteBox.origin.sz.y)) {
+                const mask = new Graphics().rect((spriteBox.rel.x / SCALE) * UNIT, (spriteBox.rel.y / SCALE) * UNIT, (spriteBox.sz.x / SCALE) * UNIT, (spriteBox.sz.y / SCALE) * UNIT).fill();
+                container.addChild(mask);
+                sprite.mask = mask;
+            }
+        });
+        obj.needsRedraw = false;
+    } else {
+        obj.spriteBoxes.forEach((spriteBox, i) => {
+            const sprite = existingSprites[i];
+            sprite.x = (spriteBox.origin.rel.x / SCALE) * UNIT;
+            sprite.y = (spriteBox.origin.rel.y / SCALE) * UNIT;
+            sprite.width = (spriteBox.origin.sz.x / SCALE) * UNIT;
+            sprite.height = (spriteBox.origin.sz.y / SCALE) * UNIT;
+
+            if (!(spriteBox.rel.x === spriteBox.origin.rel.x && spriteBox.rel.y === spriteBox.origin.rel.y && spriteBox.sz.x === spriteBox.origin.sz.x && spriteBox.sz.y === spriteBox.origin.sz.y)) {
+                if (sprite.mask && sprite.mask instanceof Graphics) {
+                    sprite.mask
+                        .clear()
+                        .rect((spriteBox.rel.x / SCALE) * UNIT, (spriteBox.rel.y / SCALE) * UNIT, (spriteBox.sz.x / SCALE) * UNIT, (spriteBox.sz.y / SCALE) * UNIT)
+                        .fill();
+                } else {
+                    const mask = new Graphics().rect((spriteBox.rel.x / SCALE) * UNIT, (spriteBox.rel.y / SCALE) * UNIT, (spriteBox.sz.x / SCALE) * UNIT, (spriteBox.sz.y / SCALE) * UNIT).fill();
+                    container.addChild(mask);
+                    sprite.mask = mask;
+                }
+            } else {
+                if (sprite.mask) {
+                    const mask = sprite.mask as Graphics;
+                    sprite.mask = null;
+                    mask.destroy();
+                }
+            }
+        });
     }
-    obj.spriteBoxes.forEach((spriteBox) => {
-        let sprite;
-        const texture = generatedTextures.get(`${obj.name}_${obj.state}_0`);
-        if (!texture) throw new Error(`baseTexture with key ${obj.name}_${obj.state}_0 not found`);
-        else if (Array.isArray(texture)) {
-            sprite = new AnimatedSprite(texture);
-            sprite.animationSpeed = 0.125;
-        } else {
-            sprite = new Sprite(generatedTextures.get(`${obj.name}_${obj.state}_0`) as Texture);
-        }
-        sprite.anchor.set(0);
-        sprite.x = (spriteBox.origin.rel.x / SCALE) * UNIT;
-        sprite.y = (spriteBox.origin.rel.y / SCALE) * UNIT;
-        sprite.width = (spriteBox.origin.sz.x / SCALE) * UNIT;
-        sprite.height = (spriteBox.origin.sz.y / SCALE) * UNIT;
-        container.addChild(sprite);
-        if (!(spriteBox.rel.x === spriteBox.origin.rel.x && spriteBox.rel.y === spriteBox.origin.rel.y && spriteBox.sz.x === spriteBox.origin.sz.x && spriteBox.sz.y === spriteBox.origin.sz.y)) {
-            const mask = new Graphics().rect((spriteBox.rel.x / SCALE) * UNIT, (spriteBox.rel.y / SCALE) * UNIT, (spriteBox.sz.x / SCALE) * UNIT, (spriteBox.sz.y / SCALE) * UNIT).fill();
-            container.addChild(mask);
-            sprite.mask = mask;
-        }
-    });
+
     editTexture(obj, getTexture(obj.name, obj.state, rotId));
+
     if (obj instanceof Portal) {
-        const sprite = new Sprite(getRotatedTexture("portal", "back", 0, obj.dir) as Texture);
-        const [l, r, u, d, w, h] = [obj.spriteBoxes[0].l, obj.spriteBoxes[0].r, obj.spriteBoxes[0].u, obj.spriteBoxes[0].d, obj.spriteBoxes[0].sz.x, obj.spriteBoxes[0].sz.y];
-        if (obj.dir === "u") {
-            sprite.x = (l / SCALE) * UNIT;
-            sprite.y = ((u - h) / SCALE) * UNIT;
-        } else if (obj.dir === "r") {
-            sprite.x = (r / SCALE) * UNIT;
-            sprite.y = (u / SCALE) * UNIT;
-        } else if (obj.dir === "d") {
-            sprite.x = (l / SCALE) * UNIT;
-            sprite.y = (d / SCALE) * UNIT;
-        } else if (obj.dir === "l") {
-            sprite.x = ((l - w) / SCALE) * UNIT;
-            sprite.y = (u / SCALE) * UNIT;
+        const portalBack = app.stage.children.find((c) => c instanceof Sprite && c.zIndex === -1 && c.x === (obj.spriteBoxes[0].l / SCALE) * UNIT && c.y === (obj.spriteBoxes[0].u / SCALE) * UNIT) as Sprite | undefined;
+        if (!portalBack) {
+            const sprite = new Sprite(getRotatedTexture("portal", "back", 0, obj.dir) as Texture);
+            const [l, r, u, d, w, h] = [obj.spriteBoxes[0].l, obj.spriteBoxes[0].r, obj.spriteBoxes[0].u, obj.spriteBoxes[0].d, obj.spriteBoxes[0].sz.x, obj.spriteBoxes[0].sz.y];
+            if (obj.dir === "u") {
+                sprite.x = (l / SCALE) * UNIT;
+                sprite.y = ((u - h) / SCALE) * UNIT;
+            } else if (obj.dir === "r") {
+                sprite.x = (r / SCALE) * UNIT;
+                sprite.y = (u / SCALE) * UNIT;
+            } else if (obj.dir === "d") {
+                sprite.x = (l / SCALE) * UNIT;
+                sprite.y = (d / SCALE) * UNIT;
+            } else if (obj.dir === "l") {
+                sprite.x = ((l - w) / SCALE) * UNIT;
+                sprite.y = (u / SCALE) * UNIT;
+            }
+            sprite.width = (w / SCALE) * UNIT;
+            sprite.height = (h / SCALE) * UNIT;
+            sprite.zIndex = -1;
+            app.stage.addChild(sprite);
         }
-        sprite.width = (w / SCALE) * UNIT;
-        sprite.height = (h / SCALE) * UNIT;
-        sprite.zIndex = -1;
-        app.stage.addChild(sprite);
     }
 };
 // sprite初期化
@@ -244,7 +307,7 @@ export const blockDashLine = (obj: Block) => {
     obj.container.addChild(rEdge);
 };
 // 描画更新
-export const updateSprites = () => {
+export const updateSprites = (app: Application) => {
     gameObjs.forEach((obj) => {
         const container = obj.container;
         container.x = (obj.x / SCALE) * UNIT;
@@ -257,6 +320,25 @@ export const updateSprites = () => {
                 } else child.alpha = 1;
             });
         }
+        // ポータルをまたがっている場合や、再描画フラグが立っている場合は再描画
+        if (obj.needsRedraw || obj.spriteBoxes.some((s) => Object.values(s.counterpart).some((c) => c !== null))) {
+            drawSprite(obj, app);
+            obj.needsRedraw = false;
+        }
+    });
+
+    particles.forEach((p) => {
+        p.container.x = (p.x / SCALE) * UNIT;
+        p.container.y = (p.y / SCALE) * UNIT;
+        if (p.container.children.length === 0) {
+            const size = (p.size / SCALE) * UNIT;
+            const g = new Graphics();
+            g.rect(-size / 2, -size / 2, size, size).fill({ color: p.color, alpha: 0.6 });
+            p.container.addChild(g);
+            p.container.rotation = Math.random() * π * 2;
+        }
+        p.container.rotation += 0.1; // くるくる回す
+        p.container.alpha = p.life / p.maxLife;
     });
 };
 // デバッグ表示
@@ -286,6 +368,7 @@ export const drawDebug = ($debug: HTMLCanvasElement, gameObjs: GameObj[]) => {
                 else if (obj.dir === "r") drawSide(x + w, y, x + w, y + h, obj.strength.r);
             }
         } else {
+            if (obj instanceof Block && !obj.isSolid) continue;
             for (const hitbox of obj.hitboxes) {
                 const x = (hitbox.x / SCALE) * UNIT;
                 const y = (hitbox.y / SCALE) * UNIT;
@@ -297,6 +380,12 @@ export const drawDebug = ($debug: HTMLCanvasElement, gameObjs: GameObj[]) => {
                 drawSide(x, y, x, y + h, obj.strength.l);
                 drawSide(x + w, y, x + w, y + h, obj.strength.r);
             }
+        }
+        if (obj instanceof Portal) {
+            const t = obj.trigger;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#000";
+            ctx.strokeRect((t.x / SCALE) * UNIT, (t.y / SCALE) * UNIT, (t.sz.x / SCALE) * UNIT, (t.sz.y / SCALE) * UNIT);
         }
         for (const hitbox of obj.hiddenHitboxes) {
             ctx.lineWidth = 1;
@@ -337,7 +426,7 @@ export const glitch = (app: Application, time: number) => {
 };
 // 音声
 export const BGM_PATHS = ["/menu.mp3", "/bgm0.mp3", "/bgm1.mp3", "/bgm2.mp3", "/bgm3.mp3", "/bgm4.mp3", "/bgm5.mp3", "/bgm6.mp3"] as const;
-export const SFX_PATHS = ["/walk.mp3", "/jump.mp3", "/key.mp3", "/ladder.mp3", "/lever.mp3", "/button.mp3", "/restart.mp3", "/goal.mp3"] as const;
+export const SFX_PATHS = ["/walk.mp3", "/jump.mp3", "/key.mp3", "/ladder.mp3", "/lever.mp3", "/button.mp3", "/restart.mp3", "/goal.mp3", "/landing.mp3", "/pushblock.mp3", "/pushblocklanding.mp3", "/portal.mp3"] as const;
 export type BgmPath = (typeof BGM_PATHS)[number];
 export type SfxPath = (typeof SFX_PATHS)[number];
 export const bgmBuffers: Map<BgmPath, AudioBuffer> = new Map();
@@ -439,7 +528,7 @@ export function stopSfx(path: SfxPath, obj: GameObj | null) {
     source.disconnect();
     activeSfx.delete(path);
 }
-export function playSfx(path: SfxPath, obj: GameObj | null, volume: number = 1, disableDuplicate: boolean = false) {
+export function playSfx(path: SfxPath, obj: GameObj | null, volume: number = 1, disableDuplicate: boolean = false, pitch: number = 1) {
     const now = performance.now();
     if (activeSfx.has(path) && (disableDuplicate || now - activeSfx.get(path)!?.lastPlayed < SFX_MIN_INTERVAL)) return;
     const buffer = sfxBuffers.get(path);
@@ -451,6 +540,7 @@ export function playSfx(path: SfxPath, obj: GameObj | null, volume: number = 1, 
     if (!sfxGain) return;
     const source = ctx.createBufferSource();
     source.buffer = buffer;
+    source.playbackRate.value = pitch;
     const gain = ctx.createGain();
     gain.gain.value = volume;
     source.connect(gain);

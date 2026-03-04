@@ -65,7 +65,7 @@ export default function Settings() {
     };
 
     return (
-        <div>
+        <div className="h-svh flex flex-col">
             <Link href="/" className="btn back">
                 <LeftSvg />
             </Link>
@@ -224,6 +224,9 @@ export default function Settings() {
                                             ["電子レンジを閉める", "/lever.mp3"],
                                             ["対戦カード表示1", "/restart.mp3"],
                                             ["アスファルトの上を走る1", "/walk.mp3"],
+                                            ["ジャンプの着地", "/landing.mp3"],
+                                            ["重いものを引きずる", "/pushblock.mp3"],
+                                            ["暗黒魔法", "/portal.mp3"],
                                         ].map(([name, path]) => (
                                             <div key={path} className="flex items-center justify-between bg-black/10 p-1 rounded-sm pl-2 w-full">
                                                 <span className="truncate text-[length:3.8dvmin]">{name}</span>
@@ -242,6 +245,7 @@ export default function Settings() {
                                         {[
                                             ["スライドホイッスル03-09", "/jump.mp3"],
                                             ["木琴03-08(単音-2)", "/key.mp3"],
+                                            ["叩く05-2(弱)", "/pushblocklanding.mp3"],
                                         ].map(([name, path]) => (
                                             <div key={path} className="flex items-center justify-between bg-black/10 p-1 rounded-sm pl-2 w-full">
                                                 <span className="truncate text-[length:3.8dvmin]">{name}</span>

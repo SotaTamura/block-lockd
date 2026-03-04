@@ -18,7 +18,7 @@ export const STAGES: Record<
         hint: "既に消えているブロックは、その色の鍵を取ると復活する",
     },
     4: {
-        code: "H4sIAAAAAAAAA12QSw4DIQxDL2RVGCZQ4D5ddtnzNyF8pl1Ewi92ArA0QX1oQTpNiIqilV1SO2kdM+IxXVqcnQtUpb5Pi2DChYigRJzUEXAUpwlxo5FLkB2jA/7Hks0u99mWWiA7qHj+TrZlB+WFyBszpHuDg+6XPo4+37UNL9UB1Ij0t/XEZB7nMJ7GuG1m7KXR/ql+Ae2hFwtyAQAA",
+        code: "H4sIAAAAAAAAA12QQRbDIAhELzQvT1A06n267LLnLxONsd3J5w+oUpqhHgYRWBdW5lVFHoWwEe9zgT6Og8kTlM6nKSQieU8RaAzmwxbSqUEXupLRxz1BGUj+g5Hzz306c+eS8kAVEn7Hc+PG8mJpY0S+e93svv0mxT4fuVkvJwHiSetvdo1lvs4BtKdCqZfGrf6rh30BR9Jm7XwBAAA=",
         hint: "鍵は全て取るとは限らない",
     },
     5: {
@@ -82,7 +82,7 @@ export const STAGES: Record<
         hint: "スピードが大事",
     },
     20: {
-        code: "H4sIAAAAAAAAA2VQMQ4DIQz7EDpdAlwOmCrd2LF7t4439v21E64dqkjIdoJjOLumFSUyXoBCWMdJWMEmhqipzAk2vhiHXnj96S2Zo4aqoelCw3WpQ61b2lODcBt6gEhmIym4WOyTlIccfadxRmcLloNpsBpsD2bBSrAWrA55dI9Gz0ID7gilYcm7M6S4qQEbzXFFELHMWHUq259CLfMc8iRvPpNRl4IUheaQkPNOyTjg3+Hv8FX8teLJ/ArjIg4XSPkA7cZfG6UBAAA=",
+        code: "H4sIAAAAAAAAA01QQQ7DIAz7UFQ1AUqB06Qed9x9tx173PtnJ3SbIiHbIbHh7CYrSnW8AJWwjJOwgE0M0STPG2x8MQ678PrTm1RHDTU1W7hwXcqw2qvs0iDchh0gmtgQA9cafipp6NF3Lk7obMFSMAtWgu3BarAcrAUrQx/do3Fn5gJ6hNJogrbKhlZEKFPZ/5R350PUjStwZQC/xcnEc+iTvPmmhLoUpMgchIScd0qVF/w7/B1uxl/LnsxHGBdWNND8AXleoxulAQAA",
         hint: "駆動ブロック\n動力を与えられると矢印部分が光り、その方向に動き始める\nプレイヤーや押しブロックは押される\n壁に当たると止まる\nもう一度動力を与えられると元に戻り、止まる",
     },
     21: {
