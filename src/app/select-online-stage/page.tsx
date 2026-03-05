@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Checkbox, LeftSvg, PlayButton } from "../components";
 import { useAuth, useSettings, useStage } from "../context";
 import { playBgm } from "@/game/base";
 import { TranslatableString, translate } from "../translate";
+import { useRouter } from "next/navigation";
 
 export default function Lobby() {
+    const router = useRouter();
     const { user } = useAuth();
     const { stages, setStages } = useStage();
     const [isLoading, setIsLoading] = useState(false);
@@ -39,16 +40,18 @@ export default function Lobby() {
     return (
         <main className="editor-layout text-center">
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
-                <Link href={"/"} className="btn back w-[18dvmin] h-[12dvmin]">
+                <div className="btn back w-[18dvmin] h-[12dvmin]" onClick={router.back}>
                     <LeftSvg />
-                </Link>
+                </div>
             </div>
             <div className="[grid-area:title] flex justify-center items-center">
                 <h1 className="text-[length:10dvmin]">{t("オンラインステージ")}</h1>
             </div>
             {user && (
                 <div className="w-svw text-right">
-                    <Checkbox id="showCompleted" checked={isShowOnlyCompleted} onChange={() => setIsShowOnlyCompleted(!isShowOnlyCompleted)} children={<span>{t("クリア済ステージのみ表示")}</span>} />
+                    <Checkbox id="showCompleted" checked={isShowOnlyCompleted} onChange={() => setIsShowOnlyCompleted(!isShowOnlyCompleted)}>
+                        <span>{t("クリア済ステージのみ表示")}</span>
+                    </Checkbox>
                 </div>
             )}
             <div className="[grid-area:list] bg-[#333] overflow-y-auto py-[2dvmin]">

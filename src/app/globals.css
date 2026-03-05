@@ -169,13 +169,13 @@
     }
     .gameScreen {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
         grid-template-rows: 60px 1fr 40px 180px;
         grid-template-areas:
-            "num menu restart"
-            "main main main"
-            "guide guide guide"
-            "btn btn btn";
+            "num settings menu restart"
+            "main main main main"
+            "guide guide guide guide"
+            "btn btn btn btn";
         width: 100vw;
         height: 100svh;
     }
@@ -298,16 +298,23 @@
     .loadingStage {
         grid-area: main;
     }
+    .settings {
+        grid-area: settings;
+        width: 25svw;
+        max-width: 90px;
+        aspect-ratio: 1.5;
+        margin: auto;
+    }
     .restart {
         grid-area: restart;
-        width: 33svw;
+        width: 25svw;
         max-width: 90px;
         aspect-ratio: 1.5;
         margin: auto;
     }
     .menu {
         grid-area: menu;
-        width: 33svw;
+        width: 25svw;
         max-width: 90px;
         aspect-ratio: 1.5;
         margin: auto;
@@ -417,18 +424,19 @@
 
     @media screen and (min-aspect-ratio: 1/1) {
         .gameScreen {
-            grid-template-columns: 140px 1fr 70px 70px;
+            grid-template-columns: 140px 1fr 46px 46px 46px;
             grid-template-rows: 22svh 30svh 48svh;
             grid-template-areas:
-                "num  main menu restart"
-                ".... main guide guide"
-                "btn  main .... ....";
+                "num  main settings menu restart"
+                ".... main guide guide guide"
+                "btn  main .... .... ....";
         }
+        .settings,
         .menu,
         .restart,
         .arrow {
-            height: 22svh;
-            max-height: 105px;
+            height: 14svh;
+            max-height: 70px;
             width: initial;
             aspect-ratio: 0.66;
             margin: auto;

@@ -23,7 +23,6 @@ export default function MyLobby() {
         playBgm("/menu.mp3");
         if (!user) {
             router.push("/");
-            router.refresh();
         } else {
             (async () => {
                 setIsLoading(true);
@@ -46,9 +45,9 @@ export default function MyLobby() {
     return (
         <main className="editor-layout text-center">
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
-                <Link href={"/"} className="btn back w-[18dvmin] h-full">
+                <div className="btn back w-[18dvmin] h-full" onClick={router.back}>
                     <LeftSvg />
-                </Link>
+                </div>
             </div>
 
             <div className="[grid-area:title] flex justify-center items-center">

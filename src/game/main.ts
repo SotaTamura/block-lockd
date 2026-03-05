@@ -1,7 +1,7 @@
-import { Application, BitmapText } from "pixi.js";
+import { Application } from "pixi.js";
 import { Block, Button, GameObj, Key, Ladder, Lever, MoveBlock, Oneway, Player, Portal, PushBlock, Particle } from "./class";
-import { blockDashLine, stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites, playSfx, drawDebug, stopSfx } from "./base";
-import { Direction, GRAVITY, JUMP_SPEED, UNIT, parseBase, PROPS_LEN, opposite, SCALE, TERMINAL_V, MOVE_BLOCK_SPEED, BLOCK_STRENGTH, MOVE_BLOCK_STRENGTH } from "@/constants";
+import { stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites, playSfx, drawDebug, stopSfx, showStage } from "./base";
+import { Direction, GRAVITY, JUMP_SPEED, parseBase, PROPS_LEN, opposite, TERMINAL_V, MOVE_BLOCK_SPEED, BLOCK_STRENGTH, MOVE_BLOCK_STRENGTH, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH } from "@/constants";
 import { EditorObj } from "@/app/editor/stageEditor";
 import { gunzipSync } from "zlib";
 import { isOverLapping, resolveCollisions, updateNextBlocks } from "./collision";
@@ -15,7 +15,6 @@ export let oneways: Oneway[];
 export let levers: Lever[];
 export let pushBlocks: PushBlock[];
 export let portals: Portal[];
-export let portalTexts: BitmapText[];
 export let buttons: Button[];
 export let moveBlocks: MoveBlock[];
 export let particles: Particle[] = [];
@@ -33,6 +32,9 @@ export const remove = (obj: GameObj | Particle) => {
         if (index !== -1) {
             typeArray.splice(index, 1);
             gameObjs = gameObjs.filter((item) => item !== obj);
+            if (obj instanceof Portal) {
+                obj.backContainer.destroy({ children: true });
+            }
             obj.container.destroy();
         }
     }
@@ -76,7 +78,7 @@ const objCreator: { [gid: number]: (...args: [x: number, y: number, w: number, h
     12: (x, y, w, h, ang, color) => new MoveBlock(x, y, w, h, ang, color, true),
 };
 // マップ作成
-export const loadStage = async (data: string | EditorObj[], app: Application) => {
+export const loadStage = async (data: string | EditorObj[], app: Application, skipFadeIn: boolean) => {
     // 初期化
     gameObjs = [];
     players = [];
@@ -86,7 +88,6 @@ export const loadStage = async (data: string | EditorObj[], app: Application) =>
     oneways = [];
     levers = [];
     portals = [];
-    portalTexts = [];
     pushBlocks = [];
     buttons = [];
     moveBlocks = [];
@@ -143,32 +144,12 @@ export const loadStage = async (data: string | EditorObj[], app: Application) =>
     moveBlocks = gameObjs.filter((o) => o instanceof MoveBlock);
     const solidObjs = gameObjs.filter((o) => o.isSolid);
     updateNextBlocks(solidObjs);
-    for (const block of blocks) blockDashLine(block);
-    app.stage.sortableChildren = true;
-    for (const portal of portals) {
-        const portalText = new BitmapText({
-            text: portal.id,
-            x: ((portal.x + portal.spriteBoxes[0].sz.x / 2) / SCALE) * UNIT,
-            y: ((portal.y + portal.spriteBoxes[0].sz.y / 2) / SCALE) * UNIT,
-            style: {
-                fontFamily: ["Makinas", "sans-serif"],
-                fontSize: (3 / 4) * UNIT,
-                fill: 0x000000,
-                stroke: { color: 0xffffff, width: 10, join: "round" },
-                align: "center",
-            },
-        });
-        portalText.anchor.set(0.5);
-        portalTexts.push(portalText);
-        app.stage.addChild(portalText);
-    }
+    showStage(app, skipFadeIn);
 };
 export const isComplete = false;
 export const update = (handleComplete: () => void, app: Application, $debug?: HTMLCanvasElement) => {
     if (!app.renderer) return;
-
     if ($debug) drawDebug($debug, gameObjs);
-
     // 鍵
     for (const key of keys)
         if (players.some((p) => isOverLapping(p, key))) {
@@ -210,17 +191,17 @@ export const update = (handleComplete: () => void, app: Application, $debug?: HT
     // プレイヤー
     for (const player of players) {
         player.strength = {
-            u: player.initStrength,
-            d: player.initStrength,
-            l: player.initStrength,
-            r: player.initStrength,
+            u: PLAYER_STRENGTH,
+            d: PLAYER_STRENGTH,
+            l: PLAYER_STRENGTH,
+            r: PLAYER_STRENGTH,
         };
         if (pressStartEvent.u && player.nextBlocks.d.length) {
             player.v.y = JUMP_SPEED;
             playSfx("/jump.mp3", player);
         }
         player.v.y = Math.min(player.v.y + GRAVITY, TERMINAL_V);
-        player.handleLadder(ladders);
+        player.handleLadder();
         player.handleHorizontalMove();
         player.handleGoal(handleComplete);
         player.handleTexture();
@@ -229,14 +210,14 @@ export const update = (handleComplete: () => void, app: Application, $debug?: HT
     // 押しブロック
     for (const pushBlock of pushBlocks) {
         pushBlock.strength = {
-            u: pushBlock.initStrength,
-            d: pushBlock.initStrength,
-            l: pushBlock.initStrength,
-            r: pushBlock.initStrength,
+            u: PUSH_BLOCK_STRENGTH,
+            d: PUSH_BLOCK_STRENGTH,
+            l: PUSH_BLOCK_STRENGTH,
+            r: PUSH_BLOCK_STRENGTH,
         };
         pushBlock.v.x = 0;
         pushBlock.v.y = Math.min(pushBlock.v.y + GRAVITY, TERMINAL_V);
-        pushBlock.handleLadder(ladders); //ハシゴ
+        pushBlock.handleLadder(); //ハシゴ
         pushBlock.handleGoal();
         pushBlock.handleLanding();
     }
@@ -260,7 +241,7 @@ export const update = (handleComplete: () => void, app: Application, $debug?: HT
         else if (moveBlock.dir === "r") moveBlock.v.x = moveBlock.isActivated ? MOVE_BLOCK_SPEED : 0;
         else if (moveBlock.dir === "d") moveBlock.v.y = moveBlock.isActivated ? MOVE_BLOCK_SPEED : 0;
         else if (moveBlock.dir === "l") moveBlock.v.x = moveBlock.isActivated ? -MOVE_BLOCK_SPEED : 0;
-
+        moveBlock.canMove = moveBlock.isActivated;
         moveBlock.handleParticle(app);
     }
     // ポータル
@@ -268,7 +249,6 @@ export const update = (handleComplete: () => void, app: Application, $debug?: HT
         portal.handleParticle(app);
     }
     // パーティクル更新
-
     for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx;
@@ -291,5 +271,5 @@ export const update = (handleComplete: () => void, app: Application, $debug?: HT
     }
     updateNextBlocks(solidObjs);
     clearPressStart();
-    updateSprites(app);
+    updateSprites();
 };

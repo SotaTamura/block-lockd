@@ -6,11 +6,13 @@ import { TranslatableString, translate } from "@/app/translate";
 import { StageType } from "@/constants";
 import { playBgm } from "@/game/base";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React from "react";
 import { use, useEffect, useState } from "react";
 
 export default function Overview({ params }: { params: Promise<{ id: number }> }) {
     const id = Number(use(params).id);
+    const router = useRouter();
     const [stage, setStage] = useState<StageType | null>(null);
     const { getStageById } = useStage();
     const {
@@ -28,9 +30,9 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
         <main className="text-center">
             {!stage && <Loading />}
             <div className="[grid-area:header] flex justify-between items-center px-[2dvmin]">
-                <Link href={"/select-online-stage"} className="btn back w-[18dvmin] h-[12dvmin]">
+                <div className="btn back w-[18dvmin] h-[12dvmin]" onClick={router.back}>
                     <LeftSvg />
-                </Link>
+                </div>
             </div>
             <div className="[grid-area:title] flex justify-center items-center">
                 <h1 className="text-[length:10dvmin]">{stage?.title}</h1>

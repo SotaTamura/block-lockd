@@ -1,8 +1,8 @@
-import { BLOCK_STRENGTH, CORNER_CORRECT, Direction, MOVE_BLOCK_STRENGTH, MOVE_OBJ_CORNER_CORRECT, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH, PLAYER_SPEED, MAP_BLOCK_LEN, Axis, SCALE, UNIT } from "@/constants";
+import { BLOCK_STRENGTH, Direction, MOVE_BLOCK_STRENGTH, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH, PLAYER_SPEED, MAP_BLOCK_LEN, Axis, SCALE } from "@/constants";
 import { Sprite, Container, Application } from "pixi.js";
 import { stateChangeTexture, xFlipTexture, pressingEvent, rotate, playSfx, stopSfx, stopBgm, SfxPath } from "./base";
 import { isOverLapping } from "./collision";
-import { players, remove, particles } from "./main";
+import { players, remove, particles, ladders } from "./main";
 
 // 箱
 export class Box {
@@ -52,7 +52,7 @@ export class Box {
 export class Hitbox extends Box {
     counterpart: Record<Direction, Hitbox | null>; //portalで使用
     counterpartHidden: Record<Direction, Hitbox | null>; //portalで使用
-    constructor(owner: GameObj, relX: number, relY: number, w: number, h: number, cornerCorrect: number) {
+    constructor(owner: GameObj, relX: number, relY: number, w: number, h: number) {
         super(owner, relX, relY, w, h);
         this.counterpart = { u: null, d: null, l: null, r: null };
         this.counterpartHidden = { u: null, d: null, l: null, r: null };
@@ -81,7 +81,7 @@ export abstract class GameObj {
     name: string;
     state: string;
     isSolid: boolean; // 最適化用
-    initStrength: number;
+    canMove: boolean; // 最適化用
     strength: Record<Direction, number>; //数の大小によって、各方向から押されたときに動くか動かないか決まる
     nextBlocks: Record<Direction, GameObj[]>;
     inLadders: Ladder[];
@@ -108,21 +108,21 @@ export abstract class GameObj {
         name: string,
         textureState: string,
         isSolid: boolean,
+        canMove: boolean,
         strength: number,
-        cornerCorrect: number = CORNER_CORRECT,
     ) {
         this.x = x * SCALE;
         this.y = y * SCALE;
         this.dir = ang;
         this.color = color;
         this.v = { x: 0, y: 0 };
-        this.hitboxes = hitboxes.map((b) => new Hitbox(this, b.relX * SCALE, b.relY * SCALE, b.w * SCALE, b.h * SCALE, cornerCorrect));
+        this.hitboxes = hitboxes.map((b) => new Hitbox(this, b.relX * SCALE, b.relY * SCALE, b.w * SCALE, b.h * SCALE));
         this.hiddenHitboxes = [];
         this.spriteBoxes = spriteBoxes.map((b) => new SpriteBox(this, b.relX * SCALE, b.relY * SCALE, b.w * SCALE, b.h * SCALE, new Box(this, b.relX * SCALE, b.relY * SCALE, b.w * SCALE, b.h * SCALE)));
         this.name = name;
         this.state = textureState;
         this.isSolid = isSolid;
-        this.initStrength = strength;
+        this.canMove = canMove;
         this.strength = { u: strength, d: strength, l: strength, r: strength };
         this.nextBlocks = { u: [], d: [], l: [], r: [] };
         this.inLadders = [];
@@ -148,10 +148,10 @@ export abstract class GameObj {
 export class Player extends GameObj {
     wasOnGround: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Direction) {
-        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "player", "idle", true, PLAYER_STRENGTH, MOVE_OBJ_CORNER_CORRECT);
+        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "player", "idle", true, true, PLAYER_STRENGTH);
         this.wasOnGround = true;
     }
-    handleLadder(ladders: Ladder[]) {
+    handleLadder() {
         const wasInLadders = this.inLadders;
         this.inLadders = ladders.filter((l) => isOverLapping(this, l));
         if (wasInLadders.length && !this.inLadders.length) this.v.y = 0; //ハシゴから出たときy方向の速度を0にする
@@ -242,25 +242,25 @@ export class Player extends GameObj {
 // ブロック
 export class Block extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Direction, isSolid: boolean, color: number) {
-        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "block", "default", isSolid, BLOCK_STRENGTH);
+        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "block", "default", isSolid, false, BLOCK_STRENGTH);
     }
 }
 // ハシゴ
 export class Ladder extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Direction) {
-        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "ladder", "default", true, BLOCK_STRENGTH);
+        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "ladder", "default", true, false, BLOCK_STRENGTH);
     }
 }
 // 鍵
 export class Key extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Direction, color: number) {
-        super(x, y, ang, color, [{ relX: 0.2, relY: 0.2, w: w - 0.4, h: h - 0.4 }], [{ relX: 0, relY: 0, w, h }], "key", "default", false, -1);
+        super(x, y, ang, color, [{ relX: 0.2, relY: 0.2, w: w - 0.4, h: h - 0.4 }], [{ relX: 0, relY: 0, w, h }], "key", "default", false, false, -1);
     }
     handleParticle(app: Application) {
         const px = this.x + this.spriteBoxes[0].sz.x / 2;
         const py = this.y + this.spriteBoxes[0].sz.y / 2;
         const pSize = this.spriteBoxes[0].sz.x / 3;
-        const p = new Particle(px, py, 0, 0, 8, pSize, 0xffffff, false);
+        const p = new Particle(px, py, 0, 0, 8, pSize, 0xffffff);
         particles.push(p);
         app.stage.addChild(p.container);
         p.container.zIndex = 10;
@@ -269,14 +269,14 @@ export class Key extends GameObj {
 // 一方通行ブロック
 export class Oneway extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Direction, color: number) {
-        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "oneway", "default", true, BLOCK_STRENGTH);
+        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "oneway", "default", true, false, BLOCK_STRENGTH);
     }
 }
 // レバー
 export class Lever extends GameObj {
     isBeingContacted: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Direction, color: number) {
-        super(x, y, ang, color, [{ relX: 0.2, relY: 0.2, w: w - 0.4, h: h - 0.4 }], [{ relX: 0, relY: 0, w, h }], "lever", "off", false, -1);
+        super(x, y, ang, color, [{ relX: 0.2, relY: 0.2, w: w - 0.4, h: h - 0.4 }], [{ relX: 0, relY: 0, w, h }], "lever", "off", false, false, -1);
         this.isBeingContacted = false;
     }
 }
@@ -284,6 +284,7 @@ export class Lever extends GameObj {
 export class Portal extends GameObj {
     id: string;
     trigger: Box;
+    backContainer: Container;
     constructor(x: number, y: number, w: number, h: number, ang: Direction, id: string) {
         super(
             x,
@@ -299,10 +300,12 @@ export class Portal extends GameObj {
             "portal",
             "front",
             true,
+            false,
             BLOCK_STRENGTH,
         );
         this.id = id;
         this.trigger = new Box(this, 0, 0, w * SCALE, 0);
+        this.backContainer = new Container();
         [...this.hitboxes, this.trigger].forEach((t) => {
             rotate(t, ang, w * SCALE, h * SCALE);
         });
@@ -352,10 +355,10 @@ export class Portal extends GameObj {
 export class PushBlock extends GameObj {
     wasOnGround: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Direction) {
-        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "pushBlock", "default", true, PUSH_BLOCK_STRENGTH, MOVE_OBJ_CORNER_CORRECT);
+        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "pushBlock", "default", true, true, PUSH_BLOCK_STRENGTH);
         this.wasOnGround = true;
     }
-    handleLadder(ladders: Ladder[]) {
+    handleLadder() {
         this.inLadders = ladders.filter((l) => isOverLapping(this, l));
         if (this.inLadders.length) this.v.y = 0;
     }
@@ -369,9 +372,9 @@ export class PushBlock extends GameObj {
 }
 // ボタン
 export class Button extends GameObj {
-    isPressed: Boolean;
+    isPressed: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Direction, color: number) {
-        super(x, y, ang, color, [{ relX: 0, relY: (3 / 4) * h, w, h: h / 4 }], [{ relX: 0, relY: 0, w, h }], "button", "off", true, BLOCK_STRENGTH);
+        super(x, y, ang, color, [{ relX: 0, relY: (3 / 4) * h, w, h: h / 4 }], [{ relX: 0, relY: 0, w, h }], "button", "off", true, false, BLOCK_STRENGTH);
         this.isPressed = false;
         this.hitboxes.forEach((b) => {
             rotate(b, ang, w * SCALE, h * SCALE);
@@ -382,7 +385,7 @@ export class Button extends GameObj {
 export class MoveBlock extends GameObj {
     isActivated: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Direction, color: number, isActivated: boolean) {
-        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "moveBlock", isActivated ? "on" : "off", true, MOVE_BLOCK_STRENGTH);
+        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "moveBlock", isActivated ? "on" : "off", true, true, MOVE_BLOCK_STRENGTH);
         this.isActivated = isActivated;
     }
     handleParticle(app: Application) {
@@ -441,7 +444,7 @@ export class Particle {
     size: number;
     color: number;
     container: Container;
-    constructor(x: number, y: number, vx: number, vy: number, life: number, size: number, color: number, glow = false) {
+    constructor(x: number, y: number, vx: number, vy: number, life: number, size: number, color: number) {
         this.x = x;
         this.y = y;
         this.vx = vx;

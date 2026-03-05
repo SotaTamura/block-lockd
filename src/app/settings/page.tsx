@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useAuth, useSettings } from "../context";
 import { Checkbox, LeftSvg, VolumeSvg, MuteSvg, RightSvg, UpSvg, DownSvg } from "../components";
 import { TranslatableString, translate } from "../translate";
@@ -60,15 +59,14 @@ export default function Settings() {
         if (window.confirm(t("本当にデータを削除しますか？"))) {
             logout();
             router.push("/");
-            router.refresh();
         }
     };
 
     return (
         <div className="h-svh flex flex-col">
-            <Link href="/" className="btn back">
+            <div className="btn back" onClick={router.back}>
                 <LeftSvg />
-            </Link>
+            </div>
             <div className="flex flex-col items-center grow overflow-y-auto py-10">
                 <div
                     className="bg-[#aaa] bg-opacity-75 border-[#333] flex flex-col gap-6"

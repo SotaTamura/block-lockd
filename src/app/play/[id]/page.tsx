@@ -6,7 +6,7 @@ import { RESOLUTION, STEP } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
 import { useAuth, useSettings } from "@/app/context";
-import { ArrowButton, Checkbox, Loading, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
+import { ArrowButton, Checkbox, GearSvg, Loading, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
 import { STAGES } from "@/game/stages";
 import { BgmPath, glitch, playBgm, playSfx } from "@/game/base";
 import { TranslatableString, translate } from "@/app/translate";
@@ -17,6 +17,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const appRef = useRef<Application | null>(null);
     const { user, changeData } = useAuth();
     const [restarter, setRestarter] = useState(0);
+    const prevIdRef = useRef(id);
     const [isComplete, setIsComplete] = useState(false);
     const [isHintShowed, setIsHintShowed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -71,7 +72,9 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             cnvWrapperRef.current?.appendChild($cnv);
             cnvWrapperRef.current?.appendChild($debug);
             $cnv.style.opacity = showHitboxRef.current ? "0.2" : "1";
-            await loadStage(STAGES[id].code, app);
+            const skipFadeIn = id === prevIdRef.current && restarter > 0;
+            prevIdRef.current = id;
+            await loadStage(STAGES[id].code, app, skipFadeIn);
             setIsLoading(false);
             // 更新
             let prevTime: number | undefined;
@@ -110,6 +113,9 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             <div id="cnvWrapper" ref={cnvWrapperRef}></div>
             {isLoading && <Loading />}
             <div className="stageNum">{id}</div>
+            <Link href={"/settings"} className="btn settings">
+                <GearSvg />
+            </Link>
             <div
                 className="btn restart"
                 onClick={(e) => {

@@ -10,8 +10,9 @@ import { Application, Container, Graphics, isMobile, Sprite, Texture, Rectangle,
 import { getRotatedTexture, glitch, playSfx, stopBgm } from "@/game/base";
 import { gunzipSync, gzipSync } from "zlib";
 import { TranslatableString, translate } from "../translate";
+import Image from "next/image";
 
-type TextureName = "player0" | "block" | "block_deactivated" | "ladder" | "key" | "oneway" | "portal_front" | "lever_off" | "pushblock" | "button_off" | "moveblock_off" | "moveblock_on";
+type TextureName = "player0" | "block" | "block_deactivated" | "ladder" | "key" | "oneway" | "portal_front0" | "lever_off" | "pushblock" | "button_off" | "moveblock_off" | "moveblock_on";
 type EditorTool = "pencil" | "eraser" | "move" | "resize" | "color" | "rotate";
 const textureMap: Record<number, TextureName> = {
     1: "player0",
@@ -20,7 +21,7 @@ const textureMap: Record<number, TextureName> = {
     4: "ladder",
     5: "key",
     6: "oneway",
-    7: "portal_front",
+    7: "portal_front0",
     8: "lever_off",
     9: "pushblock",
     10: "button_off",
@@ -34,7 +35,7 @@ export const nameStateMap: Record<number, { name: string; state: string }> = {
     4: { name: "ladder", state: "default" },
     5: { name: "key", state: "default" },
     6: { name: "oneway", state: "default" },
-    7: { name: "portal", state: "front" },
+    7: { name: "portal", state: "static" },
     8: { name: "lever", state: "off" },
     9: { name: "pushBlock", state: "default" },
     10: { name: "button", state: "off" },
@@ -99,7 +100,7 @@ export class EditorObj {
             initialCursor = "crosshair";
         } else if (
             (currentSelectedTool === "color" && !["block", "block_deactivated", "key", "oneway", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[gid])) ||
-            (currentSelectedTool === "rotate" && !["oneway", "portal_front", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[gid]))
+            (currentSelectedTool === "rotate" && !["oneway", "portal_front0", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[gid]))
         ) {
             initialCursor = "not-allowed";
         }
@@ -194,7 +195,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     }, [showHitbox, tab]);
 
     const addObj = (app: Application, x: number, y: number) => {
-        if (selectedObj === "portal_front") {
+        if (selectedObj === "portal_front0") {
             let n = 0;
             const portalNums = editorObjs.filter((o) => o.tag).map((p) => parseBase(p.tag, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
             while (true) {
@@ -307,7 +308,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 obj.color = selectedColor;
             }
         } else if (selectedTool === "rotate") {
-            if (["oneway", "portal_front", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[obj.gid])) {
+            if (["oneway", "portal_front0", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[obj.gid])) {
                 const rotateObj = (obj: EditorObj) => {
                     obj.sprite.texture = getRotatedTexture(nameStateMap[obj.gid].name, nameStateMap[obj.gid].state, (obj.container.children[0] as Sprite).texture.rotate, 90) as Texture;
                     if (obj.ang === "u") obj.ang = "r";
@@ -346,7 +347,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 .split(";")
                 .map((o) => {
                     const [base64Mask, joinedMaskedProps] = o.split(":");
-                    let mask = parseBase(base64Mask, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_");
+                    const mask = parseBase(base64Mask, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_");
                     const maskedProps = joinedMaskedProps.split(",");
                     let maskedPropIndex = 0;
                     const propStrs: (string | null)[] = new Array(PROPS_LEN).fill(null);
@@ -469,7 +470,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                         o.container.cursor = "not-allowed";
                     }
                 } else if (selectedTool === "rotate") {
-                    if (["oneway", "portal_front", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[o.gid])) {
+                    if (["oneway", "portal_front0", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[o.gid])) {
                         o.container.cursor = "pointer";
                     } else {
                         o.container.cursor = "not-allowed";
@@ -492,7 +493,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             // Build test scene
             setIsComplete(false);
             setIsLoading(true);
-            loadStage(editorObjs, app)
+            loadStage(editorObjs, app, true)
                 .then(() => {
                     if (!isMounted) return;
                     setIsLoading(false);
@@ -567,7 +568,6 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         e.preventDefault();
         if (!user) {
             router.push("/");
-            router.refresh();
         } else {
             const code = gzipSync(
                 editorObjs
@@ -615,8 +615,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                     }
                     setIsLoading(false);
                 }
-                router.push("/editor");
-                router.refresh();
+                router.back();
             }
         }
     };
@@ -633,7 +632,6 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             if (res.ok) {
                 window.alert(t("ステージを削除しました。"));
                 router.push("/editor");
-                router.refresh();
             } else {
                 const data = await res.json();
                 window.alert(data.message);
@@ -715,9 +713,9 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                             disabled={access === 2}
                             onChange={() => {
                                 setAccess(1 - access);
-                            }}
-                            children={<span>{t("公開")}</span>}
-                        />
+                            }}>
+                            <span>{t("公開")}</span>
+                        </Toggle>
                     </div>
                     {access === 2 && <div>{t("ステージを公開するには、ステージをクリアしてください。")}</div>}
                     <div className="flex flex-row gap-1">
@@ -739,7 +737,20 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 {tab === "stage" && (
                     <>
                         <div className="objs">
-                            {selectedTool === "pencil" && Object.values(textureMap).map((obj, i) => <img key={i} className={`objImg ${obj === selectedObj ? "selected" : ""} cursor-pointer`} src={`/${obj}.png`} onClick={() => setSelectedObj(obj)}></img>)}
+                            {selectedTool === "pencil" &&
+                                Object.values(textureMap).map((obj, i) => (
+                                    <Image
+                                        key={i}
+                                        className={`objImg ${obj === selectedObj ? "selected" : ""} cursor-pointer`}
+                                        src={`/${obj}.png`}
+                                        onClick={() => setSelectedObj(obj)}
+                                        alt={obj}
+                                        width={500}
+                                        height={500}
+                                        style={{ width: "auto", imageRendering: "pixelated" }}
+                                        unoptimized
+                                    />
+                                ))}
                             {selectedTool === "color" &&
                                 Object.values(colorMap).map((color, i) => <div key={i} className={`objImg ${i === selectedColor ? "selected" : ""} cursor-pointer`} style={{ backgroundColor: color || "#ffffff" }} onClick={() => setSelectedColor(i)}></div>)}
                             {(selectedTool === "resize" || selectedTool === "move") && (
@@ -752,9 +763,9 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                                                 checked={selectedSnap === n}
                                                 onChange={() => {
                                                     setSelectedSnap(n as 1 | 0.5);
-                                                }}
-                                                children={<span>{n}</span>}
-                                            />
+                                                }}>
+                                                <span>{n}</span>
+                                            </Checkbox>
                                         </div>
                                     ))}
                                 </>
@@ -770,7 +781,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                                             setSelectedTool(tool);
                                             clearResizeDot();
                                         }}>
-                                        {[<PencilSvg />, <EraserSvg />, <MoveSvg />, <ResizeSvg />, <BucketSvg />, <RotateRightSvg />][i]}
+                                        {[<PencilSvg key={i} />, <EraserSvg key={i} />, <MoveSvg key={i} />, <ResizeSvg key={i} />, <BucketSvg key={i} />, <RotateRightSvg key={i} />][i]}
                                     </span>
                                 </div>
                             ))}

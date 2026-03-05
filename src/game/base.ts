@@ -1,7 +1,7 @@
 import { angFrom, Angle, colorMap, Direction, SFX_MIN_INTERVAL, UNIT, π, SCALE } from "@/constants";
 import { Block, Box, GameObj, Portal, SpriteBox, Oneway } from "./class";
-import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application } from "pixi.js";
-import { gameObjs, particles } from "./main";
+import { Assets, Texture, TilingSprite, groupD8, Sprite, AnimatedSprite, Graphics, Application, BitmapText } from "pixi.js";
+import { blocks, gameObjs, particles, portals } from "./main";
 import { GlitchFilter } from "pixi-filters";
 
 // キーイベント
@@ -62,24 +62,33 @@ export const rotate = (box: Box, ang: Direction, originW: number, originH: numbe
     if (box instanceof SpriteBox) rotate(box.origin, ang, originW, originH);
 };
 // 画像
-export const generatedTextures: Map<string, Texture | Texture[]> = new Map();
+export type TextureData =
+    | Texture
+    | {
+          textures: Texture[];
+          animationSpeed: number;
+      };
+export const generatedTextures: Map<string, TextureData> = new Map();
 // sprite加工
-export const getTexture = (name: string, state: string, newRotId: number) => {
+export const getTexture = (name: string, state: string, newRotId: number): TextureData => {
     const key = `${name}_${state}_${newRotId}`;
     const texture = generatedTextures.get(key);
     if (texture) return texture;
     else {
         const baseTexture = generatedTextures.get(`${name}_${state}_0`);
         if (!baseTexture) throw new Error(`baseTexture with key ${name}_${state}_0 not found`);
-        let newTexture: typeof baseTexture;
-        if (Array.isArray(baseTexture)) {
-            newTexture = baseTexture.map(
-                (texture) =>
-                    new Texture({
-                        source: texture.source,
-                        rotate: newRotId,
-                    }),
-            );
+        let newTexture: TextureData;
+        if ("textures" in baseTexture) {
+            newTexture = {
+                textures: baseTexture.textures.map(
+                    (texture) =>
+                        new Texture({
+                            source: texture.source,
+                            rotate: newRotId,
+                        }),
+                ),
+                animationSpeed: baseTexture.animationSpeed,
+            };
         } else {
             newTexture = new Texture({
                 source: baseTexture.source,
@@ -90,13 +99,16 @@ export const getTexture = (name: string, state: string, newRotId: number) => {
         return newTexture;
     }
 };
-export const editTexture = (obj: GameObj, newTexture: Texture | Texture[]) => {
-    if (Array.isArray(newTexture)) {
+export const editTexture = (obj: GameObj, newTextureData: TextureData) => {
+    if ("textures" in newTextureData) {
+        const { textures, animationSpeed } = newTextureData;
         obj.container.children.forEach((child) => {
             if (child instanceof AnimatedSprite) {
                 const sprite = child;
-                if (sprite.textures === newTexture) return;
-                sprite.textures = newTexture;
+                if (sprite.textures !== textures) {
+                    sprite.textures = textures;
+                    sprite.animationSpeed = animationSpeed;
+                }
                 if (!sprite.playing) {
                     sprite.play();
                 }
@@ -106,8 +118,8 @@ export const editTexture = (obj: GameObj, newTexture: Texture | Texture[]) => {
         obj.container.children.forEach((child) => {
             if (child instanceof Sprite) {
                 const sprite = child;
-                if (sprite.texture === newTexture) return;
-                sprite.texture = newTexture;
+                if (sprite.texture === newTextureData) return;
+                sprite.texture = newTextureData;
             }
         });
     }
@@ -139,7 +151,7 @@ export const stateChangeTexture = (obj: GameObj, newState: string) => {
     }
 };
 // spriteを描画する
-export const drawSprite = (obj: GameObj, app: Application) => {
+export const drawSprite = (obj: GameObj) => {
     const container = obj.container;
     const firstSprite = container.children.find((c) => c instanceof Sprite || c instanceof AnimatedSprite) as Sprite | AnimatedSprite | undefined;
     const rotId = firstSprite?.texture.rotate ?? 0;
@@ -148,10 +160,14 @@ export const drawSprite = (obj: GameObj, app: Application) => {
 
     if (existingSprites.length !== obj.spriteBoxes.length || obj.needsRedraw) {
         let prevFrame = 0;
-        let prevPlaying = false;
-        if (existingSprites.length > 0 && existingSprites[0] instanceof AnimatedSprite) {
-            prevFrame = existingSprites[0].currentFrame;
-            prevPlaying = existingSprites[0].playing;
+        let prevPlaying = true;
+        if (existingSprites.length > 0) {
+            if (existingSprites[0] instanceof AnimatedSprite) {
+                prevFrame = existingSprites[0].currentFrame;
+                prevPlaying = existingSprites[0].playing;
+            } else {
+                prevPlaying = false;
+            }
         }
 
         const removed = container.removeChildren();
@@ -160,18 +176,16 @@ export const drawSprite = (obj: GameObj, app: Application) => {
         }
 
         obj.spriteBoxes.forEach((spriteBox) => {
-            let sprite: Sprite | AnimatedSprite;
-            const texture = generatedTextures.get(`${obj.name}_${obj.state}_0`);
-            if (!texture) throw new Error(`baseTexture with key ${obj.name}_${obj.state}_0 not found`);
-            else if (Array.isArray(texture)) {
-                sprite = new AnimatedSprite(texture);
-                if (sprite instanceof AnimatedSprite) {
-                    sprite.animationSpeed = 0.125;
-                    sprite.gotoAndPlay(prevFrame % texture.length);
-                    if (!prevPlaying) sprite.stop();
-                }
+            let sprite;
+            const textureData = generatedTextures.get(`${obj.name}_${obj.state}_0`);
+            if (!textureData) throw new Error(`baseTexture with key ${obj.name}_${obj.state}_0 not found`);
+            if ("textures" in textureData) {
+                sprite = new AnimatedSprite(textureData.textures);
+                sprite.animationSpeed = textureData.animationSpeed;
+                sprite.gotoAndPlay(prevFrame % textureData.textures.length);
+                if (!prevPlaying) sprite.stop();
             } else {
-                sprite = new Sprite(texture as Texture);
+                sprite = new Sprite(textureData);
             }
             sprite.anchor.set(0);
             sprite.x = (spriteBox.origin.rel.x / SCALE) * UNIT;
@@ -179,7 +193,6 @@ export const drawSprite = (obj: GameObj, app: Application) => {
             sprite.width = (spriteBox.origin.sz.x / SCALE) * UNIT;
             sprite.height = (spriteBox.origin.sz.y / SCALE) * UNIT;
             container.addChild(sprite);
-
             if (!(spriteBox.rel.x === spriteBox.origin.rel.x && spriteBox.rel.y === spriteBox.origin.rel.y && spriteBox.sz.x === spriteBox.origin.sz.x && spriteBox.sz.y === spriteBox.origin.sz.y)) {
                 const mask = new Graphics().rect((spriteBox.rel.x / SCALE) * UNIT, (spriteBox.rel.y / SCALE) * UNIT, (spriteBox.sz.x / SCALE) * UNIT, (spriteBox.sz.y / SCALE) * UNIT).fill();
                 container.addChild(mask);
@@ -217,31 +230,6 @@ export const drawSprite = (obj: GameObj, app: Application) => {
     }
 
     editTexture(obj, getTexture(obj.name, obj.state, rotId));
-
-    if (obj instanceof Portal) {
-        const portalBack = app.stage.children.find((c) => c instanceof Sprite && c.zIndex === -1 && c.x === (obj.spriteBoxes[0].l / SCALE) * UNIT && c.y === (obj.spriteBoxes[0].u / SCALE) * UNIT) as Sprite | undefined;
-        if (!portalBack) {
-            const sprite = new Sprite(getRotatedTexture("portal", "back", 0, obj.dir) as Texture);
-            const [l, r, u, d, w, h] = [obj.spriteBoxes[0].l, obj.spriteBoxes[0].r, obj.spriteBoxes[0].u, obj.spriteBoxes[0].d, obj.spriteBoxes[0].sz.x, obj.spriteBoxes[0].sz.y];
-            if (obj.dir === "u") {
-                sprite.x = (l / SCALE) * UNIT;
-                sprite.y = ((u - h) / SCALE) * UNIT;
-            } else if (obj.dir === "r") {
-                sprite.x = (r / SCALE) * UNIT;
-                sprite.y = (u / SCALE) * UNIT;
-            } else if (obj.dir === "d") {
-                sprite.x = (l / SCALE) * UNIT;
-                sprite.y = (d / SCALE) * UNIT;
-            } else if (obj.dir === "l") {
-                sprite.x = ((l - w) / SCALE) * UNIT;
-                sprite.y = (u / SCALE) * UNIT;
-            }
-            sprite.width = (w / SCALE) * UNIT;
-            sprite.height = (h / SCALE) * UNIT;
-            sprite.zIndex = -1;
-            app.stage.addChild(sprite);
-        }
-    }
 };
 // sprite初期化
 export const setSprite = (obj: GameObj, app: Application) => {
@@ -250,13 +238,13 @@ export const setSprite = (obj: GameObj, app: Application) => {
     container.y = (obj.y / SCALE) * UNIT;
     container.width = UNIT;
     container.height = UNIT;
-    drawSprite(obj, app);
+    drawSprite(obj);
     if (obj.color) container.tint = colorMap[obj.color]!;
     rotateTexture(obj, obj.dir);
     app.stage.addChild(container);
 };
 // 点線囲い
-export const blockDashLine = (obj: Block) => {
+const blockDashLine = (obj: Block) => {
     const lineTexture = generatedTextures.get("block_deactivatedLine_0") as Texture;
     const w = (obj.spriteBoxes[0].sz.x / SCALE) * UNIT;
     const h = (obj.spriteBoxes[0].sz.y / SCALE) * UNIT;
@@ -306,8 +294,56 @@ export const blockDashLine = (obj: Block) => {
     rEdge.tileScale = { x: scale * 2, y: scale };
     obj.container.addChild(rEdge);
 };
+// portalのアルファベットと後ろの画像
+const drawPortal = (portal: Portal, app: Application) => {
+    // アルファベット
+    const portalText = new BitmapText({
+        text: portal.id,
+        x: ((portal.x + portal.spriteBoxes[0].sz.x / 2) / SCALE) * UNIT,
+        y: ((portal.y + portal.spriteBoxes[0].sz.y / 2) / SCALE) * UNIT,
+        style: {
+            fontFamily: ["Makinas", "sans-serif"],
+            fontSize: (3 / 4) * UNIT,
+            fill: 0x000000,
+            stroke: { color: 0xffffff, width: 10, join: "round" },
+            align: "center",
+        },
+    });
+    portalText.anchor.set(0.5);
+    app.stage.addChild(portalText);
+    // 後ろの画像
+    if (portal.backContainer.children.length === 0) {
+        const textureData = getRotatedTexture("portal", "back", 0, portal.dir) as { textures: Texture[]; animationSpeed: number };
+        const { textures, animationSpeed } = textureData;
+        if (!textures) throw new Error("Portal back texture should be an animation");
+        const sprite = new AnimatedSprite(textures);
+        sprite.animationSpeed = animationSpeed;
+        sprite.play();
+        const [w, h] = [portal.spriteBoxes[0].sz.x, portal.spriteBoxes[0].sz.y];
+        if (portal.dir === "u") {
+            sprite.x = 0;
+            sprite.y = -(h / SCALE) * UNIT;
+        } else if (portal.dir === "r") {
+            sprite.x = (w / SCALE) * UNIT;
+            sprite.y = 0;
+        } else if (portal.dir === "d") {
+            sprite.x = 0;
+            sprite.y = (h / SCALE) * UNIT;
+        } else if (portal.dir === "l") {
+            sprite.x = -(w / SCALE) * UNIT;
+            sprite.y = 0;
+        }
+        sprite.width = (w / SCALE) * UNIT;
+        sprite.height = (h / SCALE) * UNIT;
+        portal.backContainer.addChild(sprite);
+        portal.backContainer.x = (portal.x / SCALE) * UNIT;
+        portal.backContainer.y = (portal.y / SCALE) * UNIT;
+        portal.backContainer.zIndex = -1;
+        app.stage.addChild(portal.backContainer);
+    }
+};
 // 描画更新
-export const updateSprites = (app: Application) => {
+export const updateSprites = () => {
     gameObjs.forEach((obj) => {
         const container = obj.container;
         container.x = (obj.x / SCALE) * UNIT;
@@ -322,8 +358,18 @@ export const updateSprites = (app: Application) => {
         }
         // ポータルをまたがっている場合や、再描画フラグが立っている場合は再描画
         if (obj.needsRedraw || obj.spriteBoxes.some((s) => Object.values(s.counterpart).some((c) => c !== null))) {
-            drawSprite(obj, app);
+            drawSprite(obj);
             obj.needsRedraw = false;
+        }
+        // ポータルの前後アニメーションを同期
+        if (obj instanceof Portal) {
+            const frontSprite = obj.container.children.find((c) => c instanceof AnimatedSprite) as AnimatedSprite;
+            const backSprite = obj.backContainer.children.find((c) => c instanceof AnimatedSprite) as AnimatedSprite;
+            if (frontSprite && backSprite) {
+                backSprite.currentFrame = frontSprite.currentFrame;
+            }
+            obj.backContainer.x = container.x;
+            obj.backContainer.y = container.y;
         }
     });
 
@@ -424,6 +470,42 @@ export const glitch = (app: Application, time: number) => {
         app.stage.filters = [];
     }, time);
 };
+// キャンバスのフェードイン
+export const showStage = (app: Application, skipFadeIn: boolean) => {
+    if (skipFadeIn) {
+        for (const block of blocks) blockDashLine(block);
+        for (const portal of portals) drawPortal(portal, app);
+        return;
+    }
+    app.stage.sortableChildren = true;
+    // フェードインアニメーション
+    const overlay = new Graphics().fill(0x000000).rect(0, 0, app.screen.width, app.screen.height);
+    overlay.zIndex = 1000;
+    app.stage.addChild(overlay);
+    gameObjs.forEach((obj) => {
+        obj.container.scale.set(0);
+        obj.container.alpha = 0;
+    });
+    let elapsed = 0;
+    const duration = 20;
+    const fadeOut = (ticker: { deltaTime: number }) => {
+        elapsed += ticker.deltaTime;
+        const progress = elapsed / duration;
+        overlay.alpha = 1 - progress;
+        gameObjs.forEach((obj) => {
+            obj.container.alpha = progress;
+            obj.container.scale.set(Math.min(progress, 1));
+        });
+        if (progress >= 1) {
+            app.stage.removeChild(overlay);
+            overlay.destroy();
+            app.ticker.remove(fadeOut);
+            for (const block of blocks) blockDashLine(block);
+            for (const portal of portals) drawPortal(portal, app);
+        }
+    };
+    app.ticker.add(fadeOut);
+};
 // 音声
 export const BGM_PATHS = ["/menu.mp3", "/bgm0.mp3", "/bgm1.mp3", "/bgm2.mp3", "/bgm3.mp3", "/bgm4.mp3", "/bgm5.mp3", "/bgm6.mp3"] as const;
 export const SFX_PATHS = ["/walk.mp3", "/jump.mp3", "/key.mp3", "/ladder.mp3", "/lever.mp3", "/button.mp3", "/restart.mp3", "/goal.mp3", "/landing.mp3", "/pushblock.mp3", "/pushblocklanding.mp3", "/portal.mp3"] as const;
@@ -439,7 +521,8 @@ let audioContext: AudioContext | null = null;
 function getAudioContext() {
     if (typeof window === "undefined") return null;
     if (!audioContext) {
-        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        audioContext = new AudioContextClass();
     }
     return audioContext;
 }
@@ -530,7 +613,7 @@ export function stopSfx(path: SfxPath, obj: GameObj | null) {
 }
 export function playSfx(path: SfxPath, obj: GameObj | null, volume: number = 1, disableDuplicate: boolean = false, pitch: number = 1) {
     const now = performance.now();
-    if (activeSfx.has(path) && (disableDuplicate || now - activeSfx.get(path)!?.lastPlayed < SFX_MIN_INTERVAL)) return;
+    if (activeSfx.has(path) && (disableDuplicate || now - activeSfx.get(path)!.lastPlayed < SFX_MIN_INTERVAL)) return;
     const buffer = sfxBuffers.get(path);
     if (!buffer) return;
     if (obj) obj.playedSfxs.push(path);
@@ -574,7 +657,9 @@ export async function onLoad() {
 
     // 画像のパスを配列にまとめる
     const assetUrls = [
-        ...Array.from({ length: 7 }, (_, i) => `/player${i}.png`),
+        ...Array.from({ length: 8 }, (_, i) => `/player${i}.png`),
+        ...Array.from({ length: 3 }, (_, i) => `/portal_front${i}.png`),
+        ...Array.from({ length: 3 }, (_, i) => `/portal_back${i}.png`),
         "/block.png",
         "/block_deactivated.png",
         "/block_deactivated_line.png",
@@ -583,8 +668,6 @@ export async function onLoad() {
         "/oneway.png",
         "/lever_off.png",
         "/lever_on.png",
-        "/portal_front.png",
-        "/portal_back.png",
         "/pushblock.png",
         "/button_off.png",
         "/button_on.png",
@@ -594,13 +677,18 @@ export async function onLoad() {
     // すべてのアセットを並行して読み込む
     const textures = await Assets.load(assetUrls);
     // 読み込んだテクスチャをgeneratedTexturesに割り当てる
-    const playerTextures = Array.from({ length: 7 }, (_, i) => textures[`/player${i}.png`]);
+    const playerTextures = Array.from({ length: 8 }, (_, i) => textures[`/player${i}.png`]);
+    const portalFrontTextures = Array.from({ length: 3 }, (_, i) => textures[`/portal_front${i}.png`]);
+    const portalBackTextures = Array.from({ length: 3 }, (_, i) => textures[`/portal_back${i}.png`]);
     generatedTextures.set("player_static_0", playerTextures[0]);
-    generatedTextures.set("player_idle_0", [playerTextures[0]]);
-    generatedTextures.set("player_walk_0", [playerTextures[1], playerTextures[0], playerTextures[2], playerTextures[0]]);
-    generatedTextures.set("player_jump_0", [playerTextures[3]]);
-    generatedTextures.set("player_ladderMove_0", [playerTextures[4], playerTextures[5]]);
-    generatedTextures.set("player_ladderIdle_0", [playerTextures[6]]);
+    generatedTextures.set("player_idle_0", { textures: [playerTextures[0], playerTextures[7]], animationSpeed: 0.015625 });
+    generatedTextures.set("player_walk_0", {
+        textures: [playerTextures[1], playerTextures[0], playerTextures[2], playerTextures[0]],
+        animationSpeed: 0.125,
+    });
+    generatedTextures.set("player_jump_0", { textures: [playerTextures[3]], animationSpeed: 0.125 });
+    generatedTextures.set("player_ladderMove_0", { textures: [playerTextures[4], playerTextures[5]], animationSpeed: 0.125 });
+    generatedTextures.set("player_ladderIdle_0", { textures: [playerTextures[6]], animationSpeed: 0.125 });
     generatedTextures.set("block_default_0", textures["/block.png"]);
     generatedTextures.set("block_deactivatedLine_0", textures["/block_deactivated_line.png"]);
     generatedTextures.set("block_deactivated_0", textures["/block_deactivated.png"]);
@@ -609,14 +697,14 @@ export async function onLoad() {
     generatedTextures.set("oneway_default_0", textures["/oneway.png"]);
     generatedTextures.set("lever_off_0", textures["/lever_off.png"]);
     generatedTextures.set("lever_on_0", textures["/lever_on.png"]);
-    generatedTextures.set("portal_front_0", textures["/portal_front.png"]);
-    generatedTextures.set("portal_back_0", textures["/portal_back.png"]);
+    generatedTextures.set("portal_static_0", portalFrontTextures[0]);
+    generatedTextures.set("portal_front_0", { textures: portalFrontTextures, animationSpeed: 0.0625 });
+    generatedTextures.set("portal_back_0", { textures: portalBackTextures, animationSpeed: 0.0625 });
     generatedTextures.set("pushBlock_default_0", textures["/pushblock.png"]);
     generatedTextures.set("button_off_0", textures["/button_off.png"]);
     generatedTextures.set("button_on_0", textures["/button_on.png"]);
     generatedTextures.set("moveBlock_off_0", textures["/moveblock_off.png"]);
     generatedTextures.set("moveBlock_on_0", textures["/moveblock_on.png"]);
-    // nearest-neighbor scaling を適用
     assetUrls.forEach((url) => {
         const texture = textures[url];
         if (texture) {

@@ -54,17 +54,14 @@ const isIgnoreCollision = (aHitbox: Hitbox, bHitbox: Hitbox, axis: Axis) => {
     const b = bHitbox.owner;
     if (a instanceof Ladder || b instanceof Ladder) {
         if (axis === "x") return true; // ハシゴの側面とは衝突しない
-        let ladder: Ladder;
         let ladderHitbox: Hitbox;
         let other: GameObj;
         let otherHitbox: Hitbox;
         if (a instanceof Ladder && !(b instanceof Ladder)) {
-            ladder = a;
             ladderHitbox = aHitbox;
             other = b;
             otherHitbox = bHitbox;
         } else if (!(a instanceof Ladder) && b instanceof Ladder) {
-            ladder = b;
             ladderHitbox = bHitbox;
             other = a;
             otherHitbox = aHitbox;
@@ -119,21 +116,17 @@ const cornerCorrect = (hit: { a: GameObj; b: GameObj; relV: number }, axis: Axis
     const bCollisionDir = opposite[aCollisionDir];
     // strengthが小さい方の座標を補正する
     let weaker: GameObj;
-    let weakerCollisionDir: Direction;
     let stronger: GameObj;
     let bothMove = false;
     if (a.strength[aCollisionDir] < b.strength[bCollisionDir]) {
         weaker = a;
         stronger = b;
-        weakerCollisionDir = aCollisionDir;
     } else if (a.strength[aCollisionDir] > b.strength[bCollisionDir]) {
         weaker = b;
         stronger = a;
-        weakerCollisionDir = bCollisionDir;
     } else {
         weaker = a;
         stronger = b;
-        weakerCollisionDir = aCollisionDir;
         bothMove = true;
     }
     for (let i = 0; i < weaker.hitboxes.length; i++) {
@@ -222,6 +215,7 @@ const findEarliestCollision1D = (gameObjs: GameObj[], axis: Axis, tRemain: numbe
         for (let j = i + 1; j < gameObjs.length; j++) {
             const a = gameObjs[i];
             const b = gameObjs[j];
+            if (!a.canMove && !b.canMove) continue;
             let tPair: number | null = null;
             let relVPair: number | null = null;
             for (const aHitbox of [...a.hitboxes, ...a.hiddenHitboxes]) {
@@ -259,7 +253,7 @@ const findEarliestCollision1D = (gameObjs: GameObj[], axis: Axis, tRemain: numbe
 /** 次にポータルに入る時間tと、ボックスboxとポータルportalのペアのリストentriesを返す */
 const findEarliestPortalEnter1D = (gameObjs: GameObj[], axis: Axis, tRemain: number) => {
     let tMin = tRemain;
-    let entries: { box: Hitbox | SpriteBox; portal: Portal }[] = [];
+    const entries: { box: Hitbox | SpriteBox; portal: Portal }[] = [];
     const crossAxis = axis === "x" ? "y" : "x";
     for (const obj of gameObjs.filter((o) => !(o instanceof Portal))) {
         const dir = vDir1D(obj.v[axis], axis);
@@ -365,7 +359,7 @@ const resolveCollisions1D = (gameObjs: GameObj[], axis: Axis) => {
                 sz[axis] = 0;
 
                 if (box instanceof Hitbox) {
-                    const counterpart = new Hitbox(box.owner, rel.x, rel.y, sz.x, sz.y, 0);
+                    const counterpart = new Hitbox(box.owner, rel.x, rel.y, sz.x, sz.y);
                     box.counterpart[dir] = counterpart;
                     counterpart.counterpart[opposite[dir]] = box;
                     box.owner.hitboxes.push(counterpart);
@@ -373,12 +367,12 @@ const resolveCollisions1D = (gameObjs: GameObj[], axis: Axis) => {
 
                     const entranceHidden =
                         axis === "x"
-                            ? new Hitbox(box.owner, portal.trigger.center.x - box.owner.x + (dir === "r" ? ε : -ε), box.rel.y, 0, box.sz.y, 0)
-                            : new Hitbox(box.owner, box.rel.x, portal.trigger.center.y - box.owner.y + (dir === "d" ? ε : -ε), box.sz.x, 0, 0);
+                            ? new Hitbox(box.owner, portal.trigger.center.x - box.owner.x + (dir === "r" ? ε : -ε), box.rel.y, 0, box.sz.y)
+                            : new Hitbox(box.owner, box.rel.x, portal.trigger.center.y - box.owner.y + (dir === "d" ? ε : -ε), box.sz.x, 0);
                     const exitHidden =
                         axis === "x"
-                            ? new Hitbox(box.owner, exit.trigger.center.x - box.owner.x + (opposite[dir] === "r" ? ε : -ε), counterpart.rel.y, 0, counterpart.sz.y, 0)
-                            : new Hitbox(box.owner, counterpart.rel.x, exit.trigger.center.y - box.owner.y + (opposite[dir] === "d" ? ε : -ε), counterpart.sz.x, 0, 0);
+                            ? new Hitbox(box.owner, exit.trigger.center.x - box.owner.x + (opposite[dir] === "r" ? ε : -ε), counterpart.rel.y, 0, counterpart.sz.y)
+                            : new Hitbox(box.owner, counterpart.rel.x, exit.trigger.center.y - box.owner.y + (opposite[dir] === "d" ? ε : -ε), counterpart.sz.x, 0);
                     box.counterpartHidden[dir] = entranceHidden;
                     counterpart.counterpartHidden[opposite[dir]] = exitHidden;
                     box.owner.hiddenHitboxes.push(entranceHidden, exitHidden);
@@ -413,7 +407,7 @@ const resolveCollisions1D = (gameObjs: GameObj[], axis: Axis) => {
                         if (dir !== moveDir) {
                             if (c.sz[axis] <= 0 && !c.counterpart[dir]) {
                                 b.counterpart[dir] = null;
-                                const cIdx = (boxes as any[]).indexOf(c);
+                                const cIdx = (boxes as (Hitbox | SpriteBox)[]).indexOf(c);
                                 if (cIdx !== -1) {
                                     boxes.splice(cIdx, 1);
                                     if (i > cIdx) i--;

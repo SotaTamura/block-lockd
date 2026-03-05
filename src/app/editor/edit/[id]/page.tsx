@@ -17,7 +17,6 @@ export default function EditStage({ params }: { params: Promise<{ id: number }> 
     useEffect(() => {
         if (!user) {
             router.push("/");
-            router.refresh();
             return;
         }
         const stageFromContext = getStageById(id);

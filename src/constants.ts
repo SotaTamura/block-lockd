@@ -1,3 +1,5 @@
+import type { Stage, User } from "@/generated/prisma";
+
 // 定数
 export const π = Math.PI;
 export const ε = 1e-4;
@@ -21,22 +23,13 @@ export const MOVE_BLOCK_SPEED = 4;
 export const TERMINAL_V = 45;
 export const CORNER_CORRECT = 12;
 export const MOVE_OBJ_CORNER_CORRECT = 20;
+
 // 型
-export type StageType = {
-    id: number;
-    createdAt: Date;
-    updatedAt: Date;
-    title: string;
+export type StageType = Stage & {
     creatorId: string;
     creatorName: string;
-    description: string;
-    code: string;
-    access: number;
 };
-export type UserType = {
-    id: string;
-    name: string;
-    completedStageIds: number[];
+export type UserType = User & {
     completedOnlineStageIds: number[];
 };
 export type SettingsType = {

@@ -6,17 +6,20 @@ import { RESOLUTION, StageType, STEP } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
 import { useAuth, useSettings, useStage } from "@/app/context";
-import { ArrowButton, Checkbox, LeftSvg, Loading, RestartSvg } from "@/app/components";
+import { ArrowButton, Checkbox, GearSvg, LeftSvg, Loading, RestartSvg } from "@/app/components";
 import { BgmPath, glitch, playBgm, playSfx } from "@/game/base";
 import { TranslatableString, translate } from "@/app/translate";
+import { useRouter } from "next/navigation";
 
 export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
+    const router = useRouter();
     const cnvWrapperRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<Application | null>(null);
     const { user, changeData } = useAuth();
     const { getStageById } = useStage();
     const [restarter, setRestarter] = useState(0);
+    const prevIdRef = useRef(id);
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const stageRef = useRef<StageType | null>(null);
@@ -73,7 +76,9 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             const stageFromContext = getStageById(id);
             if (stageFromContext) stageRef.current = stageFromContext;
             if (!stageRef.current) return;
-            await loadStage(stageRef.current.code, app);
+            const skipFadeIn = id === prevIdRef.current && restarter > 0;
+            prevIdRef.current = id;
+            await loadStage(stageRef.current.code, app, skipFadeIn);
             setIsLoading(false);
             // 更新
             let prevTime: number | undefined;
@@ -111,6 +116,9 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
         <div className="gameScreen backGround">
             <div id="cnvWrapper" ref={cnvWrapperRef}></div>
             {isLoading && <Loading />}
+            <Link href={"/settings"} className="btn settings">
+                <GearSvg />
+            </Link>
             <div
                 className="btn restart"
                 onClick={(e) => {
@@ -127,9 +135,9 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 }}>
                 <RestartSvg />
             </div>
-            <Link href={`/online-stage/${id}/overview`} className="btn menu">
+            <div className="btn menu" onClick={router.back}>
                 <LeftSvg />
-            </Link>
+            </div>
             <div className="guides">
                 <Checkbox id="hitbox" checked={showHitbox} onChange={() => setShowHitbox(!showHitbox)}>
                     {t("当たり判定")}
@@ -146,9 +154,9 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             {isComplete && (
                 <div className="popup">
                     <div className="popupTitle">stage complete!</div>
-                    <Link href={`/online-stage/${id}/overview`} className="btn next">
+                    <div className="btn next" onClick={router.back}>
                         <LeftSvg />
-                    </Link>
+                    </div>
                 </div>
             )}
         </div>

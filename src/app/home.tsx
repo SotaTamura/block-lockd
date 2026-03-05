@@ -5,6 +5,7 @@ import Link from "next/link";
 import { WrenchSvg, RightSvg, WorldSvg, GearSvg } from "./components";
 import { useEffect, useState, useRef } from "react";
 import { TranslatableString, translate } from "./translate";
+import Image from "next/image";
 
 export default function Home({ id }: { id: string | undefined }) {
     const { user, loginBySession, signinBySession, setGuest } = useAuth();
@@ -43,7 +44,7 @@ export default function Home({ id }: { id: string | undefined }) {
 
     if (!user) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-dvh gap-8">
+            <div className="flex flex-col items-center justify-center h-svh overflow-y-auto gap-8">
                 <div
                     className="bg-[#aaa] bg-opacity-75 border-[#333] flex flex-col gap-6 p-8"
                     style={{
@@ -70,11 +71,11 @@ export default function Home({ id }: { id: string | undefined }) {
     }
 
     return (
-        <div>
+        <div className="h-svh overflow-y-auto pb-10">
             <div className="loginBtn">
                 <p>{user?.name || t("ゲスト")}</p>
             </div>
-            <img src={"/logo.png"} className="mt-[20dvh] h-[24dvmin] m-auto" />
+            <Image src={"/logo.png"} className="mt-[20dvh] h-[24dvmin] m-auto" alt="logo" width={500} height={500} style={{ width: "auto", imageRendering: "pixelated" }} unoptimized />
             <div className="grid grid-cols-2 gap-2 w-[50dvmin] h-[50dvmin] m-auto mt-[8dvh]">
                 <Link className="btn home-btn flex flex-col items-center w-full h-full py-2" href={"/select-stage"}>
                     <div className="grow flex items-center justify-center w-full">
