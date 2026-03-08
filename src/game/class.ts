@@ -78,6 +78,7 @@ export abstract class GameObj {
     hiddenHitboxes: Hitbox[];
     spriteBoxes: SpriteBox[];
     v: Record<Axis, number>;
+    correctsCorner: boolean;
     name: string;
     state: string;
     isSolid: boolean; // 最適化用
@@ -110,6 +111,7 @@ export abstract class GameObj {
         isSolid: boolean,
         canMove: boolean,
         strength: number,
+        correctsCorner: boolean,
     ) {
         this.x = x * SCALE;
         this.y = y * SCALE;
@@ -124,6 +126,7 @@ export abstract class GameObj {
         this.isSolid = isSolid;
         this.canMove = canMove;
         this.strength = { u: strength, d: strength, l: strength, r: strength };
+        this.correctsCorner = correctsCorner;
         this.nextBlocks = { u: [], d: [], l: [], r: [] };
         this.inLadders = [];
         this.container = new Container();
@@ -148,7 +151,7 @@ export abstract class GameObj {
 export class Player extends GameObj {
     wasOnGround: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Direction) {
-        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "player", "idle", true, true, PLAYER_STRENGTH);
+        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "player", "idle", true, true, PLAYER_STRENGTH, true);
         this.wasOnGround = true;
     }
     handleLadder() {
@@ -242,19 +245,19 @@ export class Player extends GameObj {
 // ブロック
 export class Block extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Direction, isSolid: boolean, color: number) {
-        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "block", "default", isSolid, false, BLOCK_STRENGTH);
+        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "block", "default", isSolid, false, BLOCK_STRENGTH, false);
     }
 }
 // ハシゴ
 export class Ladder extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Direction) {
-        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "ladder", "default", true, false, BLOCK_STRENGTH);
+        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "ladder", "default", true, false, BLOCK_STRENGTH, false);
     }
 }
 // 鍵
 export class Key extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Direction, color: number) {
-        super(x, y, ang, color, [{ relX: 0.2, relY: 0.2, w: w - 0.4, h: h - 0.4 }], [{ relX: 0, relY: 0, w, h }], "key", "default", false, false, -1);
+        super(x, y, ang, color, [{ relX: 0.2, relY: 0.2, w: w - 0.4, h: h - 0.4 }], [{ relX: 0, relY: 0, w, h }], "key", "default", false, false, -1, false);
     }
     handleParticle(app: Application) {
         const px = this.x + this.spriteBoxes[0].sz.x / 2;
@@ -269,14 +272,14 @@ export class Key extends GameObj {
 // 一方通行ブロック
 export class Oneway extends GameObj {
     constructor(x: number, y: number, w: number, h: number, ang: Direction, color: number) {
-        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "oneway", "default", true, false, BLOCK_STRENGTH);
+        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "oneway", "default", true, false, BLOCK_STRENGTH, false);
     }
 }
 // レバー
 export class Lever extends GameObj {
     isBeingContacted: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Direction, color: number) {
-        super(x, y, ang, color, [{ relX: 0.2, relY: 0.2, w: w - 0.4, h: h - 0.4 }], [{ relX: 0, relY: 0, w, h }], "lever", "off", false, false, -1);
+        super(x, y, ang, color, [{ relX: 0.2, relY: 0.2, w: w - 0.4, h: h - 0.4 }], [{ relX: 0, relY: 0, w, h }], "lever", "off", false, false, -1, false);
         this.isBeingContacted = false;
     }
 }
@@ -302,6 +305,7 @@ export class Portal extends GameObj {
             true,
             false,
             BLOCK_STRENGTH,
+            false,
         );
         this.id = id;
         this.trigger = new Box(this, 0, 0, w * SCALE, 0);
@@ -355,7 +359,7 @@ export class Portal extends GameObj {
 export class PushBlock extends GameObj {
     wasOnGround: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Direction) {
-        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "pushBlock", "default", true, true, PUSH_BLOCK_STRENGTH);
+        super(x, y, ang, 0, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "pushBlock", "default", true, true, PUSH_BLOCK_STRENGTH, true);
         this.wasOnGround = true;
     }
     handleLadder() {
@@ -374,7 +378,7 @@ export class PushBlock extends GameObj {
 export class Button extends GameObj {
     isPressed: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Direction, color: number) {
-        super(x, y, ang, color, [{ relX: 0, relY: (3 / 4) * h, w, h: h / 4 }], [{ relX: 0, relY: 0, w, h }], "button", "off", true, false, BLOCK_STRENGTH);
+        super(x, y, ang, color, [{ relX: 0, relY: (3 / 4) * h, w, h: h / 4 }], [{ relX: 0, relY: 0, w, h }], "button", "off", true, false, BLOCK_STRENGTH, false);
         this.isPressed = false;
         this.hitboxes.forEach((b) => {
             rotate(b, ang, w * SCALE, h * SCALE);
@@ -385,7 +389,7 @@ export class Button extends GameObj {
 export class MoveBlock extends GameObj {
     isActivated: boolean;
     constructor(x: number, y: number, w: number, h: number, ang: Direction, color: number, isActivated: boolean) {
-        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "moveBlock", isActivated ? "on" : "off", true, true, MOVE_BLOCK_STRENGTH);
+        super(x, y, ang, color, [{ relX: 0, relY: 0, w, h }], [{ relX: 0, relY: 0, w, h }], "moveBlock", isActivated ? "on" : "off", true, true, MOVE_BLOCK_STRENGTH, false);
         this.isActivated = isActivated;
     }
     handleParticle(app: Application) {

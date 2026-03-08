@@ -438,6 +438,51 @@ export const drawDebug = ($debug: HTMLCanvasElement, gameObjs: GameObj[]) => {
             ctx.strokeStyle = "#0f0";
             ctx.strokeRect((hitbox.x / SCALE) * UNIT, (hitbox.y / SCALE) * UNIT, (hitbox.sz.x / SCALE) * UNIT, (hitbox.sz.y / SCALE) * UNIT);
         }
+
+        // 速度ベクトルの矢印を描画
+        if (obj.v && (obj.v.x !== 0 || obj.v.y !== 0)) {
+            // オブジェクトの中心座標を取得
+            const centerX = ((obj.x + obj.hitboxes[0].rel.x + obj.hitboxes[0].sz.x / 2) / SCALE) * UNIT;
+            const centerY = ((obj.y + obj.hitboxes[0].rel.y + obj.hitboxes[0].sz.y / 2) / SCALE) * UNIT;
+            
+            // 速度ベクトルをスケーリング（矢印の長さ調整）
+            const arrowScale = 3;
+            const vx = (obj.v.x / SCALE) * UNIT * arrowScale;
+            const vy = (obj.v.y / SCALE) * UNIT * arrowScale;
+            
+            // 矢印の終点
+            const endX = centerX + vx;
+            const endY = centerY + vy;
+            
+            // 矢印の本体を描画
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#00f";
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+            
+            // 矢印の先端を描画
+            const arrowLength = Math.sqrt(vx * vx + vy * vy);
+            if (arrowLength > 0) {
+                const angle = Math.atan2(vy, vx);
+                const arrowHeadLength = Math.min(10, arrowLength * 0.3);
+                const arrowHeadAngle = Math.PI / 6;
+                
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(
+                    endX - arrowHeadLength * Math.cos(angle - arrowHeadAngle),
+                    endY - arrowHeadLength * Math.sin(angle - arrowHeadAngle)
+                );
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(
+                    endX - arrowHeadLength * Math.cos(angle + arrowHeadAngle),
+                    endY - arrowHeadLength * Math.sin(angle + arrowHeadAngle)
+                );
+                ctx.stroke();
+            }
+        }
     }
 };
 // グリッチ
@@ -534,13 +579,20 @@ export async function loadAudio(path: BgmPath | SfxPath): Promise<AudioBuffer> {
     }
     return await ctx.decodeAudioData(await (await fetch(path)).arrayBuffer());
 }
-export async function loadAllBgm() {
+export async function loadAllBgm(onProgress?: (loaded: number, total: number) => void) {
+    let loaded = 0;
+    const total = BGM_PATHS.length;
     const buffers = await Promise.all(
         BGM_PATHS.map(async (p) => {
             try {
-                return await loadAudio(p);
+                const buffer = await loadAudio(p);
+                loaded++;
+                if (onProgress) onProgress(loaded, total);
+                return buffer;
             } catch (e) {
                 console.error(`Failed to load BGM: ${p}`, e);
+                loaded++;
+                if (onProgress) onProgress(loaded, total);
                 return null;
             }
         }),

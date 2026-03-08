@@ -1,20 +1,18 @@
 "use client";
 
 import { RightSvg, LeftSvg, Loading } from "@/app/components";
-import { useSettings, useStage } from "@/app/context";
+import { useSettings } from "@/app/context";
 import { TranslatableString, translate } from "@/app/translate";
 import { StageType } from "@/constants";
 import { playBgm } from "@/game/base";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React from "react";
 import { use, useEffect, useState } from "react";
 
 export default function Overview({ params }: { params: Promise<{ id: number }> }) {
     const id = Number(use(params).id);
     const router = useRouter();
     const [stage, setStage] = useState<StageType | null>(null);
-    const { getStageById } = useStage();
     const {
         settings: { lang },
     } = useSettings();
@@ -22,9 +20,20 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
 
     useEffect(() => {
         playBgm("/menu.mp3");
-        const stageFromContext = getStageById(id);
-        if (stageFromContext) setStage(stageFromContext);
-    }, [id, getStageById]);
+        const fetchStage = async () => {
+            try {
+                // project://src/app/api/stage/[id]/route.ts
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/${id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setStage(data.stage);
+                }
+            } catch (error) {
+                console.error("Failed to fetch stage:", error);
+            }
+        };
+        fetchStage();
+    }, [id]);
 
     return (
         <main className="text-center">
@@ -47,7 +56,7 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
                 <p className="text-[#ccc] mb-[1dvmin]">
                     {t("更新")}: {stage?.updatedAt ? new Date(stage.updatedAt).toLocaleDateString() : ""}
                 </p>
-                <p>{stage?.description}</p>
+                <p className="whitespace-pre-wrap">{stage?.description}</p>
             </div>
             <div className="flex justify-center mt-[10dvmin]">
                 <Link href={`/online-stage/${id}/play`} className="btn w-[24dvmin] h-[18dvmin]">

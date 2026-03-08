@@ -22,7 +22,6 @@ export const PLAYER_SPEED = 8;
 export const MOVE_BLOCK_SPEED = 4;
 export const TERMINAL_V = 45;
 export const CORNER_CORRECT = 12;
-export const MOVE_OBJ_CORNER_CORRECT = 20;
 
 // 型
 export type StageType = Stage & {

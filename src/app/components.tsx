@@ -3,12 +3,17 @@ import { pressingEvent, pressStartEvent } from "../game/base";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function Loading() {
+export function Loading({ percentage }: { percentage?: number }) {
     return (
-        <motion.div className="absolute inset-0 z-50 flex items-center justify-center w-full h-full bg-[#333]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <motion.span className="text-6xl font-bold text-white" initial={{ opacity: 0.5, scale: 1 }} animate={{ opacity: 1, scale: [1, 1.05, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
+        <motion.div className="absolute inset-0 z-50 flex flex-col items-center justify-center w-full h-full bg-[#333]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+            <motion.span className="text-6xl font-bold text-white mb-8" initial={{ opacity: 0.5, scale: 1 }} animate={{ opacity: 1, scale: [1, 1.05, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
                 Loading...
             </motion.span>
+            {percentage !== undefined && (
+                <div className="w-64 h-4 bg-gray-700 overflow-hidden border-2 border-white">
+                    <motion.div className="h-full bg-white" initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 0.1 }} />
+                </div>
+            )}
         </motion.div>
     );
 }

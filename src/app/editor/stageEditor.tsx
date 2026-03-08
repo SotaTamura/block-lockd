@@ -4,7 +4,7 @@ import { useAuth, usePopup, useSettings } from "@/app/context";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowButton, BucketSvg, Checkbox, CheckSvg, EraserSvg, LeftSvg, MoveSvg, PencilSvg, ResizeSvg, RestartSvg, RestartSvgWhite, RotateRightSvg, Toggle, TrashSvg } from "@/app/components";
-import { Direction, MAP_BLOCK_LEN, RESOLUTION, STEP, UNIT, colorMap, π, StageType, convertBase, parseBase, PROPS_LEN } from "@/constants";
+import { Direction, MAP_BLOCK_LEN, RESOLUTION, UNIT, colorMap, π, StageType, convertBase, parseBase, PROPS_LEN } from "@/constants";
 import { loadStage, update } from "@/game/main";
 import { Application, Container, Graphics, isMobile, Sprite, Texture, Rectangle, FederatedPointerEvent, BitmapText, Cursor } from "pixi.js";
 import { getRotatedTexture, glitch, playSfx, stopBgm } from "@/game/base";
@@ -174,6 +174,8 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     const [access, setAccess] = useState(2); //0: public, 1: private, 2: unverified
     const [showHitbox, setShowHitbox] = useState(false);
     const showHitboxRef = useRef(false);
+    const [step, setStep] = useState(1000 / 60);
+    const stepRef = useRef(1000 / 60);
     const {
         settings: { lang },
     } = useSettings();
@@ -193,6 +195,10 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             }
         }
     }, [showHitbox, tab]);
+
+    useEffect(() => {
+        stepRef.current = step;
+    }, [step]);
 
     const addObj = (app: Application, x: number, y: number) => {
         if (selectedObj === "portal_front0") {
@@ -345,7 +351,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         }
         glitch(appRef.current, 300);
         playSfx("/restart.mp3", null);
-        setTimeout(() => setRestarter(restarter + 1), 300);
+        setTimeout(() => setRestarter((prev) => prev + 1), 300);
     };
 
     // Init App
@@ -393,6 +399,11 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         };
         document.addEventListener("keydown", switchToolByKey);
 
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "r" || e.key === "R") handleRestartTest();
+        };
+        document.addEventListener("keydown", handleKeyDown);
+
         const $wrapper = cnvWrapperRef.current;
         if (!$wrapper) return;
         const app = new Application();
@@ -420,6 +431,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         })();
         return () => {
             document.removeEventListener("keydown", switchToolByKey);
+            document.removeEventListener("keydown", handleKeyDown);
             const currentApp = appRef.current;
             if (currentApp) {
                 currentApp.destroy(true, { children: true, texture: false, textureSource: false });
@@ -517,7 +529,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                             dt = Math.min(timestamp - prevTime, 100);
                         }
                         accumulator += dt ? dt : 0;
-                        while (accumulator >= STEP) {
+                        while (accumulator >= stepRef.current) {
                             const $debug = document.getElementById("debug") as HTMLCanvasElement;
                             update(
                                 async () => {
@@ -530,7 +542,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                                                         handleRestartTest();
                                                         hidePopup();
                                                     }}
-                                                    className="btn next">
+                                                    className="btn next mt-0 w-[18svmin] h-[18svmin] max-w-20 max-h-20">
                                                     <RestartSvg />
                                                 </div>
                                             </>
@@ -541,7 +553,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                                 app,
                                 showHitboxRef.current && $debug ? $debug : undefined,
                             );
-                            accumulator -= STEP;
+                            accumulator -= stepRef.current;
                         }
                         prevTime = timestamp;
                         gameLoopId.current = requestAnimationFrame(gameLoop);
@@ -561,7 +573,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 gameLoopId.current = null;
             }
         };
-    }, [tab, isAppReady, restarter, editorObjs, selectedTool, selectedColor, selectedSnap, selectedObj, access]);
+    }, [tab, isAppReady, restarter, editorObjs, selectedTool, selectedColor, selectedSnap, selectedObj]);
 
     useEffect(() => {
         if (isAppReady && appRef.current && cnvSize > 0) {
@@ -817,6 +829,23 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                             <Checkbox id="hitbox" checked={showHitbox} onChange={() => setShowHitbox(!showHitbox)}>
                                 {t("当たり判定")}
                             </Checkbox>
+                            <label htmlFor="speed" className="guide">
+                                {t("速度")}
+                                <select
+                                    id="speed"
+                                    value={step}
+                                    onChange={(e) => {
+                                        setStep(Number(e.target.value));
+                                        e.target.blur();
+                                    }}>
+                                    <option value={1000 / 30}>0.5x</option>
+                                    <option value={1000 / 45}>0.75x</option>
+                                    <option value={1000 / 60}>1x</option>
+                                    <option value={1000 / 75}>1.25x</option>
+                                    <option value={1000 / 90}>1.5x</option>
+                                    <option value={1000 / 120}>2x</option>
+                                </select>
+                            </label>
                         </div>
                         {isMobile.any && (
                             <div className="controlBtns">

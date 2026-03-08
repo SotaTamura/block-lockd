@@ -21,12 +21,19 @@ export default function Home({ id }: { id: string | undefined }) {
     useEffect(() => {
         (async () => {
             if (isLoginProcessing.current) return;
+            if (localStorage.getItem("guest") === "1") {
+                if (!user || user.id !== "guest") {
+                    setGuest();
+                }
+                setIsLoading(false);
+                return;
+            }
             if (id && (!user || user.id !== id)) {
                 await loginBySession(id);
             }
             setIsLoading(false);
         })();
-    }, [id, loginBySession, user]);
+    }, [id, loginBySession, user, setGuest]);
 
     const handleStart = async () => {
         if (!name) showAlert(t("ニックネームを入力してください"));
@@ -45,11 +52,11 @@ export default function Home({ id }: { id: string | undefined }) {
 
     if (!user) {
         return (
-            <div className="flex flex-col items-center justify-center h-svh overflow-y-auto gap-8 relative">
+            <div className="flex flex-col items-center justify-center h-full overflow-y-auto gap-8 relative">
                 <div
                     className="bg-[#aaa] bg-opacity-75 border-[#333] flex flex-col gap-6 p-8"
                     style={{
-                        borderWidth: "1dvmin",
+                        borderWidth: "1vmin",
                         width: "min(90vw, 400px)",
                     }}>
                     <input
@@ -75,12 +82,12 @@ export default function Home({ id }: { id: string | undefined }) {
     }
 
     return (
-        <div className="h-svh overflow-y-auto pb-10 relative">
+        <div className="h-full overflow-y-auto pb-10 relative">
             <div className="loginBtn">
                 <p>{user?.name || t("ゲスト")}</p>
             </div>
-            <Image src={"/logo.png"} className="mt-[20dvh] h-[24dvmin] m-auto" alt="logo" width={500} height={500} style={{ width: "auto", imageRendering: "pixelated" }} unoptimized />
-            <div className="grid grid-cols-2 gap-2 w-[50dvmin] h-[50dvmin] m-auto mt-[8dvh]">
+            <Image src={"/logo.png"} className="mt-[20vh] h-[24vmin] m-auto" alt="logo" width={500} height={500} style={{ width: "auto", imageRendering: "pixelated" }} unoptimized />
+            <div className="grid grid-cols-2 gap-2 w-[50vmin] h-[50vmin] m-auto mt-[8vh]">
                 <Link className="btn home-btn flex flex-col items-center w-full h-full py-2" href={"/select-stage"}>
                     <div className="grow flex items-center justify-center w-full">
                         <div className="w-[70%] h-[70%] flex justify-center items-center">

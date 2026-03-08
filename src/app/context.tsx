@@ -106,6 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             completedStageIds: [],
             completedOnlineStageIds: [],
         });
+        localStorage.setItem("guest", "1");
     }, []);
 
     const loginBySession = useCallback(
@@ -120,6 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const dbData = await res.json();
                 if (res.ok) {
                     setUser(dbData.user);
+                    localStorage.setItem("guest", "0");
                 } else if (res.status === 404) {
                     // Create user ONLY IF initialName is provided
                     if (initialName) {
@@ -133,6 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         const createData = await createRes.json();
                         if (createRes.ok) {
                             setUser(createData.user);
+                            localStorage.setItem("guest", "0");
                         } else {
                             showAlert(createData.message);
                         }
@@ -264,8 +267,8 @@ export const useStage = () => {
 interface SettingsContextType {
     settings: SettingsType;
     setLang: (lang: Language) => void;
-    setBgm: (bgm: boolean, firstBgm?: BgmPath) => Promise<void>;
-    setSfx: (sfx: boolean) => Promise<void>;
+    setBgm: (bgm: boolean, firstBgm?: BgmPath, onProgress?: (loaded: number, total: number) => void) => Promise<void>;
+    setSfx: (sfx: boolean, onProgress?: (loaded: number, total: number) => void) => Promise<void>;
     setFont: (font: boolean) => void;
 }
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -277,10 +280,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         setSettings((prev) => ({ ...prev, lang }));
         localStorage.setItem("la", lang);
     };
-    const setBgm = async (bgm: boolean, firstBgm?: BgmPath) => {
+    const setBgm = async (bgm: boolean, firstBgm?: BgmPath, onProgress?: (loaded: number, total: number) => void) => {
         setSettings((prev) => ({ ...prev, bgm }));
         if (bgm && !bgmBuffers.size) {
-            await loadAllBgm();
+            await loadAllBgm(onProgress);
             if (firstBgm) playBgm(firstBgm);
         }
         if (!bgm) {
