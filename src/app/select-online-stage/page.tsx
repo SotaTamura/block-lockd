@@ -21,7 +21,6 @@ export default function Lobby() {
 
     useEffect(() => {
         playBgm(`/menu.mp3`);
-        if (stages.length > 0) return;
         (async () => {
             setIsLoading(true);
             try {

@@ -54,34 +54,33 @@ export default function Settings() {
     };
 
     return (
-        <div className="h-svh flex flex-col">
+        <div className="h-full flex flex-col">
             {isProcessing && <Loading />}
             <div className="btn back" onClick={router.back}>
                 <LeftSvg />
             </div>
-            <div className="flex flex-col items-center grow overflow-y-auto py-10">
+            <div className="flex flex-col items-center grow overflow-y-auto py-10 px-4">
                 <div
-                    className="bg-[#aaa] bg-opacity-75 border-[#333] flex flex-col gap-6"
+                    className="bg-[#bbb] border-2 border-[#333] flex flex-col gap-6 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_2px_0_rgba(255,255,255,0.4)]"
                     style={{
-                        padding: "4dvmin",
-                        borderWidth: "1dvmin",
+                        padding: "5dvmin",
                         width: "min(90vw, 500px)",
                         maxWidth: "500px",
                     }}>
-                    <h1 className="font-bold text-center border-b border-gray-600 mb-4 pb-1" style={{ fontSize: "9dvmin", marginBottom: "1dvmin" }}>
+                    <h1 className="font-bold text-center border-b-2 border-[#444] mb-4 pb-2 text-[#222] drop-shadow-sm" style={{ fontSize: "9dvmin" }}>
                         {t("設定")}
                     </h1>
                     {user && (
-                        <SettingsSection title={t("ユーザー情報")}>
+                        <SettingsSection title={<span className="text-[#333]">{t("ユーザー情報")}</span>}>
                             <div className="flex flex-col gap-6 py-4 w-full">
                                 <div className="flex flex-col gap-2 w-full">
-                                    <label className="text-left font-bold opacity-70" style={{ fontSize: "4dvmin" }}>
+                                    <label className="text-left font-bold text-[#444]" style={{ fontSize: "4dvmin" }}>
                                         {t("ニックネームを入力してください")}
                                     </label>
                                     <div className="flex gap-2 w-full">
                                         <input
                                             type="text"
-                                            className="grow min-w-0 px-4 py-2 text-black rounded border-2 border-[#333] bg-white"
+                                            className="grow min-w-0 px-4 py-2 text-black border-2 border-[#555] bg-white/90 shadow-inner focus:outline-none focus:border-black"
                                             style={{ fontSize: "5dvmin" }}
                                             placeholder={t("ニックネームを入力してください")}
                                             value={name}
@@ -93,25 +92,31 @@ export default function Settings() {
                                     </div>
                                 </div>
                                 {user.id !== "guest" && (
-                                    <button className="miniBtn w-full font-bold text-white bg-red-600 hover:bg-red-700 transition-colors border-red-800" style={{ padding: "2dvmin", fontSize: "5dvmin", marginTop: "2dvmin" }} onClick={handleDeleteData}>
+                                    <button className="dangerBtn w-full font-bold text-white transition-all" style={{ padding: "2.5dvmin", fontSize: "5dvmin", marginTop: "2dvmin" }} onClick={handleDeleteData}>
                                         {t("データ削除")}
                                     </button>
                                 )}
                             </div>
                         </SettingsSection>
                     )}
-                    <SettingsSection title={t("オーディオ")}>
-                        <button onClick={() => setBgm(!bgm, "/menu.mp3")} className="flex items-center cursor-pointer hover:bg-black/10 p-2 rounded -mx-2 w-full text-left gap-2">
-                            {bgm ? <VolumeSvg /> : <MuteSvg />}
-                            <span style={{ fontSize: "5dvmin" }}>{t("音楽")}</span>
-                        </button>
-                        <button onClick={() => setSfx(!sfx)} className="flex items-center cursor-pointer hover:bg-black/10 p-2 rounded -mx-2 w-full text-left gap-2">
-                            {sfx ? <VolumeSvg /> : <MuteSvg />}
-                            <span style={{ fontSize: "5dvmin" }}>{t("効果音")}</span>
-                        </button>
+                    <SettingsSection title={<span className="text-[#333]">{t("オーディオ")}</span>}>
+                        <div className="flex flex-col gap-2 py-2">
+                            <button onClick={() => setBgm(!bgm, "/menu.mp3")} className="flex items-center cursor-pointer bg-black/5 hover:bg-black/15 p-3 w-full text-left gap-3 transition-colors border border-black/10">
+                                <div className="text-[#333]">{bgm ? <VolumeSvg /> : <MuteSvg />}</div>
+                                <span className="text-[#222]" style={{ fontSize: "5dvmin" }}>
+                                    {t("音楽")}
+                                </span>
+                            </button>
+                            <button onClick={() => setSfx(!sfx)} className="flex items-center cursor-pointer bg-black/5 hover:bg-black/15 p-3 w-full text-left gap-3 transition-colors border border-black/10">
+                                <div className="text-[#333]">{sfx ? <VolumeSvg /> : <MuteSvg />}</div>
+                                <span className="text-[#222]" style={{ fontSize: "5dvmin" }}>
+                                    {t("効果音")}
+                                </span>
+                            </button>
+                        </div>
                     </SettingsSection>
-                    <SettingsSection title={t("言語")}>
-                        <div className="flex flex-col gap-2">
+                    <SettingsSection title={<span className="text-[#333]">{t("言語")}</span>}>
+                        <div className="flex flex-col gap-2 py-2">
                             {[
                                 ["ja", "日本語"],
                                 ["us", "English(US)"],
@@ -119,16 +124,22 @@ export default function Settings() {
                                 ["cn", "中文（简体字）"],
                                 ["tw", "中文（繁體字）"],
                             ].map((l) => (
-                                <Checkbox key={l[0]} id={l[0]} checked={l[0] === lang} onChange={() => setLang(l[0] as Language)} className="flex items-center cursor-pointer hover:bg-black/10 p-2 rounded -mx-2">
-                                    <span style={{ fontSize: "5dvmin" }}>{l[1]}</span>
+                                <Checkbox key={l[0]} id={l[0]} checked={l[0] === lang} onChange={() => setLang(l[0] as Language)} className="flex items-center cursor-pointer bg-black/5 hover:bg-black/15 p-3 w-full transition-colors border border-black/10">
+                                    <span className="text-[#222]" style={{ fontSize: "5dvmin" }}>
+                                        {l[1]}
+                                    </span>
                                 </Checkbox>
                             ))}
                         </div>
                     </SettingsSection>
-                    <SettingsSection title={t("表示")}>
-                        <Checkbox id={"makinas"} checked={font} onChange={() => setFont(!font)} className="flex items-center cursor-pointer hover:bg-black/10 p-2 rounded -mx-2">
-                            <span style={{ fontSize: "5dvmin" }}>{t("フォント")}</span>
-                        </Checkbox>
+                    <SettingsSection title={<span className="text-[#333]">{t("表示")}</span>}>
+                        <div className="py-2">
+                            <Checkbox id={"makinas"} checked={font} onChange={() => setFont(!font)} className="flex items-center cursor-pointer bg-black/5 hover:bg-black/15 p-3 w-full transition-colors border border-black/10">
+                                <span className="text-[#222]" style={{ fontSize: "5dvmin" }}>
+                                    {t("フォント")}
+                                </span>
+                            </Checkbox>
+                        </div>
                     </SettingsSection>
                 </div>
             </div>

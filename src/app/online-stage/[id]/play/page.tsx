@@ -2,7 +2,7 @@
 
 import { Application, isMobile } from "pixi.js";
 import { use, useEffect, useRef, useState } from "react";
-import { RESOLUTION, StageType, STEP } from "@/constants";
+import { RESOLUTION, StageType } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
 import { useAuth, usePopup, useSettings, useStage } from "@/app/context";
@@ -25,11 +25,37 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const stageRef = useRef<StageType | null>(null);
     const [showHitbox, setShowHitbox] = useState(false);
     const showHitboxRef = useRef(false);
+    const [step, setStep] = useState(1000 / 60);
+    const stepRef = useRef(1000 / 60);
     const {
         settings: { lang },
     } = useSettings();
     const t = (str: TranslatableString) => translate(str, lang);
     let loopId: number;
+
+    const handleRestart = () => {
+        if (!appRef.current) return;
+        const $debug = document.getElementById("debug") as HTMLCanvasElement;
+        if ($debug) {
+            const ctx = $debug.getContext("2d");
+            ctx?.clearRect(0, 0, $debug.width, $debug.height);
+        }
+        playSfx("/restart.mp3", null);
+        glitch(appRef.current, 300);
+        setTimeout(() => setRestarter((prev) => prev + 1), 300);
+    };
+
+    const RestartButton = ({ className, onClick }: { className?: string; onClick?: () => void }) => (
+        <div
+            className={`btn ${className}`}
+            onClick={(e) => {
+                e.preventDefault();
+                handleRestart();
+                if (onClick) onClick();
+            }}>
+            <RestartSvg />
+        </div>
+    );
 
     useEffect(() => {
         showHitboxRef.current = showHitbox;
@@ -45,6 +71,19 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             }
         }
     }, [showHitbox]);
+
+    useEffect(() => {
+        stepRef.current = step;
+    }, [step]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "r" || e.key === "R") handleRestart();
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
 
     useEffect(() => {
         playBgm(`/bgm${Math.floor(Math.random() * 7)}.mp3` as BgmPath);
@@ -104,21 +143,24 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                     dt = Math.min(timestamp - prevTime, 100);
                 }
                 accumulator += dt ? dt : 0;
-                while (accumulator >= STEP) {
+                while (accumulator >= stepRef.current) {
                     update(
                         async () => {
                             if (user && !user.completedOnlineStageIds.includes(id)) changeData({ completedOnlineStageIds: [...user.completedOnlineStageIds, id] });
                             showPopup({
                                 children: (
                                     <>
-                                        <div className="popupTitle">stage complete!</div>
-                                        <div
-                                            onClick={() => {
-                                                hidePopup();
-                                                router.back();
-                                            }}
-                                            className="btn next">
-                                            <LeftSvg />
+                                        <div className="popupTitle mb-4">stage complete!</div>
+                                        <div className="flex flex-row justify-center gap-8">
+                                            <div
+                                                onClick={() => {
+                                                    hidePopup();
+                                                    router.back();
+                                                }}
+                                                className="btn next mt-0 w-[18svmin] h-[18svmin] max-w-20 max-h-20">
+                                                <LeftSvg />
+                                            </div>
+                                            <RestartButton className="next mt-0 w-[18svmin] h-[18svmin] max-w-20 max-h-20" onClick={hidePopup} />
                                         </div>
                                     </>
                                 ),
@@ -127,7 +169,7 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                         app,
                         showHitboxRef.current ? $debug : undefined,
                     );
-                    accumulator -= STEP;
+                    accumulator -= stepRef.current;
                 }
                 prevTime = timestamp;
                 loopId = requestAnimationFrame(gameLoop);
@@ -139,38 +181,42 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
             app.destroy(true, { children: true });
             $debug?.remove();
         };
-    }, [id, restarter, getStageById, changeData, setStages, user, router]);
+    }, [id, restarter]);
 
     return (
         <div className="gameScreen backGround">
             <div id="cnvWrapper" ref={cnvWrapperRef}></div>
             {isLoading && <Loading />}
-            <Link href={"/settings"} className="btn settings">
-                <GearSvg />
-            </Link>
-            <div
-                className="btn restart"
-                onClick={(e) => {
-                    e.preventDefault();
-                    if (!appRef.current) return;
-                    const $debug = document.getElementById("debug") as HTMLCanvasElement;
-                    if ($debug) {
-                        const ctx = $debug.getContext("2d");
-                        ctx?.clearRect(0, 0, $debug.width, $debug.height);
-                    }
-                    playSfx("/restart.mp3", null);
-                    glitch(appRef.current, 300);
-                    setTimeout(() => setRestarter(restarter + 1), 300);
-                }}>
-                <RestartSvg />
-            </div>
-            <div className="btn menu" onClick={router.back}>
-                <LeftSvg />
+            <div className="options">
+                <Link href={"/settings"} className="btn">
+                    <GearSvg />
+                </Link>
+                <div className="btn" onClick={router.back}>
+                    <LeftSvg />
+                </div>
+                <RestartButton />
             </div>
             <div className="guides">
                 <Checkbox id="hitbox" checked={showHitbox} onChange={() => setShowHitbox(!showHitbox)}>
                     {t("当たり判定")}
                 </Checkbox>
+                <label htmlFor="speed" className="guide">
+                    {t("速度")}
+                    <select
+                        id="speed"
+                        value={step}
+                        onChange={(e) => {
+                            setStep(Number(e.target.value));
+                            e.target.blur();
+                        }}>
+                        <option value={1000 / 30}>0.5x</option>
+                        <option value={1000 / 45}>0.75x</option>
+                        <option value={1000 / 60}>1x</option>
+                        <option value={1000 / 75}>1.25x</option>
+                        <option value={1000 / 90}>1.5x</option>
+                        <option value={1000 / 120}>2x</option>
+                    </select>
+                </label>
             </div>
             {isMobile.any && (
                 <div className="controlBtns">

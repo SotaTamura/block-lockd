@@ -56,7 +56,7 @@ const translations = {
         s1Title: "1. 关卡数据",
         s1Content: "用户可以使用本服务的关卡编辑器功能创建数据（以下简称“关卡数据”）并将其保存或发布到服务器。发布的数据被视为已允许其他用户游玩。",
         s2Title: "2. 关于数据删除（重要）",
-        s2Content: "如果出于运营需要或判定内容不当，开发者保留在不事先通知用户且不透露原因的情况下删除或隐藏关卡数据的权利。",
+        s2Content: "如果出于运营需要 or 判定内容不当，开发者保留在不事先通知用户且不透露原因的情况下删除或隐藏关卡数据的权利。",
         s2List: ["违反公序良俗的情况", "侵害第三方权利的情况", "需要减少服务器容量或进行系统优化时", "开发者认为不当的其他情况"],
         s2Note: "※删除的数据在任何情况下都无法恢复。",
         s3Title: "3. 禁止事项",
@@ -89,55 +89,54 @@ export default function Terms() {
     const router = useRouter();
 
     return (
-        <div className="h-svh flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="btn back" onClick={router.back}>
                 <LeftSvg />
             </div>
             <div className="flex flex-col items-center grow overflow-y-auto py-10 px-4">
                 <div
-                    className="bg-[#aaa] bg-opacity-75 border-[#333] flex flex-col gap-6"
+                    className="bg-[#bbb] border-2 border-[#333] flex flex-col gap-6 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_2px_0_rgba(255,255,255,0.4)]"
                     style={{
-                        padding: "4dvmin",
-                        borderWidth: "1dvmin",
+                        padding: "5dvmin",
                         width: "min(95vw, 600px)",
                         maxWidth: "600px",
                     }}>
-                    <h1 className="font-bold text-center border-b border-gray-600 mb-4 pb-1" style={{ fontSize: "8dvmin" }}>
+                    <h1 className="font-bold text-center border-b-2 border-[#444] mb-4 pb-2 text-[#222] drop-shadow-sm" style={{ fontSize: "8dvmin" }}>
                         {t.title}
                     </h1>
 
-                    <div className="flex flex-col gap-4 text-left" style={{ fontSize: "3.5dvmin", fontFamily: "sans-serif" }}>
-                        <p>{t.intro}</p>
+                    <div className="flex flex-col gap-6 text-left text-[#333]" style={{ fontSize: "3.5dvmin", fontFamily: "sans-serif" }}>
+                        <p className="font-medium text-[#444] leading-relaxed">{t.intro}</p>
 
-                        <section>
-                            <h2 className="font-bold border-l-4 border-gray-700 pl-2 mb-2">{t.s1Title}</h2>
-                            <p>{t.s1Content}</p>
+                        <section className="bg-black/5 p-4 border border-black/10">
+                            <h2 className="font-bold border-l-4 border-gray-700 pl-3 mb-2 text-[#222]">{t.s1Title}</h2>
+                            <p className="leading-relaxed">{t.s1Content}</p>
                         </section>
 
-                        <section className="bg-red-100 bg-opacity-30 p-2 border-2 border-red-800">
-                            <h2 className="font-bold border-l-4 border-red-800 pl-2 mb-2 text-red-900">{t.s2Title}</h2>
-                            <p className="font-bold text-red-900">{t.s2Content}</p>
-                            <ul className="list-disc ml-5 mt-2">
+                        <section className="bg-red-50 border-2 border-red-200 p-4 shadow-sm">
+                            <h2 className="font-bold border-l-4 border-red-600 pl-3 mb-2 text-red-700">{t.s2Title}</h2>
+                            <p className="font-bold text-red-800 mb-3">{t.s2Content}</p>
+                            <ul className="list-disc ml-6 space-y-1">
                                 {t.s2List.map((item: string, i: number) => (
-                                    <li key={i} className="text-red-900">
+                                    <li key={i} className="text-red-700 font-medium">
                                         {item}
                                     </li>
                                 ))}
                             </ul>
-                            <p className="mt-2 text-sm italic text-red-900">{t.s2Note}</p>
+                            <p className="mt-3 text-[length:3dvmin] italic text-red-600 font-bold border-t border-red-200 pt-2">{t.s2Note}</p>
                         </section>
 
-                        <section>
-                            <h2 className="font-bold border-l-4 border-gray-700 pl-2 mb-2">{t.s3Title}</h2>
-                            <p>{t.s3Content}</p>
+                        <section className="bg-black/5 p-4 border border-black/10">
+                            <h2 className="font-bold border-l-4 border-gray-700 pl-3 mb-2 text-[#222]">{t.s3Title}</h2>
+                            <p className="leading-relaxed">{t.s3Content}</p>
                         </section>
 
-                        <section>
-                            <h2 className="font-bold border-l-4 border-gray-700 pl-2 mb-2">{t.s4Title}</h2>
-                            <p>{t.s4Content}</p>
+                        <section className="bg-black/5 p-4 border border-black/10">
+                            <h2 className="font-bold border-l-4 border-gray-700 pl-3 mb-2 text-[#222]">{t.s4Title}</h2>
+                            <p className="leading-relaxed">{t.s4Content}</p>
                         </section>
 
-                        <section className="text-right mt-4 opacity-70">
+                        <section className="text-right mt-4 opacity-60 font-medium">
                             <p>{t.date}</p>
                         </section>
                     </div>

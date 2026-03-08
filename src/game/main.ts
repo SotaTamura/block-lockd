@@ -149,7 +149,6 @@ export const loadStage = async (data: string | EditorObj[], app: Application, sk
 export const isComplete = false;
 export const update = (handleComplete: () => void, app: Application, $debug?: HTMLCanvasElement) => {
     if (!app.renderer) return;
-    if ($debug) drawDebug($debug, gameObjs);
     // 鍵
     for (const key of keys)
         if (players.some((p) => isOverLapping(p, key))) {
@@ -269,6 +268,7 @@ export const update = (handleComplete: () => void, app: Application, $debug?: HT
             stopSfx("/pushblock.mp3", pushBlock);
         }
     }
+    if ($debug) drawDebug($debug, gameObjs);
     updateNextBlocks(solidObjs);
     clearPressStart();
     updateSprites();

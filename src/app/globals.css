@@ -25,8 +25,7 @@
         -webkit-touch-callout: none;
         touch-action: none;
     }
-    .stageWrapper,
-    .stage {
+    .stageWrapper {
         touch-action: pan-y;
     }
     html,
@@ -36,30 +35,37 @@
     .makinas-font {
         font-family: "Makinas", sans-serif;
     }
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+    }
     body {
         position: relative;
         text-align: center;
-        width: 100svw;
-        height: 100svh;
-        background: radial-gradient(#aaa, #555);
-        overflow: hidden;
+        background:
+            repeating-linear-gradient(45deg, transparent, transparent 100px, rgba(0, 0, 0, 0.05) 100px, rgba(0, 0, 0, 0.05) 200px), repeating-linear-gradient(-45deg, transparent, transparent 100px, rgba(0, 0, 0, 0.05) 100px, rgba(0, 0, 0, 0.05) 200px),
+            radial-gradient(#aaa, #555);
     }
     .loadingTxt {
+        line-height: 100vh;
         line-height: 100svh;
         color: #f00;
     }
     .stageSelectScreen {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: 12svmin 18svmin 1fr;
+        grid-template-rows: 60px 18svmin 25svmin 1fr;
         grid-template-areas:
             "back ...."
             "txt txt"
+            "jump jump"
             "stage stage";
-        width: 100vw;
-        height: 100svh;
-        padding-top: max(2svh, env(safe-area-inset-top));
-        padding-bottom: max(2svh, env(safe-area-inset-bottom));
+        width: 100%;
+        height: 100%;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        box-sizing: border-box;
     }
     .back {
         width: 18svmin;
@@ -68,6 +74,9 @@
     }
     .selectStageText {
         grid-area: txt;
+    }
+    .jump {
+        grid-area: jump;
     }
     .stageWrapperContainer {
         padding: 50px 0;
@@ -79,74 +88,97 @@
     .stageWrapper {
         display: flex;
         flex-wrap: wrap;
+        gap: 2svmin;
         justify-content: center;
     }
     .btn {
-        background: linear-gradient(#ddd, #999);
-        border: #333 solid 5px;
-        border-top: #777 solid 5px;
-        border-left: #777 solid 5px;
+        background: linear-gradient(145deg, #eeeeee, #aaaaaa);
+        border: 2px solid #333;
+        box-shadow:
+            0 6px 0 #555,
+            0 8px 15px rgba(0, 0, 0, 0.4),
+            inset 0 2px 0 rgba(255, 255, 255, 0.6);
         background-position: center;
         position: relative;
         cursor: pointer;
         display: flex;
         justify-content: center;
         align-items: center;
+        transition:
+            transform 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+            box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+            background 0.1s;
     }
     .arrow.pressed,
     .btn:not(.arrow):not(.completedBtn, .dangerBtn):active {
-        background: linear-gradient(#555, #999);
-        border: #777 solid 5px;
-        border-top: #333 solid 5px;
-        border-left: #333 solid 5px;
+        background: linear-gradient(145deg, #cccccc, #888888);
+        transform: translateY(6px);
+        box-shadow:
+            0 0 0 #555,
+            0 2px 4px rgba(0, 0, 0, 0.4),
+            inset 0 2px 4px rgba(0, 0, 0, 0.2);
     }
     .btn svg {
         width: 70%;
         height: 70%;
         object-fit: contain;
     }
-    .btn div {
-        position: absolute;
-        color: #4b4b4b;
-        font-size: 70%;
-        top: 10%;
-        left: 25%;
-        right: 25%;
-        overflow: visible;
-    }
     .completedBtn {
-        background: linear-gradient(#0d0, #090);
-        border: #030 solid 5px;
-        border-top: #070 solid 5px;
-        border-left: #070 solid 5px;
+        background: linear-gradient(145deg, #0d0, #090);
+        border: 2px solid #030;
+        box-shadow:
+            0 6px 0 #050,
+            0 8px 15px rgba(0, 0, 0, 0.4),
+            inset 0 2px 0 rgba(255, 255, 255, 0.4);
     }
     .completedBtn:active {
-        background: linear-gradient(#050, #090);
-        border: #070 solid 5px;
-        border-top: #030 solid 5px;
-        border-left: #030 solid 5px;
+        background: linear-gradient(145deg, #0a0, #070);
+        transform: translateY(6px);
+        box-shadow:
+            0 0 0 #050,
+            0 2px 4px rgba(0, 0, 0, 0.4),
+            inset 0 2px 4px rgba(0, 0, 0, 0.3);
     }
     .completedBtn div {
         color: #fff;
     }
     .dangerBtn {
-        background: linear-gradient(#d00, #900);
-        border: #300 solid 5px;
-        border-top: #700 solid 5px;
-        border-left: #700 solid 5px;
+        background: linear-gradient(145deg, #d00, #900);
+        border: 2px solid #300;
+        box-shadow:
+            0 6px 0 #500,
+            0 8px 15px rgba(0, 0, 0, 0.4),
+            inset 0 2px 0 rgba(255, 255, 255, 0.4);
     }
     .dangerBtn:active {
-        background: linear-gradient(#500, #900);
-        border: #700 solid 5px;
-        border-top: #300 solid 5px;
-        border-left: #300 solid 5px;
+        background: linear-gradient(145deg, #a00, #700);
+        transform: translateY(6px);
+        box-shadow:
+            0 0 0 #500,
+            0 2px 4px rgba(0, 0, 0, 0.4),
+            inset 0 2px 4px rgba(0, 0, 0, 0.3);
     }
     .miniBtn {
-        background-color: #aaa;
+        background: linear-gradient(145deg, #cccccc, #999999);
         color: #333;
-        border: #333 solid 2px;
+        border: 2px solid #333;
+        box-shadow:
+            0 4px 0 #555,
+            0 4px 6px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5);
         cursor: pointer;
         text-align: center;
+        transition:
+            transform 0.1s,
+            box-shadow 0.1s;
+    }
+    .miniBtn:active {
+        background: linear-gradient(145deg, #aaaaaa, #777777);
+        transform: translateY(4px);
+        box-shadow:
+            0 0 0 #555,
+            0 1px 2px rgba(0, 0, 0, 0.3),
+            inset 0 1px 2px rgba(0, 0, 0, 0.2);
     }
     .loginBtn {
         position: fixed;
@@ -154,33 +186,36 @@
         right: 10px;
         font-size: 30px;
     }
-    .stage {
-        width: 20svmin;
-        height: 14svmin;
-        line-height: 11svmin;
-        font-size: 11svmin;
-        margin: 1%;
-    }
     .stageNum {
         grid-area: num;
-        text-align: center;
-        margin: auto;
+        margin: 10px;
+        padding-left: 10px;
         font-size: 8svmin;
-        overflow: hidden;
     }
     .gameScreen {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-        grid-template-rows: 60px 1fr 40px 180px;
+        grid-template-columns: 1fr 3fr;
+        grid-template-rows: 60px 1fr 40px minmax(180px, auto);
         grid-template-areas:
-            "num settings menu restart"
-            "main main main main"
-            "guide guide guide guide"
-            "btn btn btn btn";
-        width: 100vw;
-        height: 100svh;
-        padding-top: max(2svh, env(safe-area-inset-top));
-        padding-bottom: max(2svh, env(safe-area-inset-bottom));
+            "num option"
+            "main main"
+            "guide guide"
+            "btn btn";
+        width: 100%;
+        height: 100%;
+        padding: env(safe-area-inset-top) min(20px, 2vw) max(env(safe-area-inset-bottom), 20px) min(20px, 2vw);
+    }
+    .options {
+        grid-area: option;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        gap: 5px;
+        padding: 5px;
+    }
+    .options .btn {
+        width: 33%;
+        max-width: 150px;
     }
     .editorScreen {
         display: grid;
@@ -191,24 +226,22 @@
             "main"
             "objs"
             "tools";
-        width: 100vw;
-        height: 100svh;
-        padding-top: max(2svh, env(safe-area-inset-top));
-        padding-bottom: max(2svh, env(safe-area-inset-bottom));
+        width: 100%;
+        height: 100%;
+        padding: env(safe-area-inset-top) min(20px, 2vw) env(safe-area-inset-bottom) min(20px, 2vw);
     }
     .testScreen {
         display: grid;
         grid-template-columns: 1fr;
-        grid-template-rows: 60px 1fr 40px 180px;
+        grid-template-rows: 60px 1fr 40px minmax(180px, auto);
         grid-template-areas:
             "header"
             "main"
             "guide"
             "btn";
-        width: 100vw;
-        height: 100svh;
-        padding-top: max(2svh, env(safe-area-inset-top));
-        padding-bottom: max(2svh, env(safe-area-inset-bottom));
+        width: 100%;
+        height: 100%;
+        padding: env(safe-area-inset-top) min(20px, 2vw) max(env(safe-area-inset-bottom), 20px) min(20px, 2vw);
     }
     .objs {
         display: flex;
@@ -255,9 +288,9 @@
         height: 100%;
     }
     input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-        margin: 10px;
+        width: 16px;
+        height: 16px;
+        margin: 0 5px;
     }
     .guides {
         grid-area: guide;
@@ -266,11 +299,25 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        gap: 5px;
     }
     .guide {
-        height: 35px;
-        margin: 0 10px;
-        padding: 0 5px;
+        height: 28px;
+        margin: 0;
+        padding: 15px 5px;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+    }
+    .guide select {
+        margin-left: 0.3rem;
+        padding: 0.1rem 0.2rem;
+        font-size: 20px;
+        background-color: #fff;
+        color: #333;
+        border: 1px solid #333;
+        border-radius: 2px;
     }
     #cnvWrapper {
         grid-area: main;
@@ -328,7 +375,7 @@
     }
     .controlBtns {
         grid-area: btn;
-        margin: 0 auto;
+        margin: 0 auto 20px auto;
         width: 100%;
         max-width: 270px;
         aspect-ratio: 1.5;
@@ -400,97 +447,5 @@
     .home-btn svg {
         width: 100% !important;
         height: 100% !important;
-    }
-
-    @media screen and (min-aspect-ratio: 1/1) {
-        .stageSelectScreen,
-        .gameScreen,
-        .editorScreen,
-        .testScreen,
-        .editor-layout {
-            padding-top: 0;
-            padding-bottom: 0;
-        }
-        .gameScreen {
-            grid-template-columns: 140px 1fr 46px 46px 46px;
-            grid-template-rows: 22svh 30svh 48svh;
-            grid-template-areas:
-                "num  main settings menu restart"
-                ".... main guide guide guide"
-                "btn  main .... .... ....";
-        }
-        .settings,
-        .menu,
-        .restart,
-        .arrow {
-            height: 14svh;
-            max-height: 70px;
-            width: initial;
-            aspect-ratio: 0.66;
-            margin: auto;
-        }
-        .controlBtns {
-            position: absolute;
-            inset: 0;
-            display: grid;
-            grid-template-columns: 70px 70px 1fr 140px;
-            grid-template-rows: 1fr 24svh 24svh;
-            grid-template-areas:
-                ". . . ."
-                "l r . u"
-                "l r . d";
-            pointer-events: none;
-            z-index: 5;
-            width: 100vw;
-            height: 100svh;
-            margin: 0;
-            max-width: none;
-            aspect-ratio: auto;
-        }
-        .controlBtns > * {
-            pointer-events: auto;
-        }
-        .guides {
-            display: block;
-        }
-        .editorScreen {
-            grid-template-columns: 140px 1fr 140px;
-            grid-template-rows: 60px 1fr;
-            grid-template-areas:
-                "header header header"
-                "objs   main   tools";
-        }
-        .testScreen {
-            grid-template-columns: 140px 1fr 70px 70px;
-            grid-template-rows: 60px 1fr 1fr;
-            grid-template-areas:
-                "header header header header"
-                "....   main   guide  guide"
-                "....   main   ....   ....";
-        }
-        .objs {
-            flex-direction: column;
-            border-left: #777 solid 8px;
-            border-right: #777 solid 8px;
-            border-top: none;
-            border-bottom: none;
-            width: 140px;
-            height: calc(100svh - 60px);
-            overflow-y: scroll;
-            overflow-x: initial;
-            touch-action: pan-y;
-        }
-        .tools {
-            flex-direction: column;
-            border-left: #bbb solid 8px;
-            border-right: #bbb solid 8px;
-            border-top: none;
-            border-bottom: none;
-            width: 140px;
-            height: calc(100svh - 60px);
-            overflow-y: scroll;
-            overflow-x: initial;
-            touch-action: pan-y;
-        }
     }
 }

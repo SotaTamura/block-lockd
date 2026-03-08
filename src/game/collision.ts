@@ -3,6 +3,9 @@ import { Box, GameObj, Hitbox, Ladder, Oneway, Player, Portal, SpriteBox } from 
 import { playSfx, pressingEvent } from "./base";
 import { portals } from "./main";
 
+const vRefs = new Map<GameObj, { axis: Axis; from: GameObj }>();
+export const getVRefs = () => vRefs;
+
 /** 速度の方向(速度0の場合null) */
 const vDir1D = (v: number, axis: Axis): Direction | null => {
     if (v === 0) return null;
@@ -129,6 +132,7 @@ const cornerCorrect = (hit: { a: GameObj; b: GameObj; relV: number }, axis: Axis
         stronger = b;
         bothMove = true;
     }
+    if (!weaker.correctsCorner) return false;
     for (let i = 0; i < weaker.hitboxes.length; i++) {
         for (let j = 0; j < stronger.hitboxes.length; j++) {
             const weakerHitBox = weaker.hitboxes[i];
@@ -305,18 +309,39 @@ const resolveCollision1D = (hit: { a: GameObj; b: GameObj; relV: number }, axis:
         // 速度の絶対値が小さい方に合わせる
         else if (Math.abs(av) < Math.abs(bv)) {
             bv = av;
+            vRefs.set(b, { axis, from: a });
         } else {
             av = bv;
+            vRefs.set(a, { axis, from: b });
         }
     }
     // 強さが異なる場合、強い方に合わせる
     else if (a.strength[aCollisionDir] > b.strength[bCollisionDir]) {
         bv = av;
         b.strength[opposite[bCollisionDir]] = a.strength[aCollisionDir];
+        vRefs.set(b, { axis, from: a });
     } else {
         av = bv;
         a.strength[opposite[aCollisionDir]] = b.strength[bCollisionDir];
+        vRefs.set(a, { axis, from: b });
     }
+
+    // 同時刻ですでに計算された衝突の修正
+    if (a.v[axis] !== av) {
+        for (const [k, v] of vRefs) {
+            if (v.from === a) {
+                k.v[axis] = av;
+            }
+        }
+    }
+    if (b.v[axis] !== bv) {
+        for (const [k, v] of vRefs) {
+            if (v.from === b) {
+                k.v[axis] = bv;
+            }
+        }
+    }
+
     a.v[axis] = av;
     b.v[axis] = bv;
 };
@@ -332,6 +357,8 @@ const resolveCollisions1D = (gameObjs: GameObj[], axis: Axis) => {
         const { t: collisionT, hits } = findEarliestCollision1D(gameObjs, axis, tRemain);
         const { t: pEnterT, entries } = findEarliestPortalEnter1D(gameObjs, axis, tRemain);
         const t = Math.min(collisionT, pEnterT);
+        // 同時衝突の記録を消す
+        if (collisionT > ε) vRefs.clear();
         // 衝突まで進める
         for (const obj of gameObjs) {
             obj[axis] += obj.v[axis] * t;

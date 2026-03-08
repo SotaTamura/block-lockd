@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
     title: "Block Lockd",
-    description: "A puzzle x action game.",
+    description: "Block Lockd is an action puzzle game where you control a character and aim to escape each stage.",
     appleWebApp: {
         title: "Block Lockd",
     },
