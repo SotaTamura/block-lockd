@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, useSettings } from "@/app/context";
+import { useSettings } from "@/app/context";
 import Link from "next/link";
 import { LeftSvg } from "../components";
 import { STAGES } from "@/game/stages";
@@ -27,7 +27,6 @@ function StageButton({ i, isCompleted, title, difficulty }: { i: number; isCompl
 }
 
 export default function SelectStage() {
-    const { user } = useAuth();
     const {
         settings: { lang },
     } = useSettings();
@@ -44,10 +43,7 @@ export default function SelectStage() {
     const ranges = Array.from({ length: Math.ceil(totalStages / rangeSize) }, (_, i) => {
         const start = i * rangeSize + 1;
         const end = Math.min((i + 1) * rangeSize, totalStages);
-        const stagesInRange = Array.from({ length: end - start + 1 }, (_, j) => start + j);
-        const completedInRange = stagesInRange.filter((stageId) => user?.completedStageIds.includes(stageId)).length;
-        const completionRate = (completedInRange / stagesInRange.length) * 100;
-        return { start, end, label: `${start}~${end}`, completionRate, completedInRange, total: stagesInRange.length };
+        return { start, end, label: `${start}~${end}` };
     });
 
     const scrollToStage = (stageNumber: number) => {
@@ -82,12 +78,6 @@ export default function SelectStage() {
                             onClick={() => scrollToStage(range.start)}
                             className="w-[20svmin] btn px-[2svmin] text-[length:3.5svmin] whitespace-nowrap bg-[#444] hover:bg-[#555] transition-colors flex flex-col items-center gap-[1svmin] touch-pan-x">
                             <span className="text-[#333]">{range.label}</span>
-                            <div className="w-full h-1.5 bg-[#222] overflow-hidden">
-                                <div className="h-full bg-linear-to-r from-green-500 to-green-400 transition-all duration-300" style={{ width: `${range.completionRate}%` }} />
-                            </div>
-                            <span className="text-[length:2.5svmin] opacity-80 text-[#333]">
-                                {range.completedInRange}/{range.total}
-                            </span>
                         </button>
                     ))}
                 </div>
@@ -100,7 +90,7 @@ export default function SelectStage() {
                             ref={(el) => {
                                 if (el) stageButtonRefs.current[k + 1] = el.firstChild as HTMLAnchorElement;
                             }}>
-                            <StageButton i={k + 1} isCompleted={user?.completedStageIds.includes(k + 1) || false} title={t(STAGES[k + 1].title as TranslatableString)} difficulty={STAGES[k + 1].difficulty} />
+                            <StageButton i={k + 1} isCompleted={false} title={t(STAGES[k + 1].title as TranslatableString)} difficulty={STAGES[k + 1].difficulty} />
                         </div>
                     ))}
                 </div>

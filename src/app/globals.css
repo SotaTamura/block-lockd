@@ -110,7 +110,7 @@
             background 0.1s;
     }
     .arrow.pressed,
-    .btn:not(.arrow):not(.completedBtn, .dangerBtn):active {
+    .btn:not(.arrow):not(.completedBtn, .dangerBtn, .yellowBtn):active {
         background: linear-gradient(145deg, #cccccc, #888888);
         transform: translateY(6px);
         box-shadow:
@@ -157,6 +157,25 @@
             0 0 0 #500,
             0 2px 4px rgba(0, 0, 0, 0.4),
             inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .yellowBtn {
+        background: linear-gradient(145deg, #ffd700, #ffa500);
+        border: 2px solid #b8860b;
+        box-shadow:
+            0 6px 0 #8b6914,
+            0 8px 15px rgba(0, 0, 0, 0.4),
+            inset 0 2px 0 rgba(255, 255, 255, 0.4);
+    }
+    .yellowBtn:active {
+        background: linear-gradient(145deg, #ffcc00, #ff8c00);
+        transform: translateY(6px);
+        box-shadow:
+            0 0 0 #8b6914,
+            0 2px 4px rgba(0, 0, 0, 0.4),
+            inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .yellowBtn div {
+        color: #000;
     }
     .miniBtn {
         background: linear-gradient(145deg, #cccccc, #999999);

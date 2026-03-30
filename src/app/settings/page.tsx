@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth, usePopup, useSettings } from "../context";
-import { Checkbox, LeftSvg, VolumeSvg, MuteSvg, UpSvg, DownSvg, Loading } from "../components";
+import { usePopup, useSettings } from "../context";
+import { Checkbox, LeftSvg, VolumeSvg, MuteSvg, UpSvg, DownSvg } from "../components";
 import { TranslatableString, translate } from "../translate";
 import { Language } from "@/constants";
 import { ReactNode, useState } from "react";
@@ -21,41 +21,14 @@ function SettingsSection({ title, children }: { title: ReactNode; children: Reac
 }
 
 export default function Settings() {
-    const { user, logout, changeData, signinBySession } = useAuth();
-    const { showAlert, showConfirm } = usePopup();
     const { settings, setLang, setBgm, setSfx, setFont } = useSettings();
     const { lang, bgm, sfx, font } = settings;
+    const { showConfirm } = usePopup();
     const t = (str: TranslatableString) => translate(str, lang);
-    const [name, setName] = useState(user?.name || "");
-    const [isProcessing, setIsProcessing] = useState(false);
     const router = useRouter();
-
-    const handleDeleteData = () => {
-        showConfirm(t("本当にデータを削除しますか？"), async () => {
-            setIsProcessing(true);
-            await logout();
-            setIsProcessing(false);
-            router.push("/");
-        });
-    };
-
-    const handleUpdateName = async () => {
-        if (!name) {
-            showAlert(t("ニックネームを入力してください"));
-            return;
-        }
-        setIsProcessing(true);
-        if (user?.id === "guest") {
-            await signinBySession(name);
-        } else {
-            await changeData({ name });
-        }
-        setIsProcessing(false);
-    };
 
     return (
         <div className="h-full flex flex-col">
-            {isProcessing && <Loading />}
             <div className="btn back" onClick={router.back}>
                 <LeftSvg />
             </div>
@@ -70,35 +43,21 @@ export default function Settings() {
                     <h1 className="font-bold text-center border-b-2 border-[#444] mb-4 pb-2 text-[#222] drop-shadow-sm" style={{ fontSize: "9dvmin" }}>
                         {t("設定")}
                     </h1>
-                    {user && (
-                        <SettingsSection title={<span className="text-[#333]">{t("ユーザー情報")}</span>}>
-                            <div className="flex flex-col gap-6 py-4 w-full">
-                                <div className="flex flex-col gap-2 w-full">
-                                    <label className="text-left font-bold text-[#444]" style={{ fontSize: "4dvmin" }}>
-                                        {t("ニックネームを入力してください")}
-                                    </label>
-                                    <div className="flex gap-2 w-full">
-                                        <input
-                                            type="text"
-                                            className="grow min-w-0 px-4 py-2 text-black border-2 border-[#555] bg-white/90 shadow-inner focus:outline-none focus:border-black"
-                                            style={{ fontSize: "5dvmin" }}
-                                            placeholder={t("ニックネームを入力してください")}
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                        />
-                                        <button onClick={handleUpdateName} className="miniBtn px-4 py-2 font-bold shrink-0" style={{ fontSize: "4dvmin" }}>
-                                            {user.id === "guest" ? t("スタート") : t("更新する")}
-                                        </button>
-                                    </div>
-                                </div>
-                                {user.id !== "guest" && (
-                                    <button className="dangerBtn w-full font-bold text-white transition-all" style={{ padding: "2.5dvmin", fontSize: "5dvmin", marginTop: "2dvmin" }} onClick={handleDeleteData}>
-                                        {t("データ削除")}
-                                    </button>
-                                )}
-                            </div>
-                        </SettingsSection>
-                    )}
+                    <button
+                        className="btn yellowBtn w-full py-3 px-4 text-center font-bold text-black"
+                        style={{ fontSize: "5dvmin" }}
+                        onClick={() =>
+                            showConfirm(
+                                <div className="text-center">
+                                    <p>{t("フル版へ移動しますか？(完全無料)")}</p>
+                                </div>,
+                                () => {
+                                    window.location.href = "https://cube-escape.vercel.app";
+                                },
+                            )
+                        }>
+                        {t("フル版へ移動 >>>")}
+                    </button>
                     <SettingsSection title={<span className="text-[#333]">{t("オーディオ")}</span>}>
                         <div className="flex flex-col gap-2 py-2">
                             <button onClick={() => setBgm(!bgm, "/menu.mp3")} className="flex items-center cursor-pointer bg-black/5 hover:bg-black/15 p-3 w-full text-left gap-3 transition-colors border border-black/10">

@@ -151,6 +151,8 @@ const TRANSLATOR_MAP_ENTRIES = [
     ["駐車場", { us: "Parking Lot", gb: "Car Park", cn: "停车场", tw: "停車場" }],
     ["高速道路", { us: "Highway", gb: "Motorway", cn: "高速公路", tw: "高速公路" }],
     ["柱", { us: "Pillar", gb: "Pillar", cn: "柱子", tw: "柱子" }],
+    ["フル版へ移動しますか？(完全無料)", { us: "Go to the full version? (Completely free)", gb: "Go to the full version? (Completely free)", cn: "前往完整版？(完全免费)", tw: "前往完整版？(完全免費)" }],
+    ["フル版へ移動 >>>", { us: "Go to Full Version >>>", gb: "Go to Full Version >>>", cn: "前往完整版 >>>", tw: "前往完整版 >>>" }],
 ] as const;
 
 export type TranslatableString = (typeof TRANSLATOR_MAP_ENTRIES)[number][0];

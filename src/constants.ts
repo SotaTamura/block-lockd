@@ -1,5 +1,3 @@
-import type { Stage, User } from "@/generated/prisma";
-
 // 定数
 export const π = Math.PI;
 export const ε = 1e-4;
@@ -24,13 +22,6 @@ export const TERMINAL_V = 45;
 export const CORNER_CORRECT = 12;
 
 // 型
-export type StageType = Stage & {
-    creatorId: string;
-    creatorName: string;
-};
-export type UserType = User & {
-    completedOnlineStageIds: number[];
-};
 export type SettingsType = {
     lang: Language;
     bgm: boolean;
