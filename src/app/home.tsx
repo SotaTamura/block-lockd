@@ -83,21 +83,21 @@ export default function Home({ id }: { id: string | undefined }) {
 
     return (
         <>
-            <div className="bg-amber-400 text-3xl font-bold border-4 border-double border-black text-center p-10">
-                <div className="text-black">Unityに移行しました！</div>
-                <div>
-                    <a className="text-blue-500 underline" href="https://unityroom.com/games/block-lockd">
-                        https://unityroom.com/games/block-lockd
-                    </a>
-                </div>
-                <div>
-                    Xフォローお願いします:{" "}
-                    <a className="text-blue-500 underline" href="https://x.com/appleS000da2">
-                        https://x.com/appleS000da2
-                    </a>
-                </div>
-            </div>
             <div className="h-full overflow-y-auto pb-10 relative">
+                <div className="bg-amber-400 text-xl font-bold border-4 border-double border-black text-center p-10">
+                    <div className="text-black">Unityに移行しました！</div>
+                    <div>
+                        <a className="text-blue-500 underline" href="https://unityroom.com/games/block-lockd">
+                            https://unityroom.com/games/block-lockd
+                        </a>
+                    </div>
+                    <div className="text-black">
+                        X:{" "}
+                        <a className="text-blue-500 underline" href="https://x.com/appleS000da2">
+                            https://x.com/appleS000da2
+                        </a>
+                    </div>
+                </div>
                 <div className="loginBtn">
                     <p>{user?.name || t("ゲスト")}</p>
                 </div>
