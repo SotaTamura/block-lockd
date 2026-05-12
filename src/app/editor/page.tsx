@@ -3,11 +3,13 @@
 import { useAuth, usePopup, useSettings, useStage } from "@/app/context";
 import { StageType } from "@/constants";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { LeftSvg, PencilSvg, PlayButton } from "../components";
+import { LeftSvg, MagnifyingGlassSvg, PencilSvg, PlayButton } from "../components";
 import { playBgm } from "@/game/base";
 import { TranslatableString, translate } from "../translate";
+
+const PAGE_SIZE = 10;
 
 export default function MyLobby() {
     const router = useRouter();
@@ -15,10 +17,36 @@ export default function MyLobby() {
     const { showAlert } = usePopup();
     const { stages, setStages } = useStage();
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [offset, setOffset] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [searchInput, setSearchInput] = useState("");
+    const [searchedQuery, setSearchedQuery] = useState("");
     const {
         settings: { lang },
     } = useSettings();
     const t = (str: TranslatableString) => translate(str, lang);
+
+    const fetchStages = useCallback(
+        async (userId: string, nextOffset: number, append: boolean, query: string) => {
+            // project://src/app/api/stage/user/[id]/route.ts
+            const params = new URLSearchParams({
+                limit: String(PAGE_SIZE),
+                offset: String(nextOffset),
+            });
+            if (query) params.set("query", query);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/user/${userId}?${params.toString()}`, {
+                cache: "no-store",
+            });
+            if (!res.ok) throw new Error("Failed to fetch stages.");
+            const data = await res.json();
+            const fetchedStages = data.stages || [];
+            setStages((prev) => (append ? [...prev, ...fetchedStages] : fetchedStages));
+            setOffset(nextOffset + fetchedStages.length);
+            setHasMore(Boolean(data.hasMore));
+        },
+        [setStages],
+    );
 
     useEffect(() => {
         playBgm("/menu.mp3");
@@ -28,20 +56,46 @@ export default function MyLobby() {
             (async () => {
                 setIsLoading(true);
                 try {
-                    // project://src/app/api/stage/user/[id]/route.ts
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/user/${user.id}`, {
-                        cache: "no-store",
-                    });
-                    if (!res.ok) setStages([]);
-                    setStages(((await res.json()).stages || []).reverse());
+                    setOffset(0);
+                    setHasMore(true);
+                    await fetchStages(user.id, 0, false, "");
                 } catch (error) {
                     showAlert(String(error));
                     setStages([]);
+                    setHasMore(false);
                 }
                 setIsLoading(false);
             })();
         }
-    }, [user, router, setStages, showAlert]);
+    }, [fetchStages, user, router, setStages, showAlert]);
+
+    const handleLoadMore = async () => {
+        if (!user || isLoading || isLoadingMore || !hasMore) return;
+        setIsLoadingMore(true);
+        try {
+            await fetchStages(user.id, offset, true, searchedQuery);
+        } catch (error) {
+            showAlert(String(error));
+        }
+        setIsLoadingMore(false);
+    };
+
+    const handleSearch = async () => {
+        if (!user || isLoading || isLoadingMore) return;
+        const query = searchInput.trim();
+        setSearchedQuery(query);
+        setIsLoading(true);
+        try {
+            setOffset(0);
+            setHasMore(true);
+            await fetchStages(user.id, 0, false, query);
+        } catch (error) {
+            showAlert(String(error));
+            setStages([]);
+            setHasMore(false);
+        }
+        setIsLoading(false);
+    };
 
     return (
         <main className="editor-layout text-center">
@@ -55,10 +109,18 @@ export default function MyLobby() {
                 <h1 className="text-[length:10dvmin]">{t("マイステージ")}</h1>
             </div>
 
-            <div className="[grid-area:new-link] flex justify-center items-center">
-                <Link href={"/editor/add"} className="completedBtn w-[10dvmin] h-[10dvmin]">
-                    <div className="text-[length:8dvmin] leading-[8dvmin]">+</div>
-                </Link>
+            <div className="[grid-area:new-link] flex flex-col justify-center px-4">
+                <div className="w-svw flex justify-center items-center gap-2">
+                    <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-[70%] max-w-120 px-4 py-2 bg-white text-black border-2 border-gray-600 focus:outline-none focus:border-gray-500 text-[16px]" />
+                    <button onClick={handleSearch} disabled={isLoading || isLoadingMore} className="btn w-[20%] max-w-50 h-12 text-black text-2xl">
+                        <MagnifyingGlassSvg />
+                    </button>
+                </div>
+                <div className="flex justify-center items-center">
+                    <Link href={"/editor/add"} className="completedBtn w-[8dvmin] h-[8dvmin] z-1">
+                        <div className="text-[length:7dvmin] leading-[7dvmin]">+</div>
+                    </Link>
+                </div>
             </div>
 
             <div className="[grid-area:list] bg-[#333] overflow-y-auto py-[2dvmin]">
@@ -81,6 +143,11 @@ export default function MyLobby() {
                                 </div>
                             </div>
                         ))
+                    )}
+                    {!isLoading && hasMore && (
+                        <button disabled={isLoadingMore} onClick={handleLoadMore} className="btn w-[40%] h-[12dvmin] text-[length:5dvmin] text-black">
+                            {isLoadingMore ? "Loading..." : t("さらに読み込む")}
+                        </button>
                     )}
                 </div>
             </div>

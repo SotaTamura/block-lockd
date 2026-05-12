@@ -2,7 +2,7 @@
 
 import { useAuth, usePopup, useSettings } from "@/app/context";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowButton, BucketSvg, Checkbox, CheckSvg, EraserSvg, LeftSvg, MoveSvg, PencilSvg, ResizeSvg, RestartSvg, RestartSvgWhite, RotateRightSvg, Toggle, TrashSvg } from "@/app/components";
 import { Direction, MAP_BLOCK_LEN, RESOLUTION, UNIT, colorMap, π, StageType, convertBase, parseBase, PROPS_LEN } from "@/constants";
 import { loadStage, update } from "@/game/main";
@@ -50,13 +50,25 @@ const toolMap: Record<string, EditorTool> = {
     c: "color",
     r: "rotate",
 };
+const COLORABLES = ["block", "block_deactivated", "key", "oneway", "lever_off", "button_off", "moveblock_off", "moveblock_on"];
+const ROTATABLES = ["ladder", "oneway", "portal_front0", "lever_off", "button_off", "moveblock_off", "moveblock_on"];
+const cursorOf = (tool: EditorTool, texture: TextureName): Cursor => {
+    if (tool === "move") {
+        return "move";
+    } else if (tool === "pencil") {
+        return "crosshair";
+    } else if ((tool === "color" && !COLORABLES.includes(texture)) || (tool === "rotate" && !ROTATABLES.includes(texture))) {
+        return "not-allowed";
+    }
+    return "pointer";
+};
 export class EditorObj {
     gid: number;
     x: number;
     y: number;
     w: number;
     h: number;
-    ang: Direction;
+    dir: Direction;
     color: number;
     tag: string;
     sprite: Sprite;
@@ -69,7 +81,7 @@ export class EditorObj {
         y: number,
         w: number,
         h: number,
-        ang: Direction,
+        dir: Direction,
         color: number,
         tag: string,
         onContainerClick: (e: FederatedPointerEvent, obj: EditorObj) => void,
@@ -82,33 +94,22 @@ export class EditorObj {
         this.y = y;
         this.w = w;
         this.h = h;
-        this.ang = ang;
+        this.dir = dir;
         this.color = color;
         this.tag = tag;
         this.sprite = new Sprite({
-            texture: getRotatedTexture(nameStateMap[gid].name, nameStateMap[gid].state, 0, ang) as Texture,
+            texture: getRotatedTexture(nameStateMap[gid].name, nameStateMap[gid].state, 0, dir) as Texture,
             x: 0,
             y: 0,
             width: w * UNIT,
             height: h * UNIT,
             tint: colorMap[color],
         });
-        let initialCursor: Cursor = "pointer";
-        if (currentSelectedTool === "move") {
-            initialCursor = "move";
-        } else if (currentSelectedTool === "pencil") {
-            initialCursor = "crosshair";
-        } else if (
-            (currentSelectedTool === "color" && !["block", "block_deactivated", "key", "oneway", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[gid])) ||
-            (currentSelectedTool === "rotate" && !["oneway", "portal_front0", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[gid]))
-        ) {
-            initialCursor = "not-allowed";
-        }
         this.container = new Container({
             x: x * UNIT,
             y: y * UNIT,
             eventMode: "static",
-            cursor: initialCursor,
+            cursor: cursorOf(currentSelectedTool, textureMap[gid]),
             hitArea: new Rectangle(0, 0, w * UNIT, h * UNIT),
             onpointerdown: (e) => {
                 onContainerClick(e, this);
@@ -157,6 +158,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     const { user } = useAuth();
     const { showAlert, showConfirm, showPopup, hidePopup } = usePopup();
     const appRef = useRef<Application | null>(null);
+    const isSubmittingRef = useRef(false);
     const cnvWrapperRef = useRef<HTMLDivElement>(null);
     const [cnvSize, setCnvSize] = useState(0);
     const gameLoopId = useRef<number | null>(null);
@@ -309,18 +311,18 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             clearResizeDot();
             obj.resizeDot.visible = true;
         } else if (selectedTool === "color") {
-            if (["block", "block_deactivated", "key", "oneway", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[obj.gid])) {
+            if (COLORABLES.includes(textureMap[obj.gid])) {
                 obj.sprite.tint = colorMap[selectedColor] || "#ffffff";
                 obj.color = selectedColor;
             }
         } else if (selectedTool === "rotate") {
-            if (["oneway", "portal_front0", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[obj.gid])) {
+            if (ROTATABLES.includes(textureMap[obj.gid])) {
                 const rotateObj = (obj: EditorObj) => {
                     obj.sprite.texture = getRotatedTexture(nameStateMap[obj.gid].name, nameStateMap[obj.gid].state, (obj.container.children[0] as Sprite).texture.rotate, 90) as Texture;
-                    if (obj.ang === "u") obj.ang = "r";
-                    else if (obj.ang === "r") obj.ang = "d";
-                    else if (obj.ang === "d") obj.ang = "l";
-                    else if (obj.ang === "l") obj.ang = "u";
+                    if (obj.dir === "u") obj.dir = "r";
+                    else if (obj.dir === "r") obj.dir = "d";
+                    else if (obj.dir === "d") obj.dir = "l";
+                    else if (obj.dir === "l") obj.dir = "u";
                 };
                 rotateObj(obj);
                 if (obj.counterpart) rotateObj(obj.counterpart);
@@ -342,7 +344,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         }
     };
 
-    const handleRestartTest = () => {
+    const handleRestartTest = useCallback(() => {
         if (!appRef.current) return;
         const $debug = document.getElementById("debug") as HTMLCanvasElement;
         if ($debug) {
@@ -352,7 +354,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         glitch(appRef.current, 300);
         playSfx("/restart.mp3", null);
         setTimeout(() => setRestarter((prev) => prev + 1), 300);
-    };
+    }, []);
 
     // Init App
     useEffect(() => {
@@ -375,7 +377,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                             propStrs[i] = propStr;
                         }
                     }
-                    const [gid, x, y, w, h, ang, color, tag] = [
+                    const [gid, x, y, w, h, dir, color, tag] = [
                         Number(propStrs[0]),
                         Number(propStrs[1]),
                         Number(propStrs[2] || 1),
@@ -385,7 +387,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                         Number(propStrs[6] || 0),
                         propStrs[7] || "",
                     ];
-                    return new EditorObj(gid, x, y, w, h, ang, color, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
+                    return new EditorObj(gid, x, y, w, h, dir, color, tag, handleContainerClick, handleContainerHover, handleResizeDotClick, selectedTool);
                 });
             const portals = loadedObjs.filter((o) => o.tag);
             portals.forEach((p) => (p.counterpart = loadedObjs.find((p2) => p2.tag === p.tag && p2 !== p)));
@@ -398,11 +400,6 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             clearResizeDot();
         };
         document.addEventListener("keydown", switchToolByKey);
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "r" || e.key === "R") handleRestartTest();
-        };
-        document.addEventListener("keydown", handleKeyDown);
 
         const $wrapper = cnvWrapperRef.current;
         if (!$wrapper) return;
@@ -431,7 +428,6 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
         })();
         return () => {
             document.removeEventListener("keydown", switchToolByKey);
-            document.removeEventListener("keydown", handleKeyDown);
             const currentApp = appRef.current;
             if (currentApp) {
                 currentApp.destroy(true, { children: true, texture: false, textureSource: false });
@@ -440,6 +436,20 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
             $debug?.remove();
         };
     }, []);
+
+    // R key handler for restart
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (tab === "test" && (e.key === "r" || e.key === "R")) {
+                e.preventDefault();
+                handleRestartTest();
+            }
+        };
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [tab, handleRestartTest]);
 
     // Scene manager
     useEffect(() => {
@@ -482,28 +492,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 }
             }
             editorObjs.forEach((o) => {
-                // Update cursors based on tool
-                if (selectedTool === "move") {
-                    o.container.cursor = "move";
-                } else if (selectedTool === "pencil") {
-                    o.container.cursor = "crosshair";
-                } else if (selectedTool === "color") {
-                    if (["block", "block_deactivated", "key", "oneway", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[o.gid])) {
-                        o.container.cursor = "pointer";
-                    } else {
-                        o.container.cursor = "not-allowed";
-                    }
-                } else if (selectedTool === "rotate") {
-                    if (["oneway", "portal_front0", "lever_off", "button_off", "moveblock_off", "moveblock_on"].includes(textureMap[o.gid])) {
-                        o.container.cursor = "pointer";
-                    } else {
-                        o.container.cursor = "not-allowed";
-                    }
-                } else {
-                    o.container.cursor = "pointer";
-                }
-
-                // Refresh handlers
+                o.container.cursor = cursorOf(selectedTool, textureMap[o.gid]);
                 o.container.onpointerdown = (e) => handleContainerClick(e, o);
                 o.container.onpointerover = () => handleContainerHover(o);
                 o.resizeDot.onpointerdown = () => handleResizeDotClick(o);
@@ -602,35 +591,42 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
     }, []);
 
     const performSubmit = async (newData: { title: string; description: string; code: string; access: number }) => {
+        if (isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
         setIsLoading(true);
-        if (initData) {
-            // project://src/app/api/stage/[id]/route.ts
-            await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/${initData.id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: initData.id, ...newData }),
-            });
-        } else {
-            //project://src/app/api/stage/route.ts
-            await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ creatorId: user!.id, ...newData }),
-            });
+        try {
+            if (initData) {
+                // project://src/app/api/stage/[id]/route.ts
+                await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage/${initData.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: initData.id, ...newData }),
+                });
+            } else {
+                //project://src/app/api/stage/route.ts
+                await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stage`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ creatorId: user!.id, ...newData }),
+                });
+            }
+            router.back();
+        } finally {
+            setIsLoading(false);
+            isSubmittingRef.current = false;
         }
-        setIsLoading(false);
-        router.back();
     };
 
     const handleSubmit = async (e: React.FormEvent, checkChange: boolean) => {
         e.preventDefault();
+        if (isSubmittingRef.current) return;
         if (!user) {
             router.push("/");
         } else {
             const code = gzipSync(
                 editorObjs
                     .map((o) => {
-                        const props = [o.gid, o.x, o.y, o.w === 1 ? null : o.w, o.h === 1 ? null : o.h, o.ang === "u" ? null : ["u", "r", "d", "l"].indexOf(o.ang), o.color === 0 ? null : o.color, o.tag === "" ? null : o.tag];
+                        const props = [o.gid, o.x, o.y, o.w === 1 ? null : o.w, o.h === 1 ? null : o.h, o.dir === "u" ? null : ["u", "r", "d", "l"].indexOf(o.dir), o.color === 0 ? null : o.color, o.tag === "" ? null : o.tag];
                         let mask = 0;
                         const maskedProps: (string | number)[] = [];
                         for (let i = 0; i < props.length; i++) {
@@ -691,6 +687,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                 <div
                     className="btn back w-[25%] h-15"
                     onClick={(e) => {
+                        if (isSubmittingRef.current) return;
                         if (tab !== "overview") {
                             setTab("overview");
                         } else {
@@ -752,7 +749,7 @@ export default function StageEditor({ initData }: { initData?: StageType }) {
                     </div>
                     {access === 2 && <div>{t("ステージを公開するには、ステージをクリアしてください。")}</div>}
                     <div className="flex flex-row gap-1">
-                        <button className="btn completedBtn font-semibold px-4 py-2 shadow-xl bg-slate-200 m-auto hover:bg-slate-100 text-gray-800 w-[10svh] max-w-md">
+                        <button disabled={isLoading} className="btn completedBtn font-semibold px-4 py-2 shadow-xl bg-slate-200 m-auto hover:bg-slate-100 text-gray-800 w-[10svh] max-w-md">
                             <CheckSvg />
                         </button>
                         {initData && (

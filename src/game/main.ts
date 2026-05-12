@@ -127,7 +127,7 @@ export const loadStage = async (data: string | EditorObj[], app: Application, sk
         for (const obj of data) {
             const create = objCreator[obj.gid];
             if (!create) throw new Error(`unknown gid ${obj.gid}`);
-            const newObj = create(obj.x, obj.y, obj.w, obj.h, obj.ang as Direction, obj.color, obj.tag);
+            const newObj = create(obj.x, obj.y, obj.w, obj.h, obj.dir as Direction, obj.color, obj.tag);
             gameObjs.push(newObj);
             setSprite(newObj, app);
         }

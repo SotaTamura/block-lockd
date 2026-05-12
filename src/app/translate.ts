@@ -57,6 +57,7 @@ const TRANSLATOR_MAP_ENTRIES = [
     ["オンラインステージ", { us: "Online Stages", gb: "Online Stages", cn: "在线关卡", tw: "線上關卡" }],
     ["クリア済ステージのみ表示", { us: "Show completed stages only", gb: "Show completed stages only", cn: "仅显示已通关关卡", tw: "僅顯示已通關關卡" }],
     ["ステージを選択", { us: "Select a Stage", gb: "Select a Stage", cn: "选择关卡", tw: "選擇關卡" }],
+    ["さらに読み込む", { us: "Load more", gb: "Load more", cn: "进一步读取", tw: "進一步匯入" }],
     [
         "矢印キーで左右移動・ジャンプ\n上下キーでハシゴを上り下りできる\nステージの外へ脱出しよう",
         {
