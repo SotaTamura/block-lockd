@@ -23,6 +23,12 @@ export const MOVE_BLOCK_SPEED = 4;
 export const TERMINAL_V = 45;
 export const CORNER_CORRECT = 12;
 
+export const MAX_GRID_DIVISION = 32;
+export const MASK_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
+export const TAG_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+export const BASE128_ALPHABET =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ΓΔΘΛΞΠΣΦΨΩβδεζηθκλμξπτφχψωБГДЖИЛПФЦЧШЩЪЫЭЮЯвджзиклмнптфцчшщъыьэюя_";
+
 // 型
 export type StageType = Stage & {
     creatorId: string;
@@ -86,4 +92,160 @@ export const parseBase = (r: string, chars: string) => {
         m = m * n + v;
     }
     return m;
+};
+
+export const leastBitsForSize = (pos: number) => {
+    const maxSz = MAX_GRID_DIVISION - pos;
+    if (maxSz <= 1) return 0;
+    return Math.floor(Math.log2(maxSz - 1)) + 1;
+};
+
+export const toBinary = (value: number, bits: number) => {
+    if (bits === 0) return "";
+    return Math.floor(value).toString(2).padStart(bits, "0");
+};
+
+export const transformCode = async (oldCode: string): Promise<string> => {
+    // 1. Decompress old data
+    const binary = atob(oldCode);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+    const decompressedData = await new Response(stream).text();
+
+    // 2. Parse and Translate Coordinates
+    const objects: any[] = [];
+    for (const entry of decompressedData.split(";")) {
+        if (!entry) continue;
+        const [maskStr, propsStr] = entry.split(":");
+        const mask = parseBase(maskStr, MASK_ALPHABET);
+        const props = propsStr.split(",");
+
+        const fullProps: (string | null)[] = Array(8).fill(null);
+        let idx = 0;
+        for (let i = 0; i < 8; i++) {
+            if (mask & (1 << i)) {
+                fullProps[i] = props[idx];
+                idx++;
+            }
+        }
+
+        const gid = parseInt(fullProps[0] || "0");
+        const xScaled = Math.round(parseFloat(fullProps[1] || "0") * 2);
+        const yScaled = Math.round(parseFloat(fullProps[2] || "0") * 2);
+        const wNew = Math.round(parseFloat(fullProps[3] || "1") * 2);
+        const hNew = Math.round(parseFloat(fullProps[4] || "1") * 2);
+
+        const yNew = 32 - yScaled - hNew;
+        const angNew = parseInt(fullProps[5] || "0");
+
+        let wStored = wNew;
+        const hStored = hNew;
+
+        if (gid === 6) {
+            // oneway
+            if (angNew === 1 || angNew === 3) {
+                wStored = hNew;
+            } else {
+                wStored = wNew;
+            }
+        }
+
+        objects.push({
+            gid,
+            x: xScaled,
+            y: yNew,
+            w: wStored,
+            h: hStored,
+            ang: angNew,
+            color: parseInt(fullProps[6] || "0"),
+            tag: fullProps[7] || "",
+        });
+    }
+
+    // 3. Handle Portals
+    const portals = objects.filter((o) => o.gid === 7);
+    const others = objects.filter((o) => o.gid !== 7);
+
+    const portalPairs: Record<string, any[]> = {};
+    for (const p of portals) {
+        if (!portalPairs[p.tag]) portalPairs[p.tag] = [];
+        portalPairs[p.tag].push(p);
+    }
+
+    const mergedData = [...others];
+    for (const tag of Object.keys(portalPairs).sort()) {
+        const pair = portalPairs[tag];
+        if (pair.length < 2) continue;
+        let p1 = pair[0];
+        let p2 = pair[1];
+        if (p1.ang === 1 || p1.ang === 2) {
+            [p1, p2] = [p2, p1];
+        }
+
+        const axis = p1.ang % 2 === 0 ? 1 : 0;
+
+        mergedData.push({
+            gid: 7,
+            x: Math.round(p1.x),
+            y: Math.round(p1.y),
+            w: p1.w,
+            h: p1.h,
+            axis,
+            pairX: Math.round(p2.x),
+            pairY: Math.round(p2.y),
+            color: p1.color,
+            tag,
+        });
+    }
+
+    // 4. Sort and Build Bitstream
+    mergedData.sort((a, b) => a.color - b.color);
+
+    let binaryStr = "";
+    let currentColor = 0;
+    for (const obj of mergedData) {
+        while (currentColor < obj.color) {
+            binaryStr += "00000"; // next color marker
+            currentColor++;
+        }
+
+        const gid = obj.gid;
+        binaryStr += toBinary(gid, 5);
+        binaryStr += toBinary(obj.x, 5);
+        binaryStr += toBinary(obj.y, 5);
+
+        if (gid === 6) {
+            // oneway
+            binaryStr += toBinary(obj.ang, 2);
+            binaryStr += toBinary(obj.w - 1, leastBitsForSize(obj.ang % 2 === 0 ? obj.x : obj.y));
+        } else if (gid === 7) {
+            // portal
+            binaryStr += toBinary(obj.w - 1, leastBitsForSize(obj.x));
+            binaryStr += toBinary(obj.h - 1, leastBitsForSize(obj.y));
+            binaryStr += toBinary(obj.axis, 1);
+            binaryStr += toBinary(obj.pairX, 5);
+            binaryStr += toBinary(obj.pairY, 5);
+        } else if ([8, 10, 11, 12].includes(gid)) {
+            // rotateables
+            binaryStr += toBinary(obj.w - 1, leastBitsForSize(obj.x));
+            binaryStr += toBinary(obj.h - 1, leastBitsForSize(obj.y));
+            binaryStr += toBinary(obj.ang, 2);
+        } else {
+            binaryStr += toBinary(obj.w - 1, leastBitsForSize(obj.x));
+            binaryStr += toBinary(obj.h - 1, leastBitsForSize(obj.y));
+        }
+    }
+
+    // 5. Base128 Encode
+    let result = "";
+    for (let i = 0; i < binaryStr.length; i += 7) {
+        const chunk = binaryStr.substring(i, i + 7).padEnd(7, "0");
+        const val = parseInt(chunk, 2);
+        result += BASE128_ALPHABET[val];
+    }
+
+    return result;
 };
