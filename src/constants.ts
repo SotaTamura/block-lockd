@@ -223,6 +223,11 @@ export const transformCode = async (oldCode: string): Promise<string> => {
             currentColor++;
         }
 
+        // skip when the object is outside the grid
+        if (obj.x < 0 || obj.x + obj.w > MAX_GRID_DIVISION || obj.y < 0 || obj.y + obj.h > MAX_GRID_DIVISION) {
+            continue;
+        }
+
         const gid = obj.gid;
         binaryStr += toBinary(gid, 5);
         binaryStr += toBinary(obj.x, 5);
