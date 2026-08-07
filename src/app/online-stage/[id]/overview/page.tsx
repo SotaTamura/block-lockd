@@ -1,11 +1,10 @@
 "use client";
 
-import { RightSvg, LeftSvg, Loading } from "@/app/components";
+import { LeftSvg, Loading } from "@/app/components";
 import { useSettings } from "@/app/context";
 import { TranslatableString, translate } from "@/app/translate";
-import { StageType, transformCode } from "@/constants";
+import { StageType } from "@/constants";
 import { playBgm } from "@/game/base";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 
@@ -13,7 +12,6 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
     const id = Number(use(params).id);
     const router = useRouter();
     const [stage, setStage] = useState<StageType | null>(null);
-    const [transformedCode, setTransformedCode] = useState<string>("");
     const {
         settings: { lang },
     } = useSettings();
@@ -28,10 +26,6 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
                 if (res.ok) {
                     const data = await res.json();
                     setStage(data.stage);
-                    if (data.stage.code) {
-                        const code = await transformCode(data.stage.code);
-                        setTransformedCode(code);
-                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch stage:", error);
@@ -41,7 +35,7 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
     }, [id]);
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(transformedCode);
+        navigator.clipboard.writeText(stage?.code || "");
         alert(t("コピーしました"));
     };
 
@@ -66,23 +60,18 @@ export default function Overview({ params }: { params: Promise<{ id: number }> }
                 <p className="text-[#ccc] mb-[1dvmin]">
                     {t("更新")}: {stage?.updatedAt ? new Date(stage.updatedAt).toLocaleDateString() : ""}
                 </p>
-                <p className="whitespace-pre-wrap">{stage?.description}</p>
-            </div>
-            {transformedCode && (
-                <>
-                    <div className="text-2xl mt-20">{t("Unity用「おまじない」")}</div>
-                    <div className="flex justify-center items-center gap-[2dvmin] mt-[4dvmin]">
-                        <input className="bg-[#222] text-white px-[2dvmin] py-[1dvmin] rounded-[1dvmin] text-[length:3dvmin] w-[40dvmin] outline-none" value={transformedCode} readOnly />
-                        <div className="btn w-[12dvmin] h-[8dvmin] text-[length:3dvmin] flex justify-center items-center text-black" onClick={handleCopy}>
-                            Copy
+                {stage?.code && (
+                    <>
+                        <div className="text-2xl">{t("おまじない")}</div>
+                        <div className="flex justify-center items-center gap-[2dvmin] mt-[4dvmin]">
+                            <input className="bg-[#222] text-white px-[2dvmin] py-[1dvmin] rounded-[1dvmin] text-[length:3dvmin] w-[40dvmin] outline-none" value={stage.code} readOnly />
+                            <div className="btn w-[12dvmin] h-[8dvmin] text-[length:3dvmin] flex justify-center items-center text-black" onClick={handleCopy}>
+                                Copy
+                            </div>
                         </div>
-                    </div>
-                </>
-            )}
-            <div className="flex justify-center mt-[10dvmin]">
-                <Link href={`/online-stage/${id}/play`} className="btn w-[24dvmin] h-[18dvmin]">
-                    <RightSvg />
-                </Link>
+                    </>
+                )}
+                <p className="whitespace-pre-wrap">{stage?.description}</p>
             </div>
         </main>
     );

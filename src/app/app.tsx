@@ -1,19 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onLoad, BGM_PATHS } from "@/game/base";
-import { Loading, MuteSvg, Popup, VolumeSvg } from "./components";
+import { onLoad } from "@/game/base";
+import { Loading, Popup } from "./components";
 import { Language } from "@/constants";
 import { usePopup, useSettings } from "./context";
 import { useRouter, usePathname } from "next/navigation";
 
 export default function App({ children }: { children: React.ReactNode }) {
-    const { settings, setLang, setBgm, setSfx, setFont } = useSettings();
+    const { settings, setLang, setFont } = useSettings();
     const { popupData } = usePopup();
     const [isInitLoading, setIsInitLoading] = useState(true);
-    const [isAudioLoading, setIsAudioLoading] = useState(true);
-    const [isAudioSelected, setIsAudioSelected] = useState(false);
-    const [audioProgress, setAudioProgress] = useState<number>(0);
     const router = useRouter();
     const pathname = usePathname();
     const [isInitialLoadAtSubpath, setIsInitialLoadAtSubpath] = useState(pathname !== "/");
@@ -82,34 +79,7 @@ export default function App({ children }: { children: React.ReactNode }) {
     }, []);
     return (
         <div suppressHydrationWarning className="h-full w-full">
-            {isInitLoading || (isAudioLoading && isAudioSelected) ? <Loading percentage={audioProgress} /> : null}
-            {!isAudioSelected && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center w-full h-full bg-[#333]">
-                    <button
-                        className="cursor-pointer m-5 bg-blue-300 rounded-4xl p-5"
-                        onClick={async () => {
-                            setIsAudioSelected(true);
-                            setAudioProgress(0);
-                            await setBgm(true, "/menu.mp3", (loaded) => {
-                                setAudioProgress((loaded / BGM_PATHS.length) * 100);
-                            });
-                            await setSfx(true);
-                            setIsAudioLoading(false);
-                        }}>
-                        <VolumeSvg />
-                    </button>
-                    <button
-                        className="cursor-pointer m-5 bg-blue-300 rounded-4xl p-5"
-                        onClick={async () => {
-                            setIsAudioSelected(true);
-                            await setBgm(false);
-                            await setSfx(false);
-                            setIsAudioLoading(false);
-                        }}>
-                        <MuteSvg />
-                    </button>
-                </div>
-            )}
+            {isInitLoading ? <Loading /> : null}
             {popupData && (
                 <Popup onOk={popupData.onOk} onCancel={popupData.onCancel}>
                     {popupData.children}

@@ -5,7 +5,7 @@ import { StageType } from "@/constants";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { LeftSvg, MagnifyingGlassSvg, PencilSvg, PlayButton } from "../components";
+import { LeftSvg, MagnifyingGlassSvg, PlayButton } from "../components";
 import { playBgm } from "@/game/base";
 import { TranslatableString, translate } from "../translate";
 
@@ -116,11 +116,6 @@ export default function MyLobby() {
                         <MagnifyingGlassSvg />
                     </button>
                 </div>
-                <div className="flex justify-center items-center">
-                    <Link href={"/editor/add"} className="completedBtn w-[8dvmin] h-[8dvmin] z-1">
-                        <div className="text-[length:7dvmin] leading-[7dvmin]">+</div>
-                    </Link>
-                </div>
             </div>
 
             <div className="[grid-area:list] bg-[#333] overflow-y-auto py-[2dvmin]">
@@ -135,9 +130,6 @@ export default function MyLobby() {
                                         <h2 className="text-[length:5dvmin] font-semibold">{stage.title}</h2>
                                     </div>
                                     <div className="flex flex-row gap-2">
-                                        <Link href={`/editor/edit/${stage.id}`} className="btn text-[length:3dvmin] py-[1dvmin] px-[2dvmin] border-[3px]">
-                                            <PencilSvg />
-                                        </Link>
                                         <PlayButton i={stage.id} isCompleted={user?.completedOnlineStageIds.includes(stage.id) || false} />
                                     </div>
                                 </div>

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { createContext, useContext, useState, ReactNode, useCallback, useRef, useEffect, Dispatch, SetStateAction } from "react";
 import { StageType } from "@/constants";
 import { createClient } from "../../lib/supabase/client";
-import { bgmBuffers, BgmPath, loadAllBgm, loadAllSfx, playBgm, sfxBuffers, stopBgm } from "@/game/base";
 import { signInAnonymously } from "./auth/actions";
 
 const supabase = createClient();
@@ -267,43 +266,23 @@ export const useStage = () => {
 interface SettingsContextType {
     settings: SettingsType;
     setLang: (lang: Language) => void;
-    setBgm: (bgm: boolean, firstBgm?: BgmPath, onProgress?: (loaded: number, total: number) => void) => Promise<void>;
-    setSfx: (sfx: boolean, onProgress?: (loaded: number, total: number) => void) => Promise<void>;
     setFont: (font: boolean) => void;
 }
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
-    const [settings, setSettings] = useState<SettingsType>({ lang: "ja", bgm: true, sfx: true, font: true });
+    const [settings, setSettings] = useState<SettingsType>({ lang: "ja", font: true });
 
     const setLang = (lang: Language) => {
         setSettings((prev) => ({ ...prev, lang }));
         localStorage.setItem("la", lang);
-    };
-    const setBgm = async (bgm: boolean, firstBgm?: BgmPath, onProgress?: (loaded: number, total: number) => void) => {
-        setSettings((prev) => ({ ...prev, bgm }));
-        if (bgm && !bgmBuffers.size) {
-            await loadAllBgm(onProgress);
-            if (firstBgm) playBgm(firstBgm);
-        }
-        if (!bgm) {
-            stopBgm();
-            bgmBuffers.clear();
-        }
-    };
-    const setSfx = async (sfx: boolean) => {
-        setSettings((prev) => ({ ...prev, sfx }));
-        if (sfx && !sfxBuffers.size) await loadAllSfx();
-        if (!sfx) {
-            sfxBuffers.clear();
-        }
     };
     const setFont = (font: boolean) => {
         setSettings((prev) => ({ ...prev, font }));
         localStorage.setItem("font", String(Number(font)));
     };
 
-    return <SettingsContext.Provider value={{ settings, setLang, setBgm, setSfx, setFont }}>{children}</SettingsContext.Provider>;
+    return <SettingsContext.Provider value={{ settings, setLang, setFont }}>{children}</SettingsContext.Provider>;
 };
 
 export const useSettings = () => {

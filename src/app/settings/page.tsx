@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth, usePopup, useSettings } from "../context";
-import { Checkbox, LeftSvg, VolumeSvg, MuteSvg, UpSvg, DownSvg, Loading } from "../components";
+import { Checkbox, LeftSvg, UpSvg, DownSvg, Loading } from "../components";
 import { TranslatableString, translate } from "../translate";
 import { Language } from "@/constants";
 import { ReactNode, useState } from "react";
@@ -23,8 +23,8 @@ function SettingsSection({ title, children }: { title: ReactNode; children: Reac
 export default function Settings() {
     const { user, logout, changeData, signinBySession } = useAuth();
     const { showAlert, showConfirm } = usePopup();
-    const { settings, setLang, setBgm, setSfx, setFont } = useSettings();
-    const { lang, bgm, sfx, font } = settings;
+    const { settings, setLang, setFont } = useSettings();
+    const { lang, font } = settings;
     const t = (str: TranslatableString) => translate(str, lang);
     const [name, setName] = useState(user?.name || "");
     const [isProcessing, setIsProcessing] = useState(false);
@@ -99,22 +99,6 @@ export default function Settings() {
                             </div>
                         </SettingsSection>
                     )}
-                    <SettingsSection title={<span className="text-[#333]">{t("オーディオ")}</span>}>
-                        <div className="flex flex-col gap-2 py-2">
-                            <button onClick={() => setBgm(!bgm, "/menu.mp3")} className="flex items-center cursor-pointer bg-black/5 hover:bg-black/15 p-3 w-full text-left gap-3 transition-colors border border-black/10">
-                                <div className="text-[#333]">{bgm ? <VolumeSvg /> : <MuteSvg />}</div>
-                                <span className="text-[#222]" style={{ fontSize: "5dvmin" }}>
-                                    {t("音楽")}
-                                </span>
-                            </button>
-                            <button onClick={() => setSfx(!sfx)} className="flex items-center cursor-pointer bg-black/5 hover:bg-black/15 p-3 w-full text-left gap-3 transition-colors border border-black/10">
-                                <div className="text-[#333]">{sfx ? <VolumeSvg /> : <MuteSvg />}</div>
-                                <span className="text-[#222]" style={{ fontSize: "5dvmin" }}>
-                                    {t("効果音")}
-                                </span>
-                            </button>
-                        </div>
-                    </SettingsSection>
                     <SettingsSection title={<span className="text-[#333]">{t("言語")}</span>}>
                         <div className="flex flex-col gap-2 py-2">
                             {[

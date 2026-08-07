@@ -157,7 +157,7 @@ const TRANSLATOR_MAP_ENTRIES = [
     ["高速道路", { us: "Highway", gb: "Motorway", cn: "高速公路", tw: "高速公路" }],
     ["柱", { us: "Pillar", gb: "Pillar", cn: "柱子", tw: "柱子" }],
     ["コピーしました", { us: "Copied!", gb: "Copied!", cn: "已复制", tw: "已複製" }],
-    ["Unity用「おまじない」", { us: '"Magic Spell" for Unity', gb: '"Magic Spell" for Unity', cn: "Unity用“咒语”", tw: "Unity用“咒語”" }],
+    ["おまじない", { us: "Magic Spell", gb: "Magic Spell", cn: "咒语", tw: "咒語" }],
 ] as const;
 
 export type TranslatableString = (typeof TRANSLATOR_MAP_ENTRIES)[number][0];
