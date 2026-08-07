@@ -2,7 +2,6 @@ import { Application } from "pixi.js";
 import { Block, Button, GameObj, Key, Ladder, Lever, MoveBlock, Oneway, Player, Portal, PushBlock, Particle } from "./class";
 import { stateChangeTexture, clearPressStart, pressStartEvent, rotateTexture, setSprite, updateSprites, playSfx, drawDebug, stopSfx, showStage } from "./base";
 import { Direction, GRAVITY, JUMP_SPEED, parseBase, PROPS_LEN, opposite, TERMINAL_V, MOVE_BLOCK_SPEED, BLOCK_STRENGTH, MOVE_BLOCK_STRENGTH, PLAYER_STRENGTH, PUSH_BLOCK_STRENGTH } from "@/constants";
-import { EditorObj } from "@/app/editor/stageEditor";
 import { gunzipSync } from "zlib";
 import { isOverLapping, resolveCollisions, updateNextBlocks } from "./collision";
 
@@ -78,7 +77,7 @@ const objCreator: { [gid: number]: (...args: [x: number, y: number, w: number, h
     12: (x, y, w, h, ang, color) => new MoveBlock(x, y, w, h, ang, color, true),
 };
 // マップ作成
-export const loadStage = async (data: string | EditorObj[], app: Application, skipFadeIn: boolean) => {
+export const loadStage = async (data: string, app: Application, skipFadeIn: boolean) => {
     // 初期化
     gameObjs = [];
     players = [];
@@ -93,44 +92,34 @@ export const loadStage = async (data: string | EditorObj[], app: Application, sk
     moveBlocks = [];
     particles.forEach((p) => p.container.destroy());
     particles = [];
-    if (typeof data === "string") {
-        const splitCode = gunzipSync(Buffer.from(data, "base64")).toString("utf-8").split(";");
-        for (const obj of splitCode) {
-            const [base64Mask, joinedMaskedProps] = obj.split(":");
-            const mask = parseBase(base64Mask, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_");
-            const maskedProps = joinedMaskedProps.split(",");
-            let maskedPropIndex = 0;
-            const propStrs: (string | null)[] = new Array(PROPS_LEN).fill(null);
-            for (let i = 0; i < PROPS_LEN; i++) {
-                if (mask & (1 << i)) {
-                    const propStr = maskedProps[maskedPropIndex++];
-                    propStrs[i] = propStr;
-                }
+    const splitCode = gunzipSync(Buffer.from(data, "base64")).toString("utf-8").split(";");
+    for (const obj of splitCode) {
+        const [base64Mask, joinedMaskedProps] = obj.split(":");
+        const mask = parseBase(base64Mask, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_");
+        const maskedProps = joinedMaskedProps.split(",");
+        let maskedPropIndex = 0;
+        const propStrs: (string | null)[] = new Array(PROPS_LEN).fill(null);
+        for (let i = 0; i < PROPS_LEN; i++) {
+            if (mask & (1 << i)) {
+                const propStr = maskedProps[maskedPropIndex++];
+                propStrs[i] = propStr;
             }
-            const [gid, x, y, w, h, ang, color, tag] = [
-                Number(propStrs[0]),
-                Number(propStrs[1]),
-                Number(propStrs[2] || 1),
-                Number(propStrs[3] || 1),
-                Number(propStrs[4] || 1),
-                (["u", "r", "d", "l"] as Direction[])[Number(propStrs[5] || 0)],
-                Number(propStrs[6] || 0),
-                propStrs[7] || "",
-            ];
-            const create = objCreator[gid];
-            if (!create) throw new Error(`unknown gid ${gid}`);
-            const newObj = create(x, y, w, h, ang, color, tag);
-            gameObjs.push(newObj);
-            setSprite(newObj, app);
         }
-    } else {
-        for (const obj of data) {
-            const create = objCreator[obj.gid];
-            if (!create) throw new Error(`unknown gid ${obj.gid}`);
-            const newObj = create(obj.x, obj.y, obj.w, obj.h, obj.dir as Direction, obj.color, obj.tag);
-            gameObjs.push(newObj);
-            setSprite(newObj, app);
-        }
+        const [gid, x, y, w, h, ang, color, tag] = [
+            Number(propStrs[0]),
+            Number(propStrs[1]),
+            Number(propStrs[2] || 1),
+            Number(propStrs[3] || 1),
+            Number(propStrs[4] || 1),
+            (["u", "r", "d", "l"] as Direction[])[Number(propStrs[5] || 0)],
+            Number(propStrs[6] || 0),
+            propStrs[7] || "",
+        ];
+        const create = objCreator[gid];
+        if (!create) throw new Error(`unknown gid ${gid}`);
+        const newObj = create(x, y, w, h, ang, color, tag);
+        gameObjs.push(newObj);
+        setSprite(newObj, app);
     }
     players = gameObjs.filter((o) => o instanceof Player);
     blocks = gameObjs.filter((o) => o instanceof Block);
