@@ -1,451 +1,468 @@
 @import "tailwindcss";
 
-@font-face {
-    font-family: "Makinas";
-    src: url("../fonts/Makinas-4-Square.woff2");
-}
-
 @layer components {
-    * {
-        padding: 0;
-        margin: 0;
-        box-sizing: border-box;
-        user-select: none;
-        -moz-user-select: none;
-        -webkit-user-select: none;
-        color: #fff;
-    }
-    img {
-        pointer-events: none;
-        image-rendering: pixelated;
-    }
-    .btn,
-    .miniBtn,
-    img {
-        -webkit-touch-callout: none;
-        touch-action: none;
-    }
-    .stageWrapper {
-        touch-action: pan-y;
-    }
-    html,
-    body {
-        font-family: sans-serif;
-    }
-    .makinas-font {
-        font-family: "Makinas", sans-serif;
-    }
-    html,
-    body {
-        width: 100%;
-        height: 100%;
-    }
-    body {
-        position: relative;
-        text-align: center;
-        background:
-            repeating-linear-gradient(45deg, transparent, transparent 100px, rgba(0, 0, 0, 0.05) 100px, rgba(0, 0, 0, 0.05) 200px), repeating-linear-gradient(-45deg, transparent, transparent 100px, rgba(0, 0, 0, 0.05) 100px, rgba(0, 0, 0, 0.05) 200px),
-            radial-gradient(#aaa, #555);
-    }
-    .loadingTxt {
-        line-height: 100vh;
-        line-height: 100svh;
-        color: #f00;
-    }
-    .stageSelectScreen {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 60px 18svmin 25svmin 1fr;
-        grid-template-areas:
-            "back ...."
-            "txt txt"
-            "jump jump"
-            "stage stage";
-        width: 100%;
-        height: 100%;
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-        box-sizing: border-box;
-    }
-    .back {
-        width: 18svmin;
-        height: 12svmin;
-        grid-area: back;
-    }
-    .selectStageText {
-        grid-area: txt;
-    }
-    .jump {
-        grid-area: jump;
-    }
-    .stageWrapperContainer {
-        padding: 50px 0;
-        grid-area: stage;
-        overflow: scroll;
-        background-color: #333;
-        text-align: center;
-    }
-    .stageWrapper {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 2svmin;
-        justify-content: center;
-    }
-    .btn {
-        background: linear-gradient(145deg, #eeeeee, #aaaaaa);
-        border: 2px solid #333;
-        box-shadow:
-            0 6px 0 #555,
-            0 8px 15px rgba(0, 0, 0, 0.4),
-            inset 0 2px 0 rgba(255, 255, 255, 0.6);
-        background-position: center;
-        position: relative;
-        cursor: pointer;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        transition:
-            transform 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-            box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-            background 0.1s;
-    }
-    .arrow.pressed,
-    .btn:not(.arrow):not(.completedBtn, .dangerBtn):active {
-        background: linear-gradient(145deg, #cccccc, #888888);
-        transform: translateY(6px);
-        box-shadow:
-            0 0 0 #555,
-            0 2px 4px rgba(0, 0, 0, 0.4),
-            inset 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    .btn svg {
-        width: 70%;
-        height: 70%;
-        object-fit: contain;
-    }
-    .completedBtn {
-        background: linear-gradient(145deg, #0d0, #090);
-        border: 2px solid #030;
-        box-shadow:
-            0 6px 0 #050,
-            0 8px 15px rgba(0, 0, 0, 0.4),
-            inset 0 2px 0 rgba(255, 255, 255, 0.4);
-    }
-    .completedBtn:active {
-        background: linear-gradient(145deg, #0a0, #070);
-        transform: translateY(6px);
-        box-shadow:
-            0 0 0 #050,
-            0 2px 4px rgba(0, 0, 0, 0.4),
-            inset 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-    .completedBtn div {
-        color: #fff;
-    }
-    .dangerBtn {
-        background: linear-gradient(145deg, #d00, #900);
-        border: 2px solid #300;
-        box-shadow:
-            0 6px 0 #500,
-            0 8px 15px rgba(0, 0, 0, 0.4),
-            inset 0 2px 0 rgba(255, 255, 255, 0.4);
-    }
-    .dangerBtn:active {
-        background: linear-gradient(145deg, #a00, #700);
-        transform: translateY(6px);
-        box-shadow:
-            0 0 0 #500,
-            0 2px 4px rgba(0, 0, 0, 0.4),
-            inset 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-    .miniBtn {
-        background: linear-gradient(145deg, #cccccc, #999999);
-        color: #333;
-        border: 2px solid #333;
-        box-shadow:
-            0 4px 0 #555,
-            0 4px 6px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.5);
-        cursor: pointer;
-        text-align: center;
-        transition:
-            transform 0.1s,
-            box-shadow 0.1s;
-    }
-    .miniBtn:active {
-        background: linear-gradient(145deg, #aaaaaa, #777777);
-        transform: translateY(4px);
-        box-shadow:
-            0 0 0 #555,
-            0 1px 2px rgba(0, 0, 0, 0.3),
-            inset 0 1px 2px rgba(0, 0, 0, 0.2);
-    }
-    .loginBtn {
-        position: absolute;
-        top: 250px;
-        right: 10px;
-        font-size: 30px;
-    }
-    .stageNum {
-        grid-area: num;
-        margin: 10px;
-        padding-left: 10px;
-        font-size: 8svmin;
-    }
-    .gameScreen {
-        display: grid;
-        grid-template-columns: 1fr 3fr;
-        grid-template-rows: 60px 1fr 40px minmax(180px, auto);
-        grid-template-areas:
-            "num option"
-            "main main"
-            "guide guide"
-            "btn btn";
-        width: 100%;
-        height: 100%;
-        padding: env(safe-area-inset-top) min(20px, 2vw) max(env(safe-area-inset-bottom), 20px) min(20px, 2vw);
-    }
-    .options {
-        grid-area: option;
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-end;
-        gap: 5px;
-        padding: 5px;
-    }
-    .options .btn {
-        width: 33%;
-        max-width: 150px;
-    }
-    .editorScreen {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: 60px 1fr 110px 110px;
-        grid-template-areas:
-            "header"
-            "main"
-            "objs"
-            "tools";
-        width: 100%;
-        height: 100%;
-        padding: env(safe-area-inset-top) min(20px, 2vw) env(safe-area-inset-bottom) min(20px, 2vw);
-    }
-    .testScreen {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: 60px 1fr 40px minmax(180px, auto);
-        grid-template-areas:
-            "header"
-            "main"
-            "guide"
-            "btn";
-        width: 100%;
-        height: 100%;
-        padding: env(safe-area-inset-top) min(20px, 2vw) max(env(safe-area-inset-bottom), 20px) min(20px, 2vw);
-    }
-    .objs {
-        display: flex;
-        grid-area: objs;
-        background-color: #999;
-        border-top: #777 solid 8px;
-        border-bottom: #777 solid 8px;
-        height: 110px;
-        align-items: center;
-        overflow-x: scroll;
-        touch-action: pan-x;
-        font-size: 5svmin;
-    }
-    .tools {
-        display: flex;
-        grid-area: tools;
-        background-color: #ddd;
-        border-top: #bbb solid 8px;
-        border-bottom: #bbb solid 8px;
-        height: 110px;
-        align-items: center;
-        overflow-x: scroll;
-        touch-action: pan-x;
-    }
-    .objImg,
-    .toolImg {
-        touch-action: pan-x;
-        margin: 5px;
-        width: 55px;
-        height: 55px;
-        pointer-events: auto;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    .objImg.selected {
-        border: #0f0 solid 2px;
-    }
-    .toolImg.selected {
-        border: #00f solid 2px;
-    }
-    #stage-editor-main {
-        width: 100%;
-        height: 100%;
-    }
-    input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        margin: 0 5px;
-    }
-    .guides {
-        grid-area: guide;
-        font-size: 20px;
-        text-align: left;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 5px;
-    }
-    .guide {
-        height: 28px;
-        margin: 0;
-        padding: 15px 5px;
-        font-size: 20px;
-        display: flex;
-        align-items: center;
-        white-space: nowrap;
-    }
-    .guide select {
-        margin-left: 0.3rem;
-        padding: 0.1rem 0.2rem;
-        font-size: 20px;
-        background-color: #fff;
-        color: #333;
-        border: 1px solid #333;
-        border-radius: 2px;
-    }
-    #cnvWrapper {
-        grid-area: main;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-    }
-    #main,
-    #debug {
-        aspect-ratio: 1 / 1;
-        width: auto;
-        height: auto;
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-    #main {
-        z-index: 1;
-    }
-    #debug {
-        pointer-events: none;
-        z-index: 2;
-    }
-    .loadingStage {
-        grid-area: main;
-    }
-    .settings {
-        grid-area: settings;
-        width: 25svw;
-        max-width: 90px;
-        aspect-ratio: 1.5;
-        margin: auto;
-    }
-    .restart {
-        grid-area: restart;
-        width: 25svw;
-        max-width: 90px;
-        aspect-ratio: 1.5;
-        margin: auto;
-    }
-    .menu {
-        grid-area: menu;
-        width: 25svw;
-        max-width: 90px;
-        aspect-ratio: 1.5;
-        margin: auto;
-    }
-    .controlBtns {
-        grid-area: btn;
-        margin: 0 auto 20px auto;
-        width: 100%;
-        max-width: 270px;
-        aspect-ratio: 1.5;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        grid-template-rows: 1fr 1fr 1fr;
-        grid-template-areas:
-            ". u ."
-            "l . r"
-            ". d .";
-    }
-    .arrow {
-        aspect-ratio: 1.5;
-    }
-    .u {
-        grid-area: u;
-    }
-    .l {
-        grid-area: l;
-    }
-    .d {
-        grid-area: d;
-    }
-    .r {
-        grid-area: r;
-    }
-    .editor-layout {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 12svmin 18svmin 15svmin 1fr;
-        grid-template-areas:
-            "header header"
-            "title title"
-            "new-link new-link"
-            "list list";
-        height: 100svh;
-        padding-top: max(2svh, env(safe-area-inset-top));
-        padding-bottom: max(2svh, env(safe-area-inset-bottom));
-    }
-    .unselected-tab {
-        background-color: #333;
-        color: white;
-        border: white solid 2px;
-        border-bottom: none;
-    }
+  * {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    color: #fff;
+  }
+  img {
+    pointer-events: none;
+    image-rendering: pixelated;
+  }
+  .btn,
+  .miniBtn,
+  img {
+    -webkit-touch-callout: none;
+    touch-action: none;
+  }
+  .stageWrapper {
+    touch-action: pan-y;
+  }
+  html,
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  :lang(zh-CN),
+  :lang(zh-Hans),
+  .font-cn {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", "Noto Sans SC", "Noto Sans CJK SC", "Source Han Sans SC", "Heiti SC", sans-serif;
+  }
+  :lang(zh-TW),
+  :lang(zh-HK),
+  :lang(zh-Hant),
+  .font-tw {
+    font-family: "PingFang TC", "Hiragino Sans TC", "Microsoft JhengHei", "Noto Sans TC", "Noto Sans CJK TC", "Source Han Sans TC", "Heiti TC", sans-serif;
+  }
+  :lang(ja),
+  .font-ja {
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Noto Sans JP", sans-serif;
+  }
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+  }
+  body {
+    position: relative;
+    text-align: center;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 100px,
+        rgba(0, 0, 0, 0.05) 100px,
+        rgba(0, 0, 0, 0.05) 200px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 100px,
+        rgba(0, 0, 0, 0.05) 100px,
+        rgba(0, 0, 0, 0.05) 200px
+      ),
+      radial-gradient(#aaa, #555);
+  }
+  .loadingTxt {
+    line-height: 100vh;
+    line-height: 100svh;
+    color: #f00;
+  }
+  .stageSelectScreen {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 60px 18svmin 25svmin 1fr;
+    grid-template-areas:
+      "back ...."
+      "txt txt"
+      "jump jump"
+      "stage stage";
+    width: 100%;
+    height: 100%;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-sizing: border-box;
+  }
+  .back {
+    width: 18svmin;
+    height: 12svmin;
+    grid-area: back;
+  }
+  .selectStageText {
+    grid-area: txt;
+  }
+  .jump {
+    grid-area: jump;
+  }
+  .stageWrapperContainer {
+    padding: 50px 0;
+    grid-area: stage;
+    overflow: scroll;
+    background-color: #333;
+    text-align: center;
+  }
+  .stageWrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2svmin;
+    justify-content: center;
+  }
+  .btn {
+    background: linear-gradient(145deg, #eeeeee, #aaaaaa);
+    border: 2px solid #333;
+    box-shadow:
+      0 6px 0 #555,
+      0 8px 15px rgba(0, 0, 0, 0.4),
+      inset 0 2px 0 rgba(255, 255, 255, 0.6);
+    background-position: center;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition:
+      transform 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+      background 0.1s;
+  }
+  .arrow.pressed,
+  .btn:not(.arrow):not(.completedBtn, .dangerBtn):active {
+    background: linear-gradient(145deg, #cccccc, #888888);
+    transform: translateY(6px);
+    box-shadow:
+      0 0 0 #555,
+      0 2px 4px rgba(0, 0, 0, 0.4),
+      inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  .btn svg {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+  }
+  .completedBtn {
+    background: linear-gradient(145deg, #0d0, #090);
+    border: 2px solid #030;
+    box-shadow:
+      0 6px 0 #050,
+      0 8px 15px rgba(0, 0, 0, 0.4),
+      inset 0 2px 0 rgba(255, 255, 255, 0.4);
+  }
+  .completedBtn:active {
+    background: linear-gradient(145deg, #0a0, #070);
+    transform: translateY(6px);
+    box-shadow:
+      0 0 0 #050,
+      0 2px 4px rgba(0, 0, 0, 0.4),
+      inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  .completedBtn div {
+    color: #fff;
+  }
+  .dangerBtn {
+    background: linear-gradient(145deg, #d00, #900);
+    border: 2px solid #300;
+    box-shadow:
+      0 6px 0 #500,
+      0 8px 15px rgba(0, 0, 0, 0.4),
+      inset 0 2px 0 rgba(255, 255, 255, 0.4);
+  }
+  .dangerBtn:active {
+    background: linear-gradient(145deg, #a00, #700);
+    transform: translateY(6px);
+    box-shadow:
+      0 0 0 #500,
+      0 2px 4px rgba(0, 0, 0, 0.4),
+      inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  .miniBtn {
+    background: linear-gradient(145deg, #cccccc, #999999);
+    color: #333;
+    border: 2px solid #333;
+    box-shadow:
+      0 4px 0 #555,
+      0 4px 6px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    text-align: center;
+    transition:
+      transform 0.1s,
+      box-shadow 0.1s;
+  }
+  .miniBtn:active {
+    background: linear-gradient(145deg, #aaaaaa, #777777);
+    transform: translateY(4px);
+    box-shadow:
+      0 0 0 #555,
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  .stageNum {
+    grid-area: num;
+    margin: 10px;
+    padding-left: 10px;
+    font-size: 8svmin;
+  }
+  .gameScreen {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    grid-template-rows: 60px 1fr 40px minmax(180px, auto);
+    grid-template-areas:
+      "num option"
+      "main main"
+      "guide guide"
+      "btn btn";
+    width: 100%;
+    height: 100%;
+    padding: env(safe-area-inset-top) min(20px, 2vw)
+      max(env(safe-area-inset-bottom), 20px) min(20px, 2vw);
+  }
+  .options {
+    grid-area: option;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 5px;
+    padding: 5px;
+  }
+  .options .btn {
+    width: 33%;
+    max-width: 150px;
+  }
+  .editorScreen {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 60px 1fr 110px 110px;
+    grid-template-areas:
+      "header"
+      "main"
+      "objs"
+      "tools";
+    width: 100%;
+    height: 100%;
+    padding: env(safe-area-inset-top) min(20px, 2vw) env(safe-area-inset-bottom)
+      min(20px, 2vw);
+  }
+  .testScreen {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 60px 1fr 40px minmax(180px, auto);
+    grid-template-areas:
+      "header"
+      "main"
+      "guide"
+      "btn";
+    width: 100%;
+    height: 100%;
+    padding: env(safe-area-inset-top) min(20px, 2vw)
+      max(env(safe-area-inset-bottom), 20px) min(20px, 2vw);
+  }
+  .objs {
+    display: flex;
+    grid-area: objs;
+    background-color: #999;
+    border-top: #777 solid 8px;
+    border-bottom: #777 solid 8px;
+    height: 110px;
+    align-items: center;
+    overflow-x: scroll;
+    touch-action: pan-x;
+    font-size: 5svmin;
+  }
+  .tools {
+    display: flex;
+    grid-area: tools;
+    background-color: #ddd;
+    border-top: #bbb solid 8px;
+    border-bottom: #bbb solid 8px;
+    height: 110px;
+    align-items: center;
+    overflow-x: scroll;
+    touch-action: pan-x;
+  }
+  .objImg,
+  .toolImg {
+    touch-action: pan-x;
+    margin: 5px;
+    width: 55px;
+    height: 55px;
+    pointer-events: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .objImg.selected {
+    border: #0f0 solid 2px;
+  }
+  .toolImg.selected {
+    border: #00f solid 2px;
+  }
+  #stage-editor-main {
+    width: 100%;
+    height: 100%;
+  }
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0 5px;
+  }
+  .guides {
+    grid-area: guide;
+    font-size: 20px;
+    text-align: left;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+  }
+  .guide {
+    height: 28px;
+    margin: 0;
+    padding: 15px 5px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+  .guide select {
+    margin-left: 0.3rem;
+    padding: 0.1rem 0.2rem;
+    font-size: 20px;
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #333;
+    border-radius: 2px;
+  }
+  #cnvWrapper {
+    grid-area: main;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  #main,
+  #debug {
+    aspect-ratio: 1 / 1;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  #main {
+    z-index: 1;
+  }
+  #debug {
+    pointer-events: none;
+    z-index: 2;
+  }
+  .loadingStage {
+    grid-area: main;
+  }
+  .settings {
+    grid-area: settings;
+    width: 25svw;
+    max-width: 90px;
+    aspect-ratio: 1.5;
+    margin: auto;
+  }
+  .restart {
+    grid-area: restart;
+    width: 25svw;
+    max-width: 90px;
+    aspect-ratio: 1.5;
+    margin: auto;
+  }
+  .menu {
+    grid-area: menu;
+    width: 25svw;
+    max-width: 90px;
+    aspect-ratio: 1.5;
+    margin: auto;
+  }
+  .controlBtns {
+    grid-area: btn;
+    margin: 0 auto 20px auto;
+    width: 100%;
+    max-width: 270px;
+    aspect-ratio: 1.5;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-areas:
+      ". u ."
+      "l . r"
+      ". d .";
+  }
+  .arrow {
+    aspect-ratio: 1.5;
+  }
+  .u {
+    grid-area: u;
+  }
+  .l {
+    grid-area: l;
+  }
+  .d {
+    grid-area: d;
+  }
+  .r {
+    grid-area: r;
+  }
+  .editor-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 12svmin 18svmin 15svmin 1fr;
+    grid-template-areas:
+      "header header"
+      "title title"
+      "new-link new-link"
+      "list list";
+    height: 100svh;
+    padding-top: max(2svh, env(safe-area-inset-top));
+    padding-bottom: max(2svh, env(safe-area-inset-bottom));
+  }
+  .unselected-tab {
+    background-color: #333;
+    color: white;
+    border: white solid 2px;
+    border-bottom: none;
+  }
 
-    .popupTitle {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        color: #fff;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    }
+  .popupTitle {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
 
-    .btn.next {
-        width: 12svmin;
-        height: 12svmin;
-        max-width: 80px;
-        max-height: 80px;
-        margin-top: 1rem;
-    }
+  .btn.next {
+    width: 12svmin;
+    height: 12svmin;
+    max-width: 80px;
+    max-height: 80px;
+    margin-top: 1rem;
+  }
 
-    .home-btn div {
-        position: static !important;
-        font-size: inherit !important;
-        inset: auto !important;
-        color: inherit;
-    }
+  .home-btn div {
+    position: static !important;
+    font-size: inherit !important;
+    inset: auto !important;
+    color: inherit;
+  }
 
-    .home-btn svg {
-        width: 100% !important;
-        height: 100% !important;
-    }
+  .home-btn svg {
+    width: 100% !important;
+    height: 100% !important;
+  }
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Checkbox, LeftSvg, MagnifyingGlassSvg, PlayButton } from "../components";
-import { useAuth, usePopup, useSettings, useStage } from "../context";
+import { LeftSvg, MagnifyingGlassSvg, PlayButton } from "../components";
+import { usePopup, useSettings, useStage } from "../context";
 import { playBgm } from "@/game/base";
 import { TranslatableString, translate } from "../translate";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,6 @@ const PAGE_SIZE = 10;
 
 export default function Lobby() {
     const router = useRouter();
-    const { user } = useAuth();
     const { showAlert } = usePopup();
     const { stages, setStages } = useStage();
     const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +19,6 @@ export default function Lobby() {
     const [hasMore, setHasMore] = useState(true);
     const [searchInput, setSearchInput] = useState("");
     const [searchedQuery, setSearchedQuery] = useState("");
-    const [isShowOnlyCompleted, setIsShowOnlyCompleted] = useState(false);
     const {
         settings: { lang },
     } = useSettings();
@@ -90,7 +88,7 @@ export default function Lobby() {
         setIsLoading(false);
     };
 
-    const displayedStages = isShowOnlyCompleted ? stages.filter((s) => user?.completedOnlineStageIds.includes(s.id)) : stages;
+    const displayedStages = stages;
 
     return (
         <main className="editor-layout text-center">
@@ -109,13 +107,6 @@ export default function Lobby() {
                         <MagnifyingGlassSvg />
                     </button>
                 </div>
-                {user && (
-                    <div className="w-svw text-right">
-                        <Checkbox id="showCompleted" checked={isShowOnlyCompleted} onChange={() => setIsShowOnlyCompleted(!isShowOnlyCompleted)}>
-                            <span>{t("クリア済ステージのみ表示")}</span>
-                        </Checkbox>
-                    </div>
-                )}
             </div>
             <div className="[grid-area:list] bg-[#333] overflow-y-auto py-[2dvmin]">
                 <div className="flex flex-col items-center gap-[2dvmin]">
@@ -129,7 +120,7 @@ export default function Lobby() {
                                         <span>{stage.title}</span>
                                         <span className="text-[#ddd] m-[2dvmin] text-[length:3dvmin]">by: {stage.creatorName}</span>
                                     </h2>
-                                    <PlayButton i={stage.id} isCompleted={user?.completedOnlineStageIds.includes(stage.id) || false} />
+                                    <PlayButton i={stage.id} isCompleted={false} />
                                 </div>
                             </div>
                         ))

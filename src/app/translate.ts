@@ -166,3 +166,15 @@ export const translate = (str: TranslatableString, lang: Language) => {
     if (lang === "ja") return str;
     else return TRANSLATOR_MAP.get(str)?.[lang] || "";
 };
+
+export const parseLanguage = (val: string | null | undefined): Language | null => {
+    if (!val) return null;
+    const lower = val.toLowerCase().replace(/_/g, "-").trim();
+    if (lower === "ja" || lower.startsWith("ja-")) return "ja";
+    if (lower === "gb" || lower === "en-gb" || lower === "uk" || lower === "en-uk") return "gb";
+    if (lower === "us" || lower === "en-us" || lower === "en") return "us";
+    if (lower === "cn" || lower === "zh-cn" || lower === "zh-hans" || lower === "zh-sg" || lower === "zh-simple" || lower === "zh-simplified") return "cn";
+    if (lower === "tw" || lower === "zh-tw" || lower === "zh-hant" || lower === "zh-hk" || lower === "zh-mo" || lower === "zh-traditional") return "tw";
+    if (lower.startsWith("zh")) return "cn";
+    return null;
+};

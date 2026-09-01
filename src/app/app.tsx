@@ -5,15 +5,10 @@ import { onLoad } from "@/game/base";
 import { Loading, Popup } from "./components";
 import { Language } from "@/constants";
 import { usePopup, useSettings } from "./context";
-import { useRouter, usePathname } from "next/navigation";
-
 export default function App({ children }: { children: React.ReactNode }) {
     const { settings, setLang, setFont } = useSettings();
     const { popupData } = usePopup();
     const [isInitLoading, setIsInitLoading] = useState(true);
-    const router = useRouter();
-    const pathname = usePathname();
-    const [isInitialLoadAtSubpath, setIsInitialLoadAtSubpath] = useState(pathname !== "/");
 
     // 上方向へのスクロールを制限する処理
     const blockScrollUp = () => {
@@ -25,24 +20,20 @@ export default function App({ children }: { children: React.ReactNode }) {
     };
 
     useEffect(() => {
-        if (isInitialLoadAtSubpath) {
-            router.replace("/");
-        }
-    }, [isInitialLoadAtSubpath, router]);
-
-    useEffect(() => {
-        if (pathname === "/") {
-            setIsInitialLoadAtSubpath(false);
-        }
-    }, [pathname]);
-
-    useEffect(() => {
         if (settings.font) {
             document.body.classList.add("makinas-font");
         } else {
             document.body.classList.remove("makinas-font");
         }
     }, [settings.font]);
+
+    useEffect(() => {
+        const htmlLang = settings.lang === "cn" ? "zh-Hans" : settings.lang === "tw" ? "zh-Hant" : settings.lang === "ja" ? "ja" : "en";
+        document.documentElement.lang = htmlLang;
+
+        document.body.classList.remove("font-cn", "font-tw", "font-ja", "font-us", "font-gb");
+        document.body.classList.add(`font-${settings.lang}`);
+    }, [settings.lang]);
 
     useEffect(() => {
         // 言語
@@ -85,7 +76,7 @@ export default function App({ children }: { children: React.ReactNode }) {
                     {popupData.children}
                 </Popup>
             )}
-            {!isInitialLoadAtSubpath && children}
+            {children}
         </div>
     );
 }

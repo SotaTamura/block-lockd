@@ -5,7 +5,7 @@ import { use, useEffect, useRef, useState } from "react";
 import { RESOLUTION } from "@/constants";
 import Link from "next/link";
 import { loadStage, update } from "@/game/main";
-import { useAuth, usePopup, useSettings } from "@/app/context";
+import { usePopup, useSettings } from "@/app/context";
 import { ArrowButton, Checkbox, GearSvg, Loading, MenuSvg, NextSvg, RestartSvg } from "@/app/components";
 import { STAGES } from "@/game/stages";
 import { BgmPath, glitch, playBgm, playSfx } from "@/game/base";
@@ -15,7 +15,6 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
     const id = Number(use(params).id);
     const cnvWrapperRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<Application | null>(null);
-    const { user, changeData } = useAuth();
     const { showPopup, hidePopup } = usePopup();
     const [restarter, setRestarter] = useState(0);
     const prevIdRef = useRef(id);
@@ -125,7 +124,12 @@ export default function Game({ params }: { params: Promise<{ id: string }> }) {
                 while (accumulator >= stepRef.current) {
                     update(
                         async () => {
-                            if (user && !user.completedStageIds.includes(id)) changeData({ completedStageIds: [...user.completedStageIds, id] });
+                            try {
+                                const stored = JSON.parse(localStorage.getItem("completedStageIds") || "[]");
+                                if (!stored.includes(id)) {
+                                    localStorage.setItem("completedStageIds", JSON.stringify([...stored, id]));
+                                }
+                            } catch {}
                             showPopup({
                                 children: (
                                     <>
