@@ -8,6 +8,8 @@ export const GET = async (req: NextRequest) => {
         const limitParam = Number(req.nextUrl.searchParams.get("limit"));
         const offsetParam = Number(req.nextUrl.searchParams.get("offset"));
         const query = req.nextUrl.searchParams.get("query")?.trim() || "";
+        const sortParam = req.nextUrl.searchParams.get("sort")?.toLowerCase();
+        const orderByDirection = sortParam === "asc" ? "asc" : "desc";
         const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(Math.floor(limitParam), 50) : 10;
         const offset = Number.isFinite(offsetParam) && offsetParam >= 0 ? Math.floor(offsetParam) : 0;
         const stages = await prisma.stage.findMany({
@@ -15,16 +17,21 @@ export const GET = async (req: NextRequest) => {
                 access: 0,
                 ...(query
                     ? {
-                          OR: [{ title: { contains: query, mode: "insensitive" } }, { creator: { name: { contains: query, mode: "insensitive" } } }],
+                          OR: [
+                              { title: { contains: query, mode: "insensitive" } },
+                              { description: { contains: query, mode: "insensitive" } },
+                              { creator: { name: { contains: query, mode: "insensitive" } } },
+                          ],
                       }
                     : {}),
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: { createdAt: orderByDirection },
             skip: offset,
             take: limit + 1,
             select: {
                 id: true,
                 title: true,
+                description: true,
                 creatorId: true,
                 createdAt: true,
                 updatedAt: true,
